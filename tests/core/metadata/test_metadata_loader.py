@@ -9,31 +9,31 @@ from unittest.mock import Mock
 import pytest
 
 from oncutf.core.metadata.metadata_loader import MetadataLoader
+from oncutf.core.metadata.metadata_ui_bridge import NullMetadataUIBridge
 
 
 @pytest.fixture
-def mock_parent_window():
-    """Create mock parent window."""
-    window = Mock()
-    window.metadata_cache = Mock()
-    window.metadata_cache.get_all_cached_metadata.return_value = {}
-    window.file_model = Mock()
-    window.file_model.files = []
-    return window
+def mock_ui_bridge():
+    """Create mock UI bridge."""
+    bridge = Mock()
+    bridge.dialog_parent = None
+    bridge.cache_get_entries_batch.return_value = {}
+    bridge.cache_get_entry.return_value = None
+    return bridge
 
 
 @pytest.fixture
-def metadata_loader(mock_parent_window):
+def metadata_loader(mock_ui_bridge):
     """Create MetadataLoader instance."""
-    return MetadataLoader(mock_parent_window)
+    return MetadataLoader(ui_bridge=mock_ui_bridge)
 
 
 @pytest.mark.unit
-def test_metadata_loader_init(mock_parent_window):
+def test_metadata_loader_init(mock_ui_bridge):
     """Test MetadataLoader initialization."""
-    loader = MetadataLoader(mock_parent_window)
+    loader = MetadataLoader(ui_bridge=mock_ui_bridge)
 
-    assert loader._parent_window == mock_parent_window
+    assert loader._ui_bridge is mock_ui_bridge
     assert loader._parallel_loader is None
     assert loader._metadata_cancelled is False
 

@@ -1,6 +1,6 @@
 # Color Column Implementation Plan
 
-**Date:** December 21, 2025  
+**Date:** December 21, 2025
 **Author:** Michael Economou
 
 ## Overview
@@ -62,7 +62,7 @@ ICON_MAPPINGS = {
 COLOR_PALETTE = [
     # Row 1: Pinks & Reds
     "#e91e63", "#f06292", "#ec407a", "#d81b60", "#c2185b", "#ad1457", "#880e4f", "#ff1744",
-    # Row 2: Oranges & Yellows  
+    # Row 2: Oranges & Yellows
     "#ff9800", "#ffb74d", "#ffa726", "#ff6f00", "#f57c00", "#e65100", "#ffeb3b", "#fdd835",
     # Row 3: Greens & Cyans
     "#4caf50", "#81c784", "#66bb6a", "#43a047", "#388e3c", "#2e7d32", "#00bcd4", "#26c6da",
@@ -101,26 +101,26 @@ from oncutf.config import COLOR_PALETTE
 def generate_color_svg(color_key: str, hex_color: str, size: int = 16) -> str:
     """Generate filled square SVG."""
     # Use rectangle with slight rounding for modern look
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" 
+    return f'''<svg xmlns="http://www.w3.org/2000/svg"
         width="{size}" height="{size}" viewBox="0 0 {size} {size}">
-        <rect x="2" y="2" width="{size-4}" height="{size-4}" 
+        <rect x="2" y="2" width="{size-4}" height="{size-4}"
               rx="2" fill="{hex_color}" stroke="none"/>
     </svg>'''
 
 def main():
     icons_dir = Path(__file__).parent.parent / "resources" / "icons"
     icons_dir.mkdir(parents=True, exist_ok=True)
-    
+
     for key, data in COLOR_PALETTE.items():
         if key == "none":
             continue  # Skip transparent/none icon
-        
+
         svg_content = generate_color_svg(key, data["color"])
         output_path = icons_dir / f"color_{key}.svg"
-        
+
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(svg_content)
-        
+
         print(f"Generated: {output_path.name}")
 
 if __name__ == "__main__":
@@ -204,7 +204,7 @@ Layout:
 class ColorButton(QToolButton):
     """Single color button in grid."""
     clicked_with_color = pyqtSignal(str)  # Emits hex color
-    
+
     def __init__(self, color: str, parent=None):
         super().__init__(parent)
         self.color = color
@@ -225,58 +225,58 @@ class ColorButton(QToolButton):
 class ColorGridMenu(QWidget):
     """Color grid menu with picker and none option."""
     color_selected = pyqtSignal(str)  # Emits selected color or "none"
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
-        
+
         self._setup_ui()
-    
+
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
-        
+
         # Top section: Grid + Picker
         top_layout = QHBoxLayout()
-        
+
         # Color grid (4 rows x 8 cols)
         grid_layout = QGridLayout()
         grid_layout.setSpacing(2)
-        
+
         from oncutf.config import COLOR_PALETTE, COLOR_GRID_ROWS, COLOR_GRID_COLS
-        
+
         for i, color in enumerate(COLOR_PALETTE):
             row = i // COLOR_GRID_COLS
             col = i % COLOR_GRID_COLS
-            
+
             btn = ColorButton(color)
             btn.clicked_with_color.connect(self._on_color_selected)
             grid_layout.addWidget(btn, row, col)
-        
+
         top_layout.addLayout(grid_layout)
-        
+
         # Color picker button (image)
         picker_btn = QToolButton()
         picker_btn.setFixedSize(60, 80)
-        
+
         from oncutf.config import COLOR_PICKER_IMAGE
         pixmap = QPixmap(COLOR_PICKER_IMAGE)
         picker_btn.setIcon(QIcon(pixmap))
         picker_btn.setIconSize(QSize(58, 78))
         picker_btn.setToolTip("Custom color picker")
         picker_btn.clicked.connect(self._open_color_picker)
-        
+
         top_layout.addWidget(picker_btn)
         layout.addLayout(top_layout)
-        
+
         # Bottom: None button
         none_btn = QPushButton("None - Reset the color")
         none_btn.setFixedHeight(25)
         none_btn.clicked.connect(lambda: self._on_color_selected("none"))
         layout.addWidget(none_btn)
-        
+
         # Style
         self.setStyleSheet("""
             ColorGridMenu {
@@ -293,14 +293,14 @@ class ColorGridMenu(QWidget):
                 background-color: #4a4a4a;
             }
         """)
-    
+
     def _on_color_selected(self, color: str):
         self.color_selected.emit(color)
         self.close()
-    
+
     def _open_color_picker(self):
         from PyQt5.QtWidgets import QColorDialog
-        
+
         color = QColorDialog.getColor()
         if color.isValid():
             hex_color = color.name()  # Returns #RRGGBB
@@ -321,17 +321,17 @@ class ColorColumnDelegate(QStyledItemDelegate):
                 self._show_color_menu(event.globalPos(), model, index)
                 return True
         return super().editorEvent(event, model, option, index)
-    
+
     def _show_color_menu(self, pos, model, index):
         from oncutf.ui.widgets.color_grid_menu import ColorGridMenu
-        
+
         menu = ColorGridMenu()
         menu.color_selected.connect(
             lambda color: self._set_file_color(model, index, color)
         )
         menu.move(pos)
         menu.show()
-    
+
     def _set_file_color(self, model, index, color):
         # Get file path from model
         # Update color in database
@@ -364,7 +364,7 @@ def load_color_icon(color_key: str) -> QIcon:
     """Load cached color icon."""
     if color_key in _color_icons_cache:
         return _color_icons_cache[color_key]
-    
+
     icon_path = get_icons_dir() / f"color_{color_key}.svg"
     icon = QIcon(str(icon_path))
     _color_icons_cache[color_key] = icon
@@ -427,8 +427,8 @@ def generate_color_icon(color_key: str) -> QPixmap:
 
 ## Summary
 
-**Complexity:** Medium  
-**Estimated Time:** 3-4 hours  
+**Complexity:** Medium
+**Estimated Time:** 3-4 hours
 **Key Files:**
 
 1. `config.py` - Color palette definition

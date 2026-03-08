@@ -29,6 +29,8 @@ from oncutf.core.rename.data_classes import (
     ValidationResult,
 )
 from oncutf.core.rename.execution_manager import UnifiedExecutionManager
+from oncutf.core.rename.module_registry import MODULE_TYPE_MAP
+from oncutf.core.rename.name_composer import NameComposer
 from oncutf.core.rename.preview_manager import UnifiedPreviewManager
 from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
 from oncutf.core.rename.state_manager import RenameStateManager
@@ -38,9 +40,11 @@ from oncutf.core.rename.validation_manager import UnifiedValidationManager
 # NOTE: RenameManager moved to ui/managers/ for boundary compliance.
 
 __all__ = [
+    "MODULE_TYPE_MAP",
     "BatchQueryManager",
     "ExecutionItem",
     "ExecutionResult",
+    "NameComposer",
     "PreviewResult",
     "RenameHistoryManager",
     "RenameState",

@@ -1,7 +1,7 @@
 # font system implementation — complete reference
 
-**Author:** Michael Economou  
-**Date:** 2026-01-11  
+**Author:** Michael Economou
+**Date:** 2026-01-11
 **Status:** COMPLETE - All 1000 tests passing
 
 ---
@@ -94,13 +94,13 @@ def get_ui_font_family() -> str:
 ```python
 class JetBrainsFonts:
     """Manages JetBrains Mono variants (embedded in QRC)."""
-    
+
     def get_font(self, style: str, size: int) -> QFont:
         """Get JetBrains font with specified style and size."""
 
 def get_default_ui_font(size: int = 9, style: str = "regular") -> QFont:
     """Get appropriate font with automatic size adjustment.
-    
+
     - Reads DEFAULT_UI_FONT from config
     - Applies FONT_SIZE_ADJUSTMENTS automatically
     - Loads font via JetBrainsFonts or InterFonts
@@ -119,12 +119,12 @@ def get_default_ui_font(size: int = 9, style: str = "regular") -> QFont:
 ```python
 def inject_font_family(qss_string: str) -> str:
     """Replace hardcoded Inter fonts with configured font.
-    
+
     Replaces:
         font-family: "Inter", "Segoe UI", Arial, sans-serif
     With:
         font-family: [from get_ui_font_family()]
-    
+
     Example:
         original = 'QMenu { font-family: "Inter", "Segoe UI", Arial, sans-serif; }'
         injected = inject_font_family(original)
@@ -146,17 +146,17 @@ def inject_font_family(qss_string: str) -> str:
 def _render_qss_template(self) -> str:
     """Render QSS template with dynamic font injection."""
     template = load_template("main.qss.template")
-    
+
     # Replace color tokens
     for token, color in self._theme.color_map.items():
         template = template.replace(f"{{{{{token}}}}}", color)
-    
+
     # NEW: Replace hardcoded Inter with configured font
     template = template.replace(
         '"Inter", "Segoe UI", Arial, sans-serif',
         get_ui_font_family()
     )
-    
+
     return template
 ```
 

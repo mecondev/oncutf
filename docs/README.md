@@ -3,13 +3,16 @@
 ## Project Status & Planning
 
 **Primary Reference:**
+
 - **[PROJECT_STATUS_2026-01-04.md](../PROJECT_STATUS_2026-01-04.md)** — Project status snapshot (root directory)
 
 **Active Architecture Documentation:**
+
 - **[migration_stance.md](migration_stance.md)** — Architecture migration policy: legacy vs modern patterns
 - **[architecture.md](architecture.md)** — System architecture (4-tier MVC, core layers)
 
 **Completed & Archived:**
+
 - **[_archive/REFACTORING_ROADMAP_COMPLETED.md](_archive/REFACTORING_ROADMAP_COMPLETED.md)** — Monster files eliminated (DONE)
 - **[_archive/PHASE5_SUMMARY_COMPLETED.md](_archive/PHASE5_SUMMARY_COMPLETED.md)** — 5-phase refactoring complete (DONE)
 - **[_archive/BEHAVIORS_REFACTORING_PLAN_COMPLETED.md](_archive/BEHAVIORS_REFACTORING_PLAN_COMPLETED.md)** — Behaviors extraction complete (DONE)
@@ -47,9 +50,9 @@
 
 Layered structure with controllers separating UI from core services:
 
-```
+```tree
 oncutf/
-├── main.py                  # Application entry point
+├── main.py                  # Slim entry point (delegates to boot/)
 ├── config.py                # Central configuration
 ├── ui/                      # UI layer (PyQt5)
 │   └── main_window.py       # Main window wiring to controllers
@@ -74,12 +77,14 @@ oncutf/
 ## Architecture Highlights
 
 **Layered Design:**
+
 - **Controllers** (`controllers/`) — UI-agnostic orchestration, testable without Qt
 - **Core Services** (`core/`) — Business logic, caching, metadata, rename engine
 - **Behaviors** (`ui/behaviors/`) — Reusable UI interactions (composition over mixins)
 - **Domain Models** (`models/`) — Pure data structures
 
 **Key Features:**
+
 - Persistent metadata and hash caching with SQLite-backed LRU
 - Modular rename pipeline (specified text, counters, metadata, transforms)
 - Safe rename workflow with conflict resolution and undo/redo

@@ -1,7 +1,7 @@
 # Database Manager Split Plan
 
-**Author:** Michael Economou  
-**Date:** 2026-01-01  
+**Author:** Michael Economou
+**Date:** 2026-01-01
 **Current:** 1615 lines → **Target:** ~400 lines (main orchestrator)
 
 ---
@@ -37,25 +37,25 @@ oncutf/core/database/
 ```python
 class DatabaseMigrations:
     """Schema creation and migration management."""
-    
+
     SCHEMA_VERSION = 4
-    
+
     @staticmethod
     def initialize_schema(conn: sqlite3.Connection) -> None:
         """Initialize or migrate schema to current version."""
-        
+
     @staticmethod
     def _create_schema_v2(cursor: sqlite3.Cursor) -> None:
         """Create the v2 schema with separated tables."""
-        
+
     @staticmethod
     def _migrate_schema(cursor: sqlite3.Cursor, from_version: int, to_version: int) -> None:
         """Migrate from older schema versions."""
-        
+
     @staticmethod
     def _create_indexes(cursor: sqlite3.Cursor) -> None:
         """Create database indexes for performance."""
-        
+
     @staticmethod
     def initialize_default_metadata_schema(conn: sqlite3.Connection) -> bool:
         """Initialize default metadata categories and fields."""
@@ -81,20 +81,20 @@ class DatabaseMigrations:
 ```python
 class PathStore:
     """Manages file_paths table operations."""
-    
+
     def __init__(self, get_connection_func):
         """Initialize with connection provider."""
         self._get_connection = get_connection_func
-        
+
     def get_or_create_path_id(self, file_path: str) -> int:
         """Get path_id for a file, creating record if needed."""
-        
+
     def get_path_id(self, file_path: str) -> int | None:
         """Get path_id for a file without creating it."""
-        
+
     def update_file_path(self, old_path: str, new_path: str) -> bool:
         """Update file path (e.g., after rename operation)."""
-        
+
     def _normalize_path(self, file_path: str) -> str:
         """Use the central normalize_path function."""
 ```
@@ -119,21 +119,21 @@ class PathStore:
 ```python
 class HashStore:
     """Manages file_hashes table operations."""
-    
+
     def __init__(self, get_connection_func, path_store: PathStore):
         """Initialize with connection provider and path store."""
         self._get_connection = get_connection_func
         self._path_store = path_store
-        
+
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
         """Store file hash."""
-        
+
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Retrieve file hash."""
-        
+
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
         """Check if hash exists for a file."""
-        
+
     def get_files_with_hash_batch(
         self, file_paths: list[str], algorithm: str = "CRC32"
     ) -> list[str]:
@@ -175,45 +175,45 @@ class HashStore:
 ```python
 class MetadataStore:
     """Manages all metadata operations (JSON + structured + schema)."""
-    
+
     def __init__(self, get_connection_func, path_store: PathStore):
         """Initialize with connection provider and path store."""
         self._get_connection = get_connection_func
         self._path_store = path_store
-    
+
     # JSON Metadata Operations
     def store_metadata(
         self, file_path: str, metadata: dict[str, Any],
         is_extended: bool = False, is_modified: bool = False
     ) -> bool:
         """Store metadata for a file."""
-        
+
     def batch_store_metadata(
         self, metadata_items: list[tuple[str, dict[str, Any], bool, bool]]
     ) -> int:
         """Store metadata for multiple files in batch."""
-        
+
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Retrieve metadata for a file."""
-        
+
     def get_metadata_batch(
         self, file_paths: list[str]
     ) -> dict[str, dict[str, Any] | None]:
         """Retrieve metadata for multiple files in batch."""
-        
+
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         """Check if file has metadata stored."""
-    
+
     # Metadata Categories & Fields
     def create_metadata_category(
         self, category_name: str, display_name: str,
         description: str | None = None, sort_order: int = 0
     ) -> int | None:
         """Create a new metadata category."""
-        
+
     def get_metadata_categories(self) -> list[dict[str, Any]]:
         """Get all metadata categories ordered by sort_order."""
-        
+
     def create_metadata_field(
         self, field_key: str, field_name: str, category_id: int,
         data_type: str = "text", is_editable: bool = False,
@@ -221,24 +221,24 @@ class MetadataStore:
         sort_order: int = 0
     ) -> int | None:
         """Create a new metadata field."""
-        
+
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
-        
+
     def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
         """Get a metadata field by its key."""
-    
+
     # Structured Metadata Operations
     def store_structured_metadata(
         self, file_path: str, field_key: str, field_value: str
     ) -> bool:
         """Store structured metadata for a file."""
-        
+
     def batch_store_structured_metadata(
         self, file_path: str, field_data: list[tuple[str, str]]
     ) -> int:
         """Store multiple structured metadata fields in batch."""
-        
+
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
 ```
@@ -262,27 +262,27 @@ class MetadataStore:
 ```python
 class BackupStore:
     """Manages file_rename_history table operations."""
-    
+
     def __init__(self, get_connection_func, path_store: PathStore):
         """Initialize with connection provider and path store."""
         self._get_connection = get_connection_func
         self._path_store = path_store
-        
+
     def store_rename_operation(
         self, operation_id: str, old_path: str, new_path: str,
         operation_type: str = "rename", modules_data: str | None = None,
         post_transform_data: str | None = None
     ) -> bool:
         """Store a rename operation in history."""
-        
+
     def get_rename_history(
         self, file_path: str, limit: int = 100
     ) -> list[dict[str, Any]]:
         """Get rename history for a file."""
-        
+
     def get_operation_files(self, operation_id: str) -> list[dict[str, Any]]:
         """Get all files involved in a rename operation."""
-        
+
     def clear_old_history(self, days: int = 90) -> int:
         """Clear rename history older than N days."""
 ```
@@ -314,16 +314,16 @@ Since no methods currently exist, this file will be mostly scaffolding for futur
 ```python
 class DatabaseManager:
     """Enhanced database management with improved separation of concerns.
-    
+
     Main orchestrator that delegates to specialized stores:
     - PathStore: file_paths table operations
     - MetadataStore: all metadata operations
     - HashStore: file_hashes table operations
     - BackupStore: file_rename_history table operations
     """
-    
+
     SCHEMA_VERSION = 4
-    
+
     def __init__(self, db_path: str | None = None):
         """Initialize database manager."""
         # Existing initialization logic
@@ -332,48 +332,48 @@ class DatabaseManager:
         self._metadata_store = MetadataStore(self._get_connection, self._path_store)
         self._hash_store = HashStore(self._get_connection, self._path_store)
         self._backup_store = BackupStore(self._get_connection, self._path_store)
-    
+
     # Connection management (keep)
     def _get_connection(self): ...
     def transaction(self): ...
     def _initialize_database(self): ...
     def close(self): ...
-    
+
     # Delegation to PathStore
     def get_or_create_path_id(self, file_path: str) -> int:
         return self._path_store.get_or_create_path_id(file_path)
-    
+
     def get_path_id(self, file_path: str) -> int | None:
         return self._path_store.get_path_id(file_path)
-    
+
     def update_file_path(self, old_path: str, new_path: str) -> bool:
         return self._path_store.update_file_path(old_path, new_path)
-    
+
     # Delegation to MetadataStore (JSON metadata)
     def store_metadata(self, file_path: str, metadata: dict[str, Any],
                       is_extended: bool = False, is_modified: bool = False) -> bool:
         return self._metadata_store.store_metadata(file_path, metadata, is_extended, is_modified)
-    
+
     def batch_store_metadata(self, metadata_items: list[tuple[str, dict[str, Any], bool, bool]]) -> int:
         return self._metadata_store.batch_store_metadata(metadata_items)
-    
+
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         return self._metadata_store.get_metadata(file_path)
-    
+
     def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
         return self._metadata_store.get_metadata_batch(file_paths)
-    
+
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         return self._metadata_store.has_metadata(file_path, metadata_type)
-    
+
     # Delegation to MetadataStore (categories & fields)
     def create_metadata_category(self, category_name: str, display_name: str,
                                  description: str | None = None, sort_order: int = 0) -> int | None:
         return self._metadata_store.create_metadata_category(category_name, display_name, description, sort_order)
-    
+
     def get_metadata_categories(self) -> list[dict[str, Any]]:
         return self._metadata_store.get_metadata_categories()
-    
+
     def create_metadata_field(self, field_key: str, field_name: str, category_id: int,
                              data_type: str = "text", is_editable: bool = False,
                              is_searchable: bool = True, display_format: str | None = None,
@@ -382,50 +382,50 @@ class DatabaseManager:
             field_key, field_name, category_id, data_type,
             is_editable, is_searchable, display_format, sort_order
         )
-    
+
     def get_metadata_fields(self, category_id: int | None = None) -> list[dict[str, Any]]:
         return self._metadata_store.get_metadata_fields(category_id)
-    
+
     def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
         return self._metadata_store.get_metadata_field_by_key(field_key)
-    
+
     # Delegation to MetadataStore (structured metadata)
     def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
         return self._metadata_store.store_structured_metadata(file_path, field_key, field_value)
-    
+
     def batch_store_structured_metadata(self, file_path: str, field_data: list[tuple[str, str]]) -> int:
         return self._metadata_store.batch_store_structured_metadata(file_path, field_data)
-    
+
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         return self._metadata_store.get_structured_metadata(file_path)
-    
+
     def initialize_default_metadata_schema(self) -> bool:
         """Delegates to migrations module."""
         with self._get_connection() as conn:
             return DatabaseMigrations.initialize_default_metadata_schema(conn)
-    
+
     # Delegation to HashStore
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
         return self._hash_store.store_hash(file_path, hash_value, algorithm)
-    
+
     def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         return self._hash_store.get_hash(file_path, algorithm)
-    
+
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
         return self._hash_store.has_hash(file_path, algorithm)
-    
+
     def get_files_with_hash_batch(self, file_paths: list[str], algorithm: str = "CRC32") -> list[str]:
         return self._hash_store.get_files_with_hash_batch(file_paths, algorithm)
-    
+
     # Color tag operations (keep in manager - uses path_store internally)
     def set_color_tag(self, file_path: str, color_hex: str) -> bool:
         """Set color tag for a file (delegates to path_store for path_id)."""
         # Existing implementation with validation logic
-        
+
     def get_color_tag(self, file_path: str) -> str:
         """Get color tag for a file (delegates to path_store for path_id)."""
         # Existing implementation
-    
+
     # Utility methods
     def get_database_stats(self) -> dict[str, int]:
         """Get database statistics."""

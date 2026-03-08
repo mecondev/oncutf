@@ -1,4 +1,4 @@
-<!-- 
+<!--
 Thumbnail Viewport Implementation Plan
 
 Author: Michael Economou
@@ -26,10 +26,10 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - Cache thumbnails persistently (disk + SQLite DB) for fast folder reload
 - Generate thumbnails in background threads without UI freeze
 
-**Status:** In Progress - Phase 4 Complete  
-**Priority:** High  
-**Estimated Duration:** 5-7 weeks (phased implementation)  
-**Time Elapsed:** 2 weeks (as of 2026-01-18)  
+**Status:** In Progress - Phase 4 Complete
+**Priority:** High
+**Estimated Duration:** 5-7 weeks (phased implementation)
+**Time Elapsed:** 2 weeks (as of 2026-01-18)
 **Completion:** 80% (Phase 1-4 done, testing pending)
 
 ---
@@ -39,6 +39,7 @@ Implement a second viewport (alongside the existing table view) that displays fi
 ### Completed Work (Weeks 1-2)
 
 **Phase 1: Core Infrastructure [COMPLETE]**
+
 - ThumbnailCache system (memory LRU + disk persistence)
 - ThumbnailProvider abstract classes (Image + Video)
 - ThumbnailStore database operations
@@ -47,12 +48,14 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - 2032 lines of code added
 
 **Phase 2: Thumbnail Manager & Generation [COMPLETE]**
+
 - ThumbnailManager orchestrator (request queue, worker coordination)
 - ThumbnailWorker background thread (async generation)
 - Progress signals and error handling
 - 650 lines of code added
 
 **Phase 3: UI Layer & Delegate [COMPLETE]**
+
 - ThumbnailDelegate with metadata/hash indicators
 - Color flag frame tinting
 - ThumbnailViewportWidget with lasso selection
@@ -60,12 +63,14 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - 250+ lines of code added (delegate enhancements)
 
 **Phase 4: Integration & Selection Sync [COMPLETE]**
+
 - Viewport toggle via LayoutController
 - Bidirectional selection synchronization
 - FileTable <-> ThumbnailViewport selection sync on view switch
 - 130+ lines of code added (selection sync logic)
 
 **Bonus: Bundled Tools Integration [COMPLETE]**
+
 - ExifToolWrapper: Uses bundled exiftool (bin/<platform>/)
 - VideoThumbnailProvider: Auto-detects bundled ffmpeg
 - PyInstaller-ready architecture
@@ -73,6 +78,7 @@ Implement a second viewport (alongside the existing table view) that displays fi
 - 472 lines of code + documentation
 
 **Total Progress:**
+
 - Lines of code: 3530+
 - Files created: 11
 - Files modified: 10
@@ -82,12 +88,14 @@ Implement a second viewport (alongside the existing table view) that displays fi
 ### Remaining Work (Weeks 3-7)
 
 **Phase 3: UI Layer (Week 3-4)** [IN PROGRESS NEXT]
+
 - ThumbnailDelegate (rendering with overlays)
 - ThumbnailViewportWidget (QListView with lasso selection)
 - FileTableModel.order_mode extension
 - VideoPreviewDialog
 
-**Phase 4: Integration & Sync (Week 4-5)**
+## Phase 4: Integration & Sync (Week 4-5)
+
 - Viewport toggle (details <-> thumbs)
 - Model synchronization (shared FileTableModel)
 - Color flag integration
@@ -95,7 +103,8 @@ Implement a second viewport (alongside the existing table view) that displays fi
 
 **Phase 5: Database Migrations** [DONE - completed in Phase 1]
 
-**Phase 6: Testing & Polish (Week 6-7)**
+## Phase 6: Testing & Polish (Week 6-7)
+
 - Unit tests for all phases
 - Performance optimization
 - Edge case handling
@@ -107,7 +116,7 @@ Implement a second viewport (alongside the existing table view) that displays fi
 
 ### Data Flow
 
-```
+``` tree
 File Load (FileLoadController)
   ↓
 File List (FileTableModel.files) ← Shared Model
@@ -142,10 +151,11 @@ Model Updated + Sync to FileTable
 
 ### Phase 1: Core Infrastructure (Week 1-2) [COMPLETE]
 
-**Status:** COMPLETE (2026-01-16)  
+**Status:** COMPLETE (2026-01-16)
 **Deliverables:** ThumbnailCache, ThumbnailProvider, ThumbnailStore, DB migration v4→v5
 
-#### 1.1 Thumbnail Cache System [COMPLETE] [COMPLETE]
+#### 1.1 Thumbnail Cache System [COMPLETE]
+
 - **File:** `oncutf/core/thumbnail/thumbnail_cache.py`
 - **Classes:**
   - `ThumbnailCacheConfig` - Settings (size, location, TTL)
@@ -154,6 +164,7 @@ Model Updated + Sync to FileTable
   - `ThumbnailCache` - Orchestrator combining both
 
 **Implementation Status:**
+
 - [DONE] LRU memory cache with OrderedDict (thread-safe with RLock)
 - [DONE] Disk cache with SHA256 hash-based filenames
 - [DONE] generate_cache_key(file_path, mtime, size) method
@@ -161,16 +172,19 @@ Model Updated + Sync to FileTable
 - [DONE] AppPaths.get_thumbnails_dir() integration
 
 **Responsibilities:**
+
 - Store/retrieve thumbnails from `~/.cache/oncutf/thumbnails/`
 - Maintain file identity: `hash(file_path + mtime + size)` → safe filename
 - Invalidate when file modified (mtime check)
 - LRU eviction when memory cache exceeds 500 entries
 
 #### 1.2 Thumbnail DB Store [COMPLETE]
+
 - **File:** `oncutf/core/database/thumbnail_store.py`
 - **Tables:** `thumbnail_cache`, `thumbnail_order` (added via migration v4→v5)
 
 **Implementation Status:**
+
 - [DONE] ThumbnailStore class with all CRUD operations
 - [DONE] Database migration v4→v5 (oncutf/core/database/migrations.py)
 - [DONE] Schema with normalized rows (not JSON blobs)
@@ -178,6 +192,7 @@ Model Updated + Sync to FileTable
 - [DONE] Integration with DatabaseManager (delegation methods)
 
 **Schema (v5):**
+
 ```sql
   CREATE TABLE thumbnail_cache (
     id INTEGER PRIMARY KEY,
@@ -191,7 +206,7 @@ Model Updated + Sync to FileTable
     UNIQUE(file_path, file_mtime, file_size)  -- File identity fingerprint
   )
   CREATE INDEX idx_thumbnail_cache_folder ON thumbnail_cache(folder_path)
-  
+
   CREATE TABLE thumbnail_order (
     id INTEGER PRIMARY KEY,
     folder_path TEXT NOT NULL,
@@ -201,10 +216,11 @@ Model Updated + Sync to FileTable
   )
   CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path, order_index)
 ```
-  CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path, order_index)
-  ```
 
-**Design Decision: Normalized Rows**
+  CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path, order_index)
+
+## Design Decision: Normalized Rows
+
 - Each file = 1 row with order_index
 - Incremental updates: only affected files change
 - No JSON blob rewrites on every drag
@@ -212,6 +228,7 @@ Model Updated + Sync to FileTable
 - One-shot load: `SELECT file_path FROM thumbnail_order WHERE folder_path=? ORDER BY order_index`
 
 **Methods:**
+
 - `get_cached_path(file_path, mtime, size) -> str | None`
 - `save_cache_entry(folder_path, file_path, mtime, size, cache_filename, video_frame_time)`
   - Uses UPSERT: INSERT OR REPLACE for same (file_path, mtime, size)
@@ -225,7 +242,8 @@ Model Updated + Sync to FileTable
 - `clear_folder_order(folder_path)`
   - `DELETE FROM thumbnail_order WHERE folder_path=?`
 
-#### 1.3 Thumbnail Providers (Abstract) [COMPLETE]
+### 1.3 Thumbnail Providers (Abstract) [COMPLETE]
+
 - **File:** `oncutf/core/thumbnail/providers.py`
 - **Classes:**
   - `ThumbnailProvider` (ABC)
@@ -233,6 +251,7 @@ Model Updated + Sync to FileTable
   - `VideoThumbnailProvider` - FFmpeg for video frames
 
 **Implementation Status:**
+
 - [DONE] Abstract base with generate(file_path) and supports(file_path)
 - [DONE] ImageThumbnailProvider: JPEG, PNG, GIF, BMP, TIFF, WebP, HEIC support
 - [DONE] VideoThumbnailProvider: FFmpeg integration with bundled binary support
@@ -241,6 +260,7 @@ Model Updated + Sync to FileTable
 - [DONE] Fallback frames: 15%, 50%, 70% if primary frame rejected
 
 **Responsibilities:**
+
 - Load/process file → QPixmap (constrained size)
 - Video: Extract frame at t = clamp(duration * 0.35, 2.0, duration - 2.0)
 - Quality check: reject frames with luma < 10 or contrast < 5 (fallback to 15%, 50%, 70%)
@@ -250,16 +270,18 @@ Model Updated + Sync to FileTable
 
 ### Phase 2: Thumbnail Manager & Generation (Week 2-3) [COMPLETE]
 
-**Status:** COMPLETE (2026-01-16)  
+**Status:** COMPLETE (2026-01-16)
 **Deliverables:** ThumbnailManager orchestrator, ThumbnailWorker thread, bundled tools integration
 
-#### 2.1 Thumbnail Manager [COMPLETE] [COMPLETE]
+#### 2.1 Thumbnail Manager [COMPLETE]
+
 - **File:** `oncutf/core/thumbnail/thumbnail_manager.py`
 - **Classes:**
   - `ThumbnailRequest` - Queued request (file path, folder, preferred size)
   - `ThumbnailManager` - Orchestrator
 
 **Implementation Status:**
+
 - [DONE] Thread-safe queue.Queue for requests
 - [DONE] Cache lookup: memory → disk → DB
 - [DONE] Worker coordination (2 threads default)
@@ -269,6 +291,7 @@ Model Updated + Sync to FileTable
 - [DONE] Statistics: get_cache_stats() with queue size, worker count
 
 **Responsibilities:**
+
 - Accept requests from UI
 - Check cache (memory → disk → DB)
 - Queue for background generation if missing
@@ -276,10 +299,12 @@ Model Updated + Sync to FileTable
 - Handle errors gracefully (return placeholder)
 
 #### 2.2 Thumbnail Worker [COMPLETE]
+
 - **File:** `oncutf/core/thumbnail/thumbnail_worker.py`
 - **Worker Thread:** Generate thumbnails asynchronously
 
 **Implementation Status:**
+
 - [DONE] QThread-based worker with request queue processing
 - [DONE] Provider selection by file extension (image vs video)
 - [DONE] Disk cache save + DB update after generation
@@ -320,16 +345,18 @@ Model Updated + Sync to FileTable
 
 ### Phase 3: UI Layer - Thumbnail Viewport (Week 3-4) [COMPLETE]
 
-**Status:** COMPLETE (2026-01-18)  
+**Status:** COMPLETE (2026-01-18)
 **Deliverables:** ThumbnailDelegate with metadata indicators, color tinting, ThumbnailViewportWidget with lasso selection, FileTableModel.order_mode
 
 **Note:** Lasso selection (3.4) completed - all edge cases handled.
 
 #### 3.1 Thumbnail Delegate [COMPLETE]
+
 - **File:** `oncutf/ui/delegates/thumbnail_delegate.py`
 - **Class:** `ThumbnailDelegate(QStyledItemDelegate)`
 
 **Implementation Status:**
+
 - [DONE] Rectangle frame (photo slide style, 3px border)
 - [DONE] **Color flag tinting:** Frame border and background tinted with FileItem.color
   - Colored files: border color matches flag, background 10% opacity tint
@@ -347,9 +374,11 @@ Model Updated + Sync to FileTable
 - [DONE] Hover/selection visual states
 
 **Deferred Features:**
+
 - Star rating overlay (top-right) - requires `FileItem.rating` field + DB storage [FUTURE]
 
 **Rendering:**
+
 - Rectangle frame (photo slide style, ~3px border)
   - **Color flag tinting:** Frame border and background tinted with FileItem.color (if set)
   - Non-colored files: default theme border (neutral gray/white)
@@ -378,15 +407,18 @@ Model Updated + Sync to FileTable
 - Placeholder (folder icon + "Loading...") for failed thumbnails
 
 **Interactions:**
+
 - Hover: Highlight border + show full filename in tooltip
 - Selected: Distinct border glow (theme color) + semi-transparent background
 - Double-click: Emit `file_activated(file_path)`
 
 #### 3.2 Thumbnail Viewport Widget
+
 - **File:** `oncutf/ui/widgets/thumbnail_viewport.py`
 - **Class:** `ThumbnailViewportWidget(QWidget)`
 
 **Layout:**
+
 - **Main Layout (QVBoxLayout):**
   - Top: **Existing status label widget** (already exists, no changes)
     - Same widget used for FileTable (managed by StatusManager)
@@ -409,11 +441,13 @@ Model Updated + Sync to FileTable
       - Connects to: `self._list_view.setIconSize(QSize(value, value))`
 
 **Model Integration:**
+
 - Viewport and table share the same model instance
 - Order changes in viewport update FileTableModel.files directly
 - Model emits dataChanged → both views update automatically
 
 **Features:**
+
 - **Zoom:** Mouse wheel (Ctrl+wheel if scroll used for pan)
   - Min 64px, Max 256px thumbnail size
   - Save preference to config
@@ -440,14 +474,17 @@ Model Updated + Sync to FileTable
   - Sort by Color Flag
   - Sort by Folder Path (if multi-folder view)
   - Manual Order (toggle back from sort)
-  - ---
+  - ---;
+
   - **[FUTURE] Set Rating:** Submenu with 0-5 stars
   - **[FUTURE] Sort by Rating:** High to Low / Low to High
   - **[FUTURE] Hide/Show Filters:** Unrated, Below 1-4 stars
-  - ---
+  - ---;
+
   - File operations (same as table context menu): Open, Rename, Delete, etc.
 
 **Rating Implementation Prerequisites:**
+
 - Add `rating INTEGER DEFAULT 0` to `file_table` schema
 - Add `rating` field to `FileItem` dataclass
 - Implement rating sync: thumbnail → file_table → metadata write
@@ -463,12 +500,13 @@ Model Updated + Sync to FileTable
 **File:** `oncutf/models/file_table/file_table_model.py`
 
 **New Properties:**
+
 ```python
 class FileTableModel:
     order_mode: Literal["manual", "sorted"] = "manual"
     sort_key: str | None = None  # "filename", "color", "rating", etc.
     sort_reverse: bool = False
-    
+
     def set_order_mode(self, mode, key=None, reverse=False):
         """Change order mode and trigger re-sort if needed."""
         self.order_mode = mode
@@ -480,7 +518,7 @@ class FileTableModel:
             self._clear_manual_order_db()
         else:  # manual
             self._load_manual_order_db()
-        
+
         self.dataChanged.emit(...)  # Notify views
 ```
 
@@ -489,13 +527,14 @@ class FileTableModel:
 **File:** `oncutf/ui/widgets/thumbnail_viewport.py` (event filter extension)
 
 **Implementation:**
+
 ```python
 class ThumbnailViewport:
     def __init__(self):
         self._rubber_band = QRubberBand(QRubberBand.Rectangle, self)
         self._rubber_band_origin = None
         self.viewport().installEventFilter(self)
-    
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonPress:
             # Check if click on empty space (not on item)
@@ -504,38 +543,39 @@ class ThumbnailViewport:
                 self._rubber_band_origin = event.pos()
                 self._rubber_band.setGeometry(QRect(self._rubber_band_origin, QSize()))
                 self._rubber_band.show()
-        
+
         elif event.type() == QEvent.MouseMove and self._rubber_band.isVisible():
             # Update rubber band rect
             self._rubber_band.setGeometry(QRect(
                 self._rubber_band_origin, event.pos()
             ).normalized())
-            
+
             # Calculate intersecting items
             rubber_rect = self._rubber_band.geometry()
             selection = QItemSelection()
-            
+
             for row in range(self.model().rowCount()):
                 index = self.model().index(row, 0)
                 item_rect = self.visualRect(index)
-                
+
                 if rubber_rect.intersects(item_rect):
                     selection.append(QItemSelectionRange(index))
-            
+
             # Apply selection
             self.selectionModel().select(
-                selection, 
+                selection,
                 QItemSelectionModel.ClearAndSelect
             )
-        
+
         elif event.type() == QEvent.MouseButtonRelease:
             self._rubber_band.hide()
             self._rubber_band_origin = None
-        
+
         return super().eventFilter(obj, event)
 ```
 
 **Edge Cases to Test:**
+
 - Scroll during lasso (item rects change)
 - Item layout changes mid-drag
 - Lasso + Ctrl modifier (additive selection)
@@ -545,27 +585,31 @@ class ThumbnailViewport:
 
 ### Phase 4: Integration & Sync (Week 4-5) [COMPLETE]
 
-**Status:** COMPLETE (2026-01-18)  
+**Status:** COMPLETE (2026-01-18)
 **Deliverables:** Viewport toggle, bidirectional selection sync, MainWindow integration
 
 #### 4.1 Viewport Toggle [COMPLETE]
+
 - **Integration:** Uses existing `viewport_button_group` infrastructure in LayoutController
 - Button click handler: `_on_viewport_changed(button)` (already implemented)
 - QStackedWidget with FileTableView (index 0) and ThumbnailViewportWidget (index 1)
 - Keyboard shortcuts: F1 (details), F2 (thumbs)
 
 **Implementation Status:**
+
 - [DONE] Viewport toggle button group (completed in earlier phase)
 - [DONE] QStackedWidget with both views
 - [DONE] Signal connection: `viewport_button_group.buttonClicked` → `_on_viewport_changed()`
 - [DONE] Viewport switching logic with logging
 
 **Logic:**
+
 - If button "details": `viewport_stack.setCurrentIndex(0)` → Show FileTableView
 - If button "thumbs": `viewport_stack.setCurrentIndex(1)` → Show ThumbnailViewportWidget
 - Selection sync on view switch (see 4.2)
 
 #### 4.2 Model Synchronization & Selection Sync [COMPLETE]
+
 - **Shared File List:** Both views display `FileTableModel.files` (no duplication)
 - **Manual Order Lookup:**
   - On file load: Query `ThumbnailOrderStore.get_folder_order(folder_path)`
@@ -578,6 +622,7 @@ class ThumbnailViewport:
   - Save to DB via `ThumbnailOrderStore.save_folder_order()`
 
 **Implementation Status:**
+
 - [DONE] Shared FileTableModel instance between views
 - [DONE] Selection sync infrastructure: `_setup_selection_sync()`
 - [DONE] Bidirectional sync methods:
@@ -587,17 +632,20 @@ class ThumbnailViewport:
 - [DONE] FileTable selection change listener (when thumbs view active)
 
 **Selection Sync Workflow:**
+
 1. User switches to thumbnail view → `_sync_selection_to_viewport()` called
 2. FileTable selection changes while thumbs view active → auto-sync to viewport
 3. User switches to details view → `_sync_selection_to_table()` called
 
 **Technical Details:**
+
 - FileTable selection tracked via `selectionModel().selectedRows()`
 - ThumbnailViewport selection via `select_files(file_paths)` and `get_selected_files()`
 - Selection conversion: row indices → file paths (via Qt.UserRole FileItem)
 - Full row selection in FileTable maintained
 
 #### 4.3 Color Flag & File Properties
+
 - Color flag already loaded in `FileItem.color`
 - Thumbnail delegate displays without modification
 - No new storage needed
@@ -605,11 +653,13 @@ class ThumbnailViewport:
 #### 4.4 Sorting Integration
 
 **FileTableModel.order_mode Property:**
+
 - `Literal["manual", "sorted"]` - determines drag reorder behavior
 - When `sorted`: drag reorder disabled (Qt sort active)
 - When `manual`: drag reorder enabled, updates DB on drop
 
 **Sort Menu Actions:**
+
 - **Sort Ascending:** `model.set_order_mode("sorted", key="filename", reverse=False)`
   - Calls `files.sort(key=lambda f: f.filename.lower())`
   - Clears DB manual order: `DELETE FROM thumbnail_order WHERE folder_path=?`
@@ -631,6 +681,7 @@ class ThumbnailViewport:
   - Enables drag reorder in viewport
 
 **Drag Reorder Behavior:**
+
 ```python
 if model.order_mode == "manual":
     # Allow drop, update model + DB
@@ -647,14 +698,16 @@ else:
 
 ### Phase 5: Database Migrations (Week 5-6) [COMPLETE - Done in Phase 1]
 
-**Status:** COMPLETE (completed during Phase 1)  
+**Status:** COMPLETE (completed during Phase 1)
 **Note:** Migration v4→v5 already implemented and deployed.
 
-#### 5.1 Migration Script [COMPLETE] [COMPLETE]
+#### 5.1 Migration Script [COMPLETE]
+
 - **File:** `oncutf/core/database/migrations.py`
 - **Migration:** v4 → v5 (DEPLOYED)
 
 **Implementation Status:**
+
 - [DONE] Added thumbnail_cache table with indexes
 - [DONE] Added thumbnail_order table with indexes
 - [DONE] SCHEMA_VERSION = 5 in migrations.py and database_manager.py
@@ -662,11 +715,12 @@ else:
 - [DONE] Backward compatible: old databases auto-upgrade
 
 **Code:**
+
   ```python
   def migrate_v4_to_v5(connection):
       """Add thumbnail cache tables."""
       cursor = connection.cursor()
-      
+
       # Thumbnail cache index
       cursor.execute("""
           CREATE TABLE IF NOT EXISTS thumbnail_cache (
@@ -681,7 +735,7 @@ else:
               UNIQUE(file_path, file_mtime)
           )
       """)
-      
+
       # Thumbnail order (manual arrange)
       cursor.execute("""
           CREATE TABLE IF NOT EXISTS thumbnail_order (
@@ -692,14 +746,15 @@ else:
               UNIQUE(folder_path, file_path)
           )
       """)
-      
+
       cursor.execute("CREATE INDEX IF NOT EXISTS idx_thumbnail_cache_folder ON thumbnail_cache(folder_path)")
       cursor.execute("CREATE INDEX IF NOT EXISTS idx_thumbnail_order_folder ON thumbnail_order(folder_path)")
-      
+
       connection.commit()
   ```
 
 #### 5.2 Update DatabaseManager
+
 - Inject `ThumbnailStore` into `DatabaseManager.__init__()`
 - Expose methods: `get_thumbnail_cache_path()`, `update_thumbnail_order()`, etc.
 
@@ -707,25 +762,29 @@ else:
 
 ### Phase 6: Testing & Polish (Week 6-7) [NOT STARTED]
 
-**Status:** NOT STARTED  
+**Status:** NOT STARTED
 **Dependencies:** Phase 3-4 complete
 
 #### 6.1 Unit Tests
+
 - `tests/unit/thumbnail/test_thumbnail_cache.py`
 - `tests/unit/thumbnail/test_thumbnail_manager.py`
 - `tests/unit/thumbnail/test_providers.py`
 
 #### 6.2 Integration Tests
+
 - `tests/integration/test_thumbnail_viewport.py`
 - `tests/integration/test_thumbnail_sync.py`
 - `tests/integration/test_video_preview.py`
 
 #### 6.3 Performance Benchmarks
+
 - Startup time with thumbnail background generation
 - Memory usage with large file sets
 - Disk cache hit rate
 
 #### 6.4 Polish & Refinement
+
 - QSS styling for thumbnail frames, badges
 - Theme integration (light/dark modes)
 - Accessibility (keyboard navigation tested)
@@ -737,7 +796,7 @@ else:
 
 ### New Files
 
-```
+``` tree
 oncutf/core/thumbnail/
 ├── __init__.py
 ├── thumbnail_cache.py          # ThumbnailCache, ThumbnailMemoryCache, ThumbnailDiskCache
@@ -772,7 +831,7 @@ tests/integration/
 
 ### Modified Files
 
-```
+``` tree
 oncutf/ui/viewport_specs.py                     # Update VIEWPORT_SPECS if needed
 oncutf/controllers/ui/layout_controller.py      # Add ThumbnailViewportWidget to center panel (QStackedWidget)
 oncutf/core/database/database_manager.py        # Inject ThumbnailStore
@@ -840,9 +899,11 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 ## Key Design Decisions
 
 ### 1. QListView vs QGraphicsView
+
 **Decision:** QListView (IconMode) with QStyledItemDelegate
 
 **Rationale:**
+
 - Native virtual scrolling (performance with 10k+ files)
 - Built-in multi-select (Ctrl/Shift handling)
 - Simpler to integrate with Qt models
@@ -851,19 +912,22 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 
 **Tradeoff:** Lasso requires manual item rect calculation and QItemSelection handling
 
-### 0. Core Architecture Decisions
+### 2. Core Architecture Decisions
 
 **Model Sharing:**
+
 - Viewport and table use **same FileTableModel instance**
 - No data duplication, no sync issues
 - Order changes update model → both views update via signals
 
 **Order Mode:**
+
 - `FileTableModel.order_mode: Literal["manual", "sorted"]`
 - Manual: drag reorder enabled, DB persistence
 - Sorted: drag disabled, Qt sort active
 
 **Database Design:**
+
 - `thumbnail_order`: Normalized rows (folder, file, index)
   - Pros: Incremental updates, no JSON rewrites, consistency
   - Cons: More rows (acceptable for <10k files per folder)
@@ -871,13 +935,16 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
   - UPDATE on file change, not INSERT (simpler)
 
 **Rating System:**
+
 - Deferred to Phase 6+ (requires DB schema + sync layer)
 - Must coordinate: thumbnail UI → FileItem → file_table → metadata write
 
 ### 2. Manual Order Persistence
+
 **Decision:** Store in SQLite (per folder) + restore on load
 
 **Rationale:**
+
 - Fast folder reload (no regeneration needed)
 - Survives app restart
 - Single source of truth (DB)
@@ -886,27 +953,33 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 **Alternative:** JSON file per folder (rejected: harder to query, less atomic)
 
 ### 3. Video Frame Heuristic
+
 **Decision:** t = clamp(duration × 0.35, 2.0s, duration - 2.0s)
 
 **Rationale:**
+
 - 35% avoids black leader/credits (common at 0% and 100%)
 - Clamp ensures 2-second margin for safety
 - Fallback to 15%, 50%, 70% if frame too dark
 - Simple to compute, good UX
 
 ### 4. Memory Cache with LRU
+
 **Decision:** Max 500 entries (~50-100 MB depending on size)
 
 **Rationale:**
+
 - Balances performance (no reload) vs memory usage
 - 500 is ~4 folders of 128 thumbnails each
 - LRU eviction prevents unbounded growth
 - Disk cache is persistent fallback
 
 ### 5. Color Flag Reuse
+
 **Decision:** No new color system, use existing `FileItem.color`
 
 **Rationale:**
+
 - Already loaded in FileItem
 - User-defined colors, unlimited palette
 - No redundant storage
@@ -917,17 +990,20 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 ## Error Handling
 
 ### Thumbnail Generation Failures
+
 - **Dark/flat frames:** Try fallback times (15%, 50%, 70%)
 - **FFmpeg not found:** Log warning, show placeholder
 - **Disk full:** Log error, skip caching, show pixmap in memory only
 - **Corrupt file:** Show error placeholder, allow retry
 
 ### Cache Invalidation
+
 - **File modified (mtime changed):** Remove cache entry, regenerate
 - **File deleted:** Remove cache entry from DB
 - **Folder moved:** Cache entries become orphans (gc on startup)
 
 ### Selection Sync Failures
+
 - **Model mismatch:** Fall back to individual sync per file
 - **Selection model null:** Use row indices directly
 
@@ -957,6 +1033,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 ## Testing Checklist
 
 ### Phase 1-2: Core Infrastructure
+
 - [ ] Single-file thumbnail generation
 - [ ] Batch generation (100+ files)
 - [ ] Video frame extraction (multiple codecs)
@@ -966,6 +1043,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] UPSERT logic: same file, different mtime → updates row
 
 ### Phase 3: UI & Interactions
+
 - [ ] Manual drag-reorder persists to DB
 - [ ] Sort modes toggle correctly (manual → sorted → manual)
 - [ ] **Order mode flag:** drag disabled in sorted mode
@@ -985,6 +1063,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] Right-click context menu
 
 ### Phase 3: UI Rendering & Interaction
+
 - [ ] Status label updates from both viewports (FileTable + Thumbs)
 - [ ] Metadata circle colors match theme: none=#404040, loaded=#51cf66 (green), extended=#fabf65 (orange)
 - [ ] Hash circle colors match theme: none=#404040, hash=#ce93d8 (pink-purple)
@@ -998,6 +1077,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] Zoom slider saves preference to config
 
 ### Phase 4-5: Integration & Persistence
+
 - [ ] App restart preserves manual order
 - [ ] Folder change clears manual order (or loads new folder's order)
 - [ ] Theme switching (light/dark)
@@ -1006,6 +1086,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 - [ ] Disk cache cleanup on app exit
 
 ### Phase 6: Future - Rating System
+
 - [ ] **[DEFERRED]** Star rating display (0-5 stars, top-right overlay)
 - [ ] **[DEFERRED]** Star rating keyboard shortcuts (0-5 keys, 0 = no rating)
 - [ ] **[DEFERRED]** Star rating context menu (submenu with 0-5 options)
@@ -1018,7 +1099,7 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 ## Risks & Mitigation
 
 | Risk | Mitigation |
-|------|-----------|
+| ---- | ---------- |
 | FFmpeg not installed | Graceful fallback (placeholder), clear user message in docs |
 | Large video files slow extraction | Cache aggressively, allow user to skip generation, show progress |
 | Unbounded disk cache | Cleanup on app exit, config max size, manual clear action |
@@ -1061,4 +1142,3 @@ CREATE INDEX idx_thumbnail_order_folder ON thumbnail_order(folder_path);
 12. **Tag-based filtering:** Combine rating filters with color flags (e.g., "3+ stars AND red flag")
 
 ---
-

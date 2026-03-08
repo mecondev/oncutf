@@ -1,4 +1,4 @@
-<!-- 
+<!--
 Bundled Tools Integration - Technical Documentation
 
 Author: Michael Economou
@@ -72,10 +72,10 @@ oncutf/
 def __init__(self) -> None:
     # OLD: Hardcoded "exiftool"
     # self.process = subprocess.Popen(["exiftool", ...])
-    
+
     # NEW: Use bundled tool
     from oncutf.utils.shared.external_tools import ToolName, get_tool_path
-    
+
     exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
     self.process = subprocess.Popen([exiftool_path, ...])
     self._exiftool_path = exiftool_path  # Store for subprocess.run calls
@@ -98,11 +98,11 @@ def __init__(self) -> None:
 def __init__(self, max_size: int = 256, ffmpeg_path: str | None = None):
     # OLD: Hardcoded "ffmpeg"
     # self.ffmpeg_path = "ffmpeg"
-    
+
     # NEW: Auto-detect bundled ffmpeg
     if ffmpeg_path is None:
         from oncutf.utils.shared.external_tools import ToolName, get_tool_path
-        
+
         try:
             self.ffmpeg_path = get_tool_path(ToolName.FFMPEG, prefer_bundled=True)
         except FileNotFoundError:
@@ -152,12 +152,12 @@ version = get_tool_version(ToolName.EXIFTOOL)
 ```python
 def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
     """Locate bundled binary based on platform.
-    
+
     Maps:
     - Windows → bin/windows/exiftool.exe
     - macOS → bin/macos/exiftool (universal or arm64/x86_64)
     - Linux → bin/linux/exiftool
-    
+
     Returns Path or None if not found.
     """
 ```
@@ -214,10 +214,10 @@ class AppPaths:
     @classmethod
     def get_bundled_tools_dir(cls) -> Path:
         """Get bundled tools directory.
-        
+
         Development: <project_root>/bin
         Frozen: <_MEIPASS>/bin
-        
+
         Returns:
             Path to bin/ directory
         """
@@ -227,7 +227,7 @@ class AppPaths:
         else:
             # Development mode
             base_path = Path(__file__).parent.parent.parent  # -> project root
-        
+
         return base_path / "bin"
 ```
 
@@ -276,7 +276,7 @@ def test_bundled_tool_detection():
     bundled_path.parent.mkdir(parents=True, exist_ok=True)
     bundled_path.write_text("#!/bin/bash\necho 12.70")
     bundled_path.chmod(0o755)
-    
+
     # Verify bundled tool is found
     path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
     assert "bin/linux/exiftool" in str(path)
@@ -435,6 +435,6 @@ def __init__(self, ffmpeg_path: str | None = None):
 
 ## Contact
 
-**Author:** Michael Economou  
-**Date:** 2026-01-16  
+**Author:** Michael Economou
+**Date:** 2026-01-16
 **Status:** Implemented (Phase 2)

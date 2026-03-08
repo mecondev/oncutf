@@ -1,8 +1,8 @@
 # File Table Header — Features & Shortcuts
 
-**Author:** Michael Economou  
-**Date:** 2026-01-08  
-**Last Updated:** 2026-01-08  
+**Author:** Michael Economou
+**Date:** 2026-01-08
+**Last Updated:** 2026-01-08
 **Type:** Feature Documentation
 
 ---
@@ -96,7 +96,7 @@ pytest          # project test suite (requires exiftool)
 
 ## Phase 6: Future Enhancements (Optional, Not Started)
 
-**Priority:** Low  
+**Priority:** Low
 **Note:** The core column reordering functionality is complete and production-ready. These items represent potential future enhancements that are NOT currently scheduled for implementation.
 
 ### Possible Features
@@ -209,7 +209,7 @@ pytest          # project test suite (requires exiftool)
     "columns_locked": false,
     "column_order": [
       "color",
-      "filename", 
+      "filename",
       "file_size",
       "type",
       "modified"
@@ -234,23 +234,23 @@ pytest          # project test suite (requires exiftool)
 
 ## Implementation Status
 
-**All Features:** [DONE] COMPLETE (Jan 8-9, 2026)  
-**Total Implementation Time:** ~160 minutes (2.7 hours)  
+**All Features:** [DONE] COMPLETE (Jan 8-9, 2026)
+**Total Implementation Time:** ~160 minutes (2.7 hours)
 **Status:** Production Ready [OK]
 
 ### What's Completed
 
-[+] Full column reordering workflow (drag & drop + keyboard)  
-[+] Lock/unlock mechanism with UI controls  
-[+] Persistent configuration (config.json)  
-[+] Drag & drop visual feedback (overlay)  
-[+] Theme-aware colors and styling  
-[+] Context menu integration  
-[+] Reset to default functionality  
-[+] Column visibility toggle  
-[+] Keyboard shortcuts (Ctrl+Left/Right)  
-[+] All tests passing (986+)  
-[+] Code quality gates (ruff, mypy clean)  
+[+] Full column reordering workflow (drag & drop + keyboard)
+[+] Lock/unlock mechanism with UI controls
+[+] Persistent configuration (config.json)
+[+] Drag & drop visual feedback (overlay)
+[+] Theme-aware colors and styling
+[+] Context menu integration
+[+] Reset to default functionality
+[+] Column visibility toggle
+[+] Keyboard shortcuts (Ctrl+Left/Right)
+[+] All tests passing (986+)
+[+] Code quality gates (ruff, mypy clean)
 
 ### Future Considerations (NOT CURRENTLY PLANNED)
 

@@ -1,9 +1,9 @@
 # oncutf Sync Session Implementation Plan
 
-**Author:** Michael Economou  
-**Date:** 2026-01-11  
-**Status:** Draft  
-**Target:** MVP -> v1 -> v2  
+**Author:** Michael Economou
+**Date:** 2026-01-11
+**Status:** Draft
+**Target:** MVP -> v1 -> v2
 
 ---
 
@@ -30,7 +30,7 @@ All sync-related code will reside under `oncutf/sync/` with clear separation of 
 oncutf/
   sync/
     __init__.py                     # Public API exports (brand: oncut)
-    
+
     # --- Domain Models ---
     domain/
       __init__.py
@@ -42,7 +42,7 @@ oncutf/
       sync_result.py                # SyncResult container dataclass
       anchor.py                     # Anchor definitions (clip-to-clip, explicit)
       timeline_position.py          # TimelinePosition helper dataclass
-    
+
     # --- Core Sync Engine ---
     engine/
       __init__.py
@@ -54,7 +54,7 @@ oncutf/
       confidence_scorer.py          # Confidence scoring and thresholds
       timeline_builder.py           # Builds final timeline from matches
       device_identifier.py          # Device identity from path/folder
-    
+
     # --- Audio Processing (Plugin-Ready) ---
     audio/
       __init__.py
@@ -64,7 +64,7 @@ oncutf/
       audio_normalizer.py           # Level normalization, downmix
       audio_resampler.py            # Resampling to common rate
       candidate_window.py           # Candidate window generation
-    
+
     # --- Exporters ---
     exporters/
       __init__.py
@@ -72,7 +72,7 @@ oncutf/
       aaf_exporter.py               # Avid AAF linked export (MVP)
       report_exporter.py            # JSON/CSV report export
       # Future: fcpxml_exporter.py, resolve_exporter.py
-    
+
     # --- UI Components ---
     ui/
       __init__.py
@@ -86,14 +86,14 @@ oncutf/
       anchor_dialog.py              # Manual anchor input dialog
       sync_settings_dialog.py       # Sync settings/preferences
       unknown_placement_menu.py     # Placement mode selector
-    
+
     # --- Controller ---
     controller/
       __init__.py
       sync_controller.py            # Main sync controller (UI-agnostic)
       anchor_controller.py          # Anchor management controller
       export_controller.py          # Export workflow controller
-    
+
     # --- Utilities ---
     utils/
       __init__.py
@@ -110,36 +110,36 @@ oncutf/
 @dataclass
 class Clip:
     """Represents a single media clip in the sync session."""
-    
+
     # Identity
     clip_id: str                          # Unique identifier (UUID)
     file_path: str                        # Absolute filesystem path
     filename: str                         # Basename for display
-    
+
     # Temporal metadata (best-effort)
     metadata_start_time: datetime | None  # Wall-clock start from metadata
     duration_seconds: float               # Clip duration in seconds
     duration_frames: int                  # Duration in project frames
-    
+
     # Device association
     device_id: str | None                 # Device identifier
     device_name: str                      # Human-readable device name
-    
+
     # Folder color (from oncutf color flags)
     color_hex: str                        # Hex color string or "none"
-    
+
     # Media properties
     media_type: str                       # "video" or "audio"
     sample_rate: int | None               # Audio sample rate (if audio)
     frame_rate: float | None              # Video frame rate
     has_audio: bool                       # Whether clip has audio track
-    
+
     # Sync state
     sync_status: str                      # "unprocessed", "matched", "unmatched"
     match_confidence: float               # 0.0 to 1.0
     timeline_position: float | None       # Position in timeline (seconds)
     track_index: int | None               # Assigned track index
-    
+
     # Sequence info
     sequence_number: int | None           # Extracted from filename if present
     sequence_anomaly: bool                # True if out-of-order detected
@@ -151,23 +151,23 @@ class Clip:
 @dataclass
 class Device:
     """Represents a recording device (camera or audio recorder)."""
-    
+
     device_id: str                        # Unique identifier
     device_name: str                      # Human-readable name
     device_type: str                      # "camera" or "recorder"
-    
+
     # Source identification
     source_folder: str                    # Primary folder path
     color_hex: str                        # Folder color from oncutf
-    
+
     # Time offset
     time_offset_seconds: float            # Offset from master reference
     offset_confidence: float              # Confidence in offset
     offset_source: str                    # "metadata", "audio", "anchor"
-    
+
     # Associated clips
     clip_ids: list[str]                   # List of clip IDs for this device
-    
+
     # Track assignment
     assigned_track: int | None            # Track index in timeline
 ```
@@ -178,19 +178,19 @@ class Device:
 @dataclass
 class Track:
     """Represents a track lane in the timeline."""
-    
+
     track_id: str                         # Unique identifier
     track_index: int                      # Zero-based track index
     track_name: str                       # Display name (e.g., "V1", "A1")
     track_type: str                       # "video" or "audio"
-    
+
     # Device association
     device_id: str | None                 # Associated device (if any)
     color_hex: str                        # Track color (from device)
-    
+
     # Clips on track
     clip_ids: list[str]                   # Ordered list of clips
-    
+
     # Layout hints
     is_overflow_track: bool               # True for unmatched overflow tracks
 ```
@@ -201,17 +201,17 @@ class Track:
 @dataclass
 class SessionSegment:
     """Represents a cluster of related clips (e.g., ceremony, reception)."""
-    
+
     segment_id: str                       # Unique identifier
     segment_name: str                     # User-facing name
-    
+
     # Temporal bounds (in timeline seconds)
     start_time: float                     # Segment start
     end_time: float                       # Segment end
-    
+
     # Contained clips
     clip_ids: list[str]                   # Clips in this segment
-    
+
     # Clustering metadata
     cluster_reason: str                   # "time_overlap", "audio_link", "manual"
     has_audio_recorder: bool              # Whether segment has recorder
@@ -224,24 +224,24 @@ class SessionSegment:
 @dataclass
 class MatchEdge:
     """Represents a sync relationship between two clips."""
-    
+
     edge_id: str                          # Unique identifier
     clip_a_id: str                        # First clip
     clip_b_id: str                        # Second clip
-    
+
     # Match details
     match_type: str                       # "audio", "anchor", "metadata"
     confidence: float                     # 0.0 to 1.0
-    
+
     # Offset
     offset_seconds: float                 # B relative to A (positive = B is later)
     offset_samples: int | None            # Sample-accurate offset (if audio)
-    
+
     # Quality indicators
     snr_estimate: float | None            # Signal-to-noise ratio
     correlation_peak: float | None        # Cross-correlation peak value
     ambiguity_flag: bool                  # True if multiple peaks detected
-    
+
     # Reason codes for diagnostics
     reason_codes: list[str]               # e.g., ["low_audio", "noisy_env"]
 ```
@@ -252,28 +252,28 @@ class MatchEdge:
 @dataclass
 class SyncResult:
     """Container for complete sync session results."""
-    
+
     session_id: str                       # Unique session identifier
     created_at: datetime                  # Session creation timestamp
     project_fps: float                    # Project timebase
-    
+
     # Domain objects
     clips: dict[str, Clip]                # clip_id -> Clip
     devices: dict[str, Device]            # device_id -> Device
     tracks: list[Track]                   # Ordered track list
     segments: list[SessionSegment]        # Segment clusters
     match_edges: list[MatchEdge]          # All sync relationships
-    
+
     # Timeline bounds
     timeline_start: float                 # Earliest position (seconds)
     timeline_end: float                   # Latest position (seconds)
-    
+
     # Statistics
     total_clips: int
     matched_clips: int
     unmatched_clips: int
     average_confidence: float
-    
+
     # Diagnostics
     warnings: list[str]                   # Warning messages
     anomalies: list[str]                  # Detected anomalies
@@ -387,11 +387,11 @@ INGEST --> NORMALIZE --> CLUSTER --> ROUGH_ALIGN --> AUDIO_REFINE --> SCORE --> 
 ```python
 class IngestService:
     """Ingests file metadata and creates Clip domain objects."""
-    
+
     def __init__(self, metadata_manager: UnifiedMetadataManager) -> None:
         self._metadata_manager = metadata_manager
         self._logger = get_cached_logger(__name__)
-    
+
     def ingest_files(self, file_items: list[FileItem]) -> list[Clip]:
         """Convert FileItems to Clip domain objects."""
         clips: list[Clip] = []
@@ -451,18 +451,18 @@ class IngestService:
 ```python
 class ClusterService:
     """Groups clips into temporal segments."""
-    
+
     CLUSTER_GAP_THRESHOLD_SECONDS = 300  # 5 minutes
-    
+
     def cluster_clips(self, clips: list[Clip]) -> list[SessionSegment]:
         """Create segments from time-based clustering."""
         # Sort by timestamp, handling None values
         timed_clips = [c for c in clips if c.metadata_start_time]
         untimed_clips = [c for c in clips if not c.metadata_start_time]
-        
+
         timed_clips.sort(key=lambda c: c.metadata_start_time)
         segments = self._build_segments(timed_clips)
-        
+
         # Handle untimed clips via filename heuristics
         self._assign_untimed_clips(untimed_clips, segments)
         return segments
@@ -515,21 +515,21 @@ class ClusterService:
 ```python
 class AudioProcessor(ABC):
     """Abstract interface for audio processing (plugin-ready)."""
-    
+
     @abstractmethod
     def load_audio(self, file_path: str) -> np.ndarray:
         """Load audio file and return mono float32 array."""
         pass
-    
+
     @abstractmethod
     def extract_features(self, audio: np.ndarray) -> np.ndarray:
         """Extract matching features from audio."""
         pass
-    
+
     @abstractmethod
     def cross_correlate(
-        self, 
-        features_a: np.ndarray, 
+        self,
+        features_a: np.ndarray,
         features_b: np.ndarray,
         window_start: int,
         window_end: int
@@ -543,9 +543,9 @@ class AudioProcessor(ABC):
 ```python
 class PythonAudioProcessor(AudioProcessor):
     """Pure Python audio processor for MVP."""
-    
+
     INTERNAL_SAMPLE_RATE = 8000  # Downsample for speed
-    
+
     def load_audio(self, file_path: str) -> np.ndarray:
         """Load and preprocess audio."""
         # Use soundfile or similar library
@@ -641,7 +641,7 @@ class PythonAudioProcessor(AudioProcessor):
 ```python
 class TimelineBuilder:
     """Builds timeline structure from sync matches."""
-    
+
     def build_timeline(
         self,
         clips: list[Clip],
@@ -735,27 +735,27 @@ TimelineScene (QGraphicsScene)
 ```python
 class TimelineViewport(QGraphicsView):
     """Graphics view for sync timeline display."""
-    
+
     # Zoom configuration
     ZOOM_FACTOR = 1.25
     ZOOM_MIN = 0.01   # Very zoomed out
     ZOOM_MAX = 100.0  # Very zoomed in
-    
+
     # Layout constants
     TRACK_HEIGHT = 60
     TRACK_SPACING = 4
     PIXELS_PER_SECOND_DEFAULT = 10
-    
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._scene = TimelineScene(self)
         self.setScene(self._scene)
-        
+
         self._current_zoom = 1.0
         self._pixels_per_second = self.PIXELS_PER_SECOND_DEFAULT
-        
+
         self._init_ui()
-    
+
     def _init_ui(self) -> None:
         """Initialize view settings."""
         self.setRenderHint(QPainter.Antialiasing)
@@ -783,7 +783,7 @@ def wheelEvent(self, event: QWheelEvent) -> None:
         # Zoom
         factor = self.ZOOM_FACTOR if event.angleDelta().y() > 0 else 1 / self.ZOOM_FACTOR
         new_zoom = self._current_zoom * factor
-        
+
         if self.ZOOM_MIN <= new_zoom <= self.ZOOM_MAX:
             self._current_zoom = new_zoom
             self.scale(factor, 1.0)  # Scale X only
@@ -875,18 +875,18 @@ from oncutf.utils.ui.tooltip_helper import TooltipHelper, TooltipType
 
 class TimelineClipItem(QGraphicsRectItem):
     """Graphics item representing a clip on the timeline."""
-    
+
     def __init__(self, clip: Clip, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
         self._clip = clip
         self._setup_tooltip()
-    
+
     def _setup_tooltip(self) -> None:
         """Configure tooltip for this clip."""
         tooltip_text = self._build_tooltip_text()
         # TooltipHelper requires a QWidget, use scene's parent view
         # Tooltip setup will be done when item is added to scene
-    
+
     def _build_tooltip_text(self) -> str:
         """Build tooltip content."""
         lines = [
@@ -986,32 +986,32 @@ User specifies exact frame positions in two clips that should align.
 ```python
 class TimecodeParser:
     """Parses HH:MM:SS:FF timecode strings."""
-    
+
     PATTERN = re.compile(r"^(\d{1,2}):(\d{2}):(\d{2}):(\d{2})$")
-    
+
     @classmethod
     def parse(cls, timecode: str, fps: float) -> float:
         """Parse timecode string to seconds.
-        
+
         Args:
             timecode: String in format HH:MM:SS:FF
             fps: Frames per second for FF interpretation
-            
+
         Returns:
             Time in seconds as float
-            
+
         Raises:
             ValueError: If timecode format is invalid
         """
         match = cls.PATTERN.match(timecode.strip())
         if not match:
             raise ValueError(f"Invalid timecode format: {timecode}")
-        
+
         hours, minutes, seconds, frames = map(int, match.groups())
-        
+
         if frames >= fps:
             raise ValueError(f"Frame number {frames} exceeds FPS {fps}")
-        
+
         total_seconds = (
             hours * 3600 +
             minutes * 60 +
@@ -1029,19 +1029,19 @@ class TimecodeParser:
 @dataclass
 class Anchor:
     """User-defined sync anchor between clips."""
-    
+
     anchor_id: str
     clip_a_id: str
     clip_b_id: str
     anchor_type: str                    # "clip_to_clip" or "explicit_time"
-    
+
     # For explicit time mapping
     time_in_a_seconds: float | None     # Position in clip A
     time_in_b_seconds: float | None     # Position in clip B
-    
+
     # Computed offset
     offset_seconds: float               # B relative to A
-    
+
     # Refinement
     audio_refined: bool
     refined_offset_seconds: float | None
@@ -1133,7 +1133,7 @@ def _create_file_locator(self, file_path: str) -> aaf2.mobs.Locator:
     """Create AAF locator with absolute path."""
     # Ensure absolute path
     abs_path = os.path.abspath(file_path)
-    
+
     # Use platform-appropriate separator
     if sys.platform == "win32":
         # Windows: keep backslashes
@@ -1141,11 +1141,11 @@ def _create_file_locator(self, file_path: str) -> aaf2.mobs.Locator:
     else:
         # Unix: use forward slashes
         locator_path = abs_path
-    
+
     # Create URLLocator with file:// URI scheme
     locator = self._aaf_file.create.Locator()
     locator["URLString"].value = f"file:///{locator_path}"
-    
+
     return locator
 ```
 
@@ -1163,14 +1163,14 @@ def _create_file_locator(self, file_path: str) -> aaf2.mobs.Locator:
 ```python
 class AAFExporter:
     """Exports sync result to Avid AAF format."""
-    
+
     def export(self, sync_result: SyncResult, output_path: str) -> bool:
         """Export timeline to AAF file.
-        
+
         Args:
             sync_result: Complete sync session result
             output_path: Destination AAF file path
-            
+
         Returns:
             True if export succeeded
         """
@@ -1227,23 +1227,23 @@ To import in Avid:
 ```python
 class TestIngestService:
     """Unit tests for IngestService."""
-    
+
     def test_create_clip_from_valid_file(self):
         """Test clip creation from valid FileItem."""
         pass
-    
+
     def test_skip_zero_duration_file(self):
         """Test that zero-duration files are skipped."""
         pass
-    
+
     def test_extract_sequence_number_from_filename(self):
         """Test sequence extraction: CAM1_0101.MP4 -> 101."""
         pass
-    
+
     def test_timestamp_normalization_with_timezone(self):
         """Test UTC normalization when timezone present."""
         pass
-    
+
     def test_timestamp_normalization_without_timezone(self):
         """Test handling of naive datetime values."""
         pass
@@ -1256,23 +1256,23 @@ class TestIngestService:
 ```python
 class TestClusterService:
     """Unit tests for ClusterService."""
-    
+
     def test_single_cluster_overlapping_clips(self):
         """Test clips within threshold form single cluster."""
         pass
-    
+
     def test_multiple_clusters_separated_clips(self):
         """Test clips beyond threshold form separate clusters."""
         pass
-    
+
     def test_untimed_clips_assigned_by_filename(self):
         """Test clips without timestamp use filename heuristics."""
         pass
-    
+
     def test_master_device_selection_with_recorder(self):
         """Test recorder is selected as master when present."""
         pass
-    
+
     def test_master_device_selection_without_recorder(self):
         """Test most-clips camera selected when no recorder."""
         pass
@@ -1285,15 +1285,15 @@ class TestClusterService:
 ```python
 class TestCandidateWindow:
     """Unit tests for candidate window generation."""
-    
+
     def test_window_from_metadata_offset(self):
         """Test window centered on metadata-derived offset."""
         pass
-    
+
     def test_window_bounds_clamped_to_clip_duration(self):
         """Test window does not exceed clip bounds."""
         pass
-    
+
     def test_no_window_for_non_overlapping_clips(self):
         """Test no candidate window when clips cannot overlap."""
         pass
@@ -1306,17 +1306,17 @@ class TestCandidateWindow:
 ```python
 class TestAnchorController:
     """Unit tests for anchor creation and offset computation."""
-    
+
     def test_explicit_time_anchor_offset_calculation(self):
         """Test offset from explicit time mapping."""
         # At 00:00:41:18 in A == 00:01:23:12 in B (25fps)
         # Expected offset computation
         pass
-    
+
     def test_clip_to_clip_anchor_with_audio_refine(self):
         """Test anchor with audio refinement enabled."""
         pass
-    
+
     def test_anchor_propagates_to_device_offset(self):
         """Test anchor offset is applied to device."""
         pass
@@ -1329,7 +1329,7 @@ class TestAnchorController:
 ```python
 class TestTimecodeParser:
     """Unit tests for timecode parsing."""
-    
+
     @pytest.mark.parametrize("tc,fps,expected", [
         ("00:00:00:00", 25, 0.0),
         ("00:00:01:00", 25, 1.0),
@@ -1340,12 +1340,12 @@ class TestTimecodeParser:
     def test_parse_valid_timecodes(self, tc, fps, expected):
         """Test parsing various valid timecodes."""
         assert TimecodeParser.parse(tc, fps) == pytest.approx(expected)
-    
+
     def test_reject_invalid_format(self):
         """Test rejection of malformed timecode."""
         with pytest.raises(ValueError):
             TimecodeParser.parse("00:00:00", 25)
-    
+
     def test_reject_frame_exceeds_fps(self):
         """Test rejection when frame >= fps."""
         with pytest.raises(ValueError):
@@ -1408,38 +1408,38 @@ def sample_audio_data():
 ```python
 class TestAAFExporter:
     """Smoke tests for AAF export."""
-    
+
     def test_export_creates_valid_aaf_file(self, tmp_path, sample_sync_result):
         """Test that export creates a readable AAF file."""
         output_path = tmp_path / "test_export.aaf"
         exporter = AAFExporter()
-        
+
         result = exporter.export(sample_sync_result, str(output_path))
-        
+
         assert result is True
         assert output_path.exists()
-        
+
         # Verify file can be opened
         with aaf2.open(str(output_path), "r") as f:
             assert f.header is not None
-    
+
     def test_export_contains_expected_tracks(self, tmp_path, sample_sync_result):
         """Test exported AAF has correct track count."""
         output_path = tmp_path / "test_export.aaf"
         exporter = AAFExporter()
         exporter.export(sample_sync_result, str(output_path))
-        
+
         with aaf2.open(str(output_path), "r") as f:
             comp = next(f.content.compositionmobs())
             slots = list(comp.slots)
             assert len(slots) == sample_sync_result.total_tracks
-    
+
     def test_export_uses_absolute_paths(self, tmp_path, sample_sync_result):
         """Test all media locators use absolute paths."""
         output_path = tmp_path / "test_export.aaf"
         exporter = AAFExporter()
         exporter.export(sample_sync_result, str(output_path))
-        
+
         with aaf2.open(str(output_path), "r") as f:
             for mob in f.content.mastermobs():
                 # Check locator paths are absolute

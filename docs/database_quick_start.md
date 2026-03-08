@@ -35,7 +35,7 @@ The database system is automatically activated when the application starts. No c
 ### Database Location
 - **Linux**: `~/.local/share/oncutf/oncutf_data.db`
 - **Windows**: `%APPDATA%/oncutf/oncutf_data.db`
-- **MacOS**: 
+- **MacOS**:
 
 ### New Features
 

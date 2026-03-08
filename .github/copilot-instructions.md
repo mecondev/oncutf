@@ -34,7 +34,10 @@
 ### Boot sequence
 
 ```
-main.py -> oncutf/boot/app_factory.py -> oncutf/ui/main_window.py -> oncutf/controllers/ -> oncutf/core/
+main.py -> oncutf/boot/lifecycle.py (signals, atexit, excepthook)
+       -> oncutf/boot/startup_orchestrator.py (splash, boot worker)
+       -> oncutf/boot/app_factory.py (create_app_context)
+       -> oncutf/ui/main_window.py -> oncutf/controllers/ -> oncutf/core/
 ```
 
 ### Layer structure
@@ -42,7 +45,7 @@ main.py -> oncutf/boot/app_factory.py -> oncutf/ui/main_window.py -> oncutf/cont
 ```
 oncutf/
   app/           # Ports, services, state (AppContext), use cases, events
-  boot/          # Composition root: app_factory.py, infra_wiring.py (ONLY place infra is wired)
+  boot/          # Composition root: app_factory.py, infra_wiring.py, lifecycle.py, startup_orchestrator.py
   config/        # Configuration management
   controllers/   # UI-agnostic orchestration (no Qt UI imports allowed)
   core/          # Business logic (no Qt imports allowed via boundary audit)
@@ -58,6 +61,8 @@ oncutf/
 
 - `oncutf/boot/app_factory.py` -- `create_app_context()` is the composition root
 - `oncutf/boot/infra_wiring.py` -- ONLY place infra implementations are imported/registered
+- `oncutf/boot/lifecycle.py` -- signal handling, atexit, excepthook, shutdown coordination
+- `oncutf/boot/startup_orchestrator.py` -- splash screen, boot worker, dual-flag sync
 - `oncutf/ui/boot/` -- multi-phase MainWindow bootstrap (orchestrator -> manager -> worker)
 
 ### Controllers (`oncutf/controllers/`)
@@ -79,6 +84,7 @@ Business logic. **No Qt imports allowed** (enforced by boundary audit).
 - `rename/unified_rename_engine.py` -- rename orchestration (never bypass this)
 - `metadata/metadata_service.py` -- metadata service entry point
 - `metadata/metadata_loader.py`, `metadata/metadata_cache_service.py` -- loading + caching
+- `metadata/metadata_ui_bridge.py` -- `MetadataUIBridge` protocol + `NullMetadataUIBridge`
 - `backup_manager.py` -- SQLite persistence
 
 ### Boundary rules (enforced by `tools/audit_boundaries.py`)
@@ -233,11 +239,11 @@ References:
 - PROJECT_RULES.md
 
 | Domain | Canonical | Legacy/Supporting |
-|--------|-----------|-------------------|
+| ------ | --------- | ----------------- |
 | **Rename Pipeline** | `UnifiedRenameEngine` (`core/rename/unified_rename_engine.py`) | `utils/naming/*` (helpers only) |
 | **Column Management** | `UnifiedColumnService` (`ui/managers/column_service.py`) | `ColumnManager` (adapter), `models/file_table/column_manager.py` (model-level) |
 | **UI Components** | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
-| **Metadata Loading** | `core/metadata/metadata_service.py` + `metadata_loader.py` + `metadata_cache_service.py` | `MetadataController` (orchestration), `ui/managers/metadata_unified_manager.py` (UI facade) |
+| **Metadata Loading** | `core/metadata/metadata_service.py` + `metadata_loader.py` + `metadata_ui_bridge.py` + `metadata_cache_service.py` | `MetadataController` (orchestration), `ui/managers/metadata_unified_manager.py` (UI facade), `ui/adapters/metadata_ui_bridge_qt.py` (bridge impl) |
 | **File Loading** | `FileLoadController` (`controllers/file_load_controller.py`) | `FileLoadManager` (legacy) |
 | **Thumbnail Viewport** | `ThumbnailViewportController` (`controllers/thumbnail_viewport_controller.py`) | Widget delegates to controller |
 
@@ -248,7 +254,7 @@ References:
 - Delegator methods marked as "Backward compatibility" are temporary; new code MUST NOT use them.
 - Application Service layer is the canonical entry point for operations.
 
-See [PROJECT_RULES.md](../PROJECT_RULES.md) for policy and detailed patterns.
+See `PROJECT_RULES.md` (repo root) for policy and detailed patterns.
 
 ### Hard Constraints (Do Not Violate)
 

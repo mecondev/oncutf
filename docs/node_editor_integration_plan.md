@@ -1,15 +1,15 @@
 # Node Editor Integration Plan
 
-**Author:** Michael Economou  
-**Date:** 2026-01-03  
+**Author:** Michael Economou
+**Date:** 2026-01-03
 **Status:** Phase 1 - Initial Setup
 
 ---
 
 ## Overview
 
-Integrate the portable PyQt Node Editor framework into oncutf to provide a visual, 
-node-based interface for building rename pipelines as an alternative to the linear 
+Integrate the portable PyQt Node Editor framework into oncutf to provide a visual,
+node-based interface for building rename pipelines as an alternative to the linear
 module list.
 
 ---
@@ -173,7 +173,7 @@ oncutf/
 
 ### CounterNode (201)
 - **Purpose**: Sequential numbering
-- **Inputs**: None  
+- **Inputs**: None
 - **Outputs**: 1 (string - formatted number)
 - **Content Widget**: Start, Step, Padding spinboxes
 

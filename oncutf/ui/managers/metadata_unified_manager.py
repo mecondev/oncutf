@@ -89,6 +89,7 @@ class UnifiedMetadataManager(QObject):
             MetadataProgressHandler,
             MetadataWriter,
         )
+        from oncutf.ui.adapters.metadata_ui_bridge_qt import QtMetadataUIBridge
         from oncutf.ui.handlers.metadata_shortcuts import MetadataShortcutHandler
         from oncutf.ui.managers.hash_loading_service import HashLoadingService
 
@@ -98,11 +99,12 @@ class UnifiedMetadataManager(QObject):
         self._shortcut_handler = MetadataShortcutHandler(self, parent_window)
         self._progress_handler = MetadataProgressHandler(parent_window)
         self._hash_service = HashLoadingService(parent_window, self._cache_service)
+        self._ui_bridge = QtMetadataUIBridge(parent_window)
         self._loader = MetadataLoader(
-            parent_window=parent_window,
             exiftool_getter=lambda: self.exiftool_wrapper,
             companion_handler=self._companion_handler,
             progress_handler=self._progress_handler,
+            ui_bridge=self._ui_bridge,
         )
 
         logger.info("[UnifiedMetadataManager] Initialized with delegated modules")

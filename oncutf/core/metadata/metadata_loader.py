@@ -16,14 +16,12 @@ Responsibilities:
 
 from __future__ import annotations
 
-import os
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout, as_completed
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from oncutf.app.services.ui_events import get_item_data_roles, process_events
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
-from oncutf.utils.filesystem.path_utils import paths_equal
+from oncutf.core.metadata.metadata_ui_bridge import MetadataUIBridge, NullMetadataUIBridge
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -52,21 +50,27 @@ class MetadataLoader:
 
     def __init__(
         self,
-        parent_window: Any = None,
         exiftool_getter: Callable[[], ExifToolWrapper] | None = None,
         companion_handler: CompanionMetadataHandler | None = None,
         progress_handler: MetadataProgressHandler | None = None,
+        *,
+        ui_bridge: MetadataUIBridge | None = None,
     ) -> None:
         """Initialize metadata loader.
 
         Args:
-            parent_window: Reference to the main application window
             exiftool_getter: Callable that returns ExifToolWrapper instance
             companion_handler: Handler for companion file metadata
             progress_handler: Handler for progress dialogs
+            ui_bridge: Typed bridge for UI operations (cache, display, status).
+                If omitted, a NullMetadataUIBridge is used.
 
         """
-        self._parent_window = parent_window
+        if ui_bridge is not None:
+            self._ui_bridge: MetadataUIBridge = ui_bridge
+        else:
+            self._ui_bridge = NullMetadataUIBridge()
+
         self._exiftool_getter = exiftool_getter
         self._companion_handler = companion_handler
         self._progress_handler = progress_handler
@@ -78,14 +82,14 @@ class MetadataLoader:
         self._parallel_loader: ParallelMetadataLoader | None = None
 
     @property
-    def parent_window(self) -> Any:
-        """Get parent window."""
-        return self._parent_window
+    def ui_bridge(self) -> MetadataUIBridge:
+        """Get the UI bridge."""
+        return self._ui_bridge
 
-    @parent_window.setter
-    def parent_window(self, value: Any) -> None:
-        """Set parent window."""
-        self._parent_window = value
+    @ui_bridge.setter
+    def ui_bridge(self, value: MetadataUIBridge) -> None:
+        """Set the UI bridge."""
+        self._ui_bridge = value
 
     @property
     def exiftool_wrapper(self) -> ExifToolWrapper:
@@ -203,9 +207,6 @@ class MetadataLoader:
         # ===== PHASE 1: Cache Pre-Check (fast, no UI blocking) =====
         needs_loading, skipped_count = self._filter_cached_items(items, use_extended)
 
-        # Get metadata tree view reference
-        metadata_tree_view = self._get_metadata_tree_view()
-
         # ===== PHASE 2: Handle "all cached" case =====
         if not needs_loading:
             logger.info(
@@ -214,7 +215,7 @@ class MetadataLoader:
                 len(items),
                 skipped_count,
             )
-            self._handle_all_cached(items, metadata_tree_view)
+            self._handle_all_cached(items, None)
             if on_finished:
                 on_finished()
             return
@@ -239,15 +240,13 @@ class MetadataLoader:
 
         # ===== PHASE 3: Single file - use wait_cursor (immediate) =====
         if len(needs_loading) == 1:
-            self._load_single_file_metadata(needs_loading[0], use_extended, metadata_tree_view)
+            self._load_single_file_metadata(needs_loading[0], use_extended, None)
             if on_finished:
                 on_finished()
             return
 
         # ===== PHASE 4: Multiple files - use ProgressDialog with parallel loading =====
-        self._load_multiple_files_metadata(
-            needs_loading, use_extended, metadata_tree_view, source, on_finished
-        )
+        self._load_multiple_files_metadata(needs_loading, use_extended, None, source, on_finished)
 
     # =========================================================================
     # Cache Pre-Checking
@@ -270,10 +269,8 @@ class MetadataLoader:
         skipped_count = 0
 
         # Use batch cache retrieval for performance
-        cache_entries = {}
-        if self._parent_window and hasattr(self._parent_window, "metadata_cache"):
-            paths = [item.full_path for item in items]
-            cache_entries = self._parent_window.metadata_cache.get_entries_batch(paths)
+        paths = [item.full_path for item in items]
+        cache_entries = self._ui_bridge.cache_get_entries_batch(paths)
 
         from oncutf.utils.filesystem.path_normalizer import normalize_path
 
@@ -311,91 +308,28 @@ class MetadataLoader:
 
         Args:
             items: List of file items
-            _metadata_tree_view: Tree view reference (unused - display handled via model)
+            _metadata_tree_view: Tree view reference (unused - display handled via bridge)
 
         """
-        # Update file table icons to show metadata icons
-        if self._parent_window and hasattr(self._parent_window, "file_model"):
-            self._parent_window.file_model.refresh_icons()
+        self._ui_bridge.refresh_model_icons()
 
         # Smart display: respect selection count
         if items:
-            # Get metadata from the appropriate file
             display_file = items[0] if len(items) == 1 else items[-1]
             metadata = None
             if hasattr(display_file, "metadata") and display_file.metadata:
                 metadata = display_file.metadata
-            elif self._parent_window and hasattr(self._parent_window, "metadata_cache"):
+            else:
                 from oncutf.utils.filesystem.path_normalizer import normalize_path
 
-                cache_entry = self._parent_window.metadata_cache.get_entry(
+                cache_entry = self._ui_bridge.cache_get_entry(
                     normalize_path(display_file.full_path)
                 )
                 if cache_entry and hasattr(cache_entry, "data"):
                     metadata = cache_entry.data
 
-            self._smart_display_metadata(metadata, context="all_cached")
-
-    def _get_metadata_tree_view(self) -> Any:
-        """Get metadata tree view reference from parent window."""
-        if self._parent_window and hasattr(self._parent_window, "metadata_tree_view"):
-            return self._parent_window.metadata_tree_view
-        return None
-
-    def _get_current_selection_count(self) -> int:
-        """Get current selection count from file table."""
-        if not self._parent_window:
-            return 0
-
-        # Try SelectionStore first (most reliable)
-        try:
-            from oncutf.app.state.context import get_app_context
-
-            context = get_app_context()
-            if context and hasattr(context, "selection_store"):
-                return len(context.selection_store.get_selected_rows())
-        except Exception:
-            pass
-
-        # Fallback: check file_list_view selection
-        if hasattr(self._parent_window, "file_list_view"):
-            selection_model = self._parent_window.file_list_view.selectionModel()
-            if selection_model:
-                return len(selection_model.selectedRows())
-
-        return 0
-
-    def _smart_display_metadata(self, metadata: dict[str, Any] | None, context: str = "") -> None:
-        """Smart display metadata respecting selection count rules.
-
-        Args:
-            metadata: Metadata to display (or None)
-            context: Context string for logging
-
-        """
-        metadata_tree_view = self._get_metadata_tree_view()
-        if not metadata_tree_view:
-            return
-
-        selection_count = self._get_current_selection_count()
-
-        # Use smart display method if available
-        if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
-            metadata_tree_view.smart_display_metadata_or_empty_state(
-                metadata, selection_count, context
-            )
-        elif selection_count == 1 and metadata:
-            # Fallback: only display if single selection
-            if hasattr(metadata_tree_view, "display_metadata"):
-                metadata_tree_view.display_metadata(metadata, context)
-        elif hasattr(metadata_tree_view, "show_empty_state"):
-            # Multiple selection or no metadata - show empty state
-            if selection_count > 1:
-                metadata_tree_view.show_empty_state(f"{selection_count} files selected")
-            elif selection_count == 0:
-                metadata_tree_view.show_empty_state("No file selected")
-            else:
-                metadata_tree_view.show_empty_state("No metadata available")
+            selection_count = self._ui_bridge.get_selection_count()
+            self._ui_bridge.display_metadata(metadata, selection_count, "all_cached")
 
     # =========================================================================
     # Single File Loading
@@ -409,7 +343,7 @@ class MetadataLoader:
         Args:
             item: The FileItem to load metadata for
             use_extended: Whether to use extended metadata
-            _metadata_tree_view: Reference to metadata tree view (unused - display handled via model)
+            _metadata_tree_view: Unused (kept for signature compat).
 
         """
         from oncutf.app.services import create_metadata_dialog, wait_cursor
@@ -425,7 +359,7 @@ class MetadataLoader:
             logger.info("[MetadataLoader] Metadata loading cancelled by user (single file)")
 
         loading_dialog = create_metadata_dialog(
-            self._parent_window,
+            self._ui_bridge.dialog_parent,
             is_extended=use_extended,
             cancel_callback=cancel_callback,
         )
@@ -477,13 +411,12 @@ class MetadataLoader:
                         "[MetadataLoader] Single file metadata loading cancelled by user for %s",
                         item.filename,
                     )
-                    if self._parent_window and hasattr(self._parent_window, "status_manager"):
-                        self._parent_window.status_manager.set_metadata_status(
-                            "Metadata loading cancelled by user",
-                            operation_type="cancelled",
-                            file_count=1,
-                            auto_reset=True,
-                        )
+                    self._ui_bridge.set_metadata_status(
+                        "Metadata loading cancelled by user",
+                        operation_type="cancelled",
+                        file_count=1,
+                        auto_reset=True,
+                    )
                     return
 
                 if metadata:
@@ -497,20 +430,21 @@ class MetadataLoader:
                     enhanced_metadata = self._enhance_with_companions(item, metadata, [item])
 
                     # Save to cache
-                    if self._parent_window and hasattr(self._parent_window, "metadata_cache"):
-                        self._parent_window.metadata_cache.set(
-                            item.full_path, enhanced_metadata, is_extended=use_extended
-                        )
+                    self._ui_bridge.cache_set(
+                        item.full_path, enhanced_metadata, is_extended=use_extended
+                    )
 
                     # Update file item
                     item.metadata = enhanced_metadata
 
                     # Update UI
-                    if self._parent_window and hasattr(self._parent_window, "file_model"):
-                        self._parent_window.file_model.refresh_icons()
+                    self._ui_bridge.refresh_model_icons()
 
                     # Smart display: respect selection count
-                    self._smart_display_metadata(enhanced_metadata, context="single_file_load")
+                    selection_count = self._ui_bridge.get_selection_count()
+                    self._ui_bridge.display_metadata(
+                        enhanced_metadata, selection_count, "single_file_load"
+                    )
 
                     logger.debug(
                         "[MetadataLoader] Loaded %s metadata for %s",
@@ -567,7 +501,7 @@ class MetadataLoader:
         )
 
         loading_dialog = create_metadata_dialog(
-            self._parent_window,
+            self._ui_bridge.dialog_parent,
             is_extended=use_extended,
             cancel_callback=cancel_callback,
         )
@@ -598,8 +532,10 @@ class MetadataLoader:
         loading_dialog.raise_()
 
         # Process events to ensure dialog is visible with initial state
+        from oncutf.app.services.ui_events import process_events as _process_events
+
         for _ in range(3):
-            process_events()
+            _process_events()
 
         # Progress tracking
         processed_size = 0
@@ -643,16 +579,15 @@ class MetadataLoader:
                 enhanced_metadata = self._enhance_with_companions(item, metadata, needs_loading)
 
                 # Save to cache
-                if self._parent_window and hasattr(self._parent_window, "metadata_cache"):
-                    self._parent_window.metadata_cache.set(
-                        item.full_path, enhanced_metadata, is_extended=use_extended
-                    )
+                self._ui_bridge.cache_set(
+                    item.full_path, enhanced_metadata, is_extended=use_extended
+                )
 
                 # Update file item
                 item.metadata = enhanced_metadata
 
                 # Emit dataChanged for progressive UI update
-                self._emit_data_changed_for_item(item)
+                self._ui_bridge.emit_data_changed(item.full_path)
 
         def on_completion() -> None:
             """Called when parallel loading completes."""
@@ -665,7 +600,11 @@ class MetadataLoader:
                 if hasattr(display_file, "metadata") and display_file.metadata:
                     metadata = display_file.metadata
 
-                self._smart_display_metadata(metadata, context="parallel_load_complete")
+                self._ui_bridge.display_metadata(
+                    metadata,
+                    self._ui_bridge.get_selection_count(),
+                    "parallel_load_complete",
+                )
 
             logger.info(
                 "[%s] Completed loading metadata for %d files",
@@ -691,27 +630,7 @@ class MetadataLoader:
 
     def _emit_data_changed_for_item(self, item: FileItem) -> None:
         """Emit dataChanged signal for a specific item in the file model."""
-        if not self._parent_window or not hasattr(self._parent_window, "file_model"):
-            return
-
-        try:
-            roles = get_item_data_roles()
-            for j, file in enumerate(self._parent_window.file_model.files):
-                if paths_equal(file.full_path, item.full_path):
-                    top_left = self._parent_window.file_model.index(j, 0)
-                    bottom_right = self._parent_window.file_model.index(
-                        j, self._parent_window.file_model.columnCount() - 1
-                    )
-                    self._parent_window.file_model.dataChanged.emit(
-                        top_left, bottom_right, [roles["DecorationRole"], roles["ToolTipRole"]]
-                    )
-                    break
-        except Exception:
-            logger.warning(
-                "[MetadataLoader] Failed to emit dataChanged for %s",
-                item.filename,
-                exc_info=True,
-            )
+        self._ui_bridge.emit_data_changed(item.full_path)
 
     # =========================================================================
     # Streaming Loading
@@ -738,11 +657,7 @@ class MetadataLoader:
 
         for item in items:
             # Check cache
-            cache_entry = (
-                self._parent_window.metadata_cache.get_entry(item.full_path)
-                if self._parent_window and hasattr(self._parent_window, "metadata_cache")
-                else None
-            )
+            cache_entry = self._ui_bridge.cache_get_entry(item.full_path)
 
             has_valid_cache = (
                 cache_entry is not None
@@ -786,10 +701,7 @@ class MetadataLoader:
                     metadata = future.result()
 
                     # Update cache
-                    if self._parent_window and hasattr(self._parent_window, "metadata_cache"):
-                        self._parent_window.metadata_cache.set(
-                            item.full_path, metadata, is_extended=use_extended
-                        )
+                    self._ui_bridge.cache_set(item.full_path, metadata, is_extended=use_extended)
 
                     # Update item metadata
                     item.metadata = metadata

@@ -72,7 +72,7 @@ Mixed business logic and Qt widgets.
 
 | File | Qt Usage | Migration Strategy |
 | ------ | ---------- | ------------------- |
-| `core/metadata/metadata_loader.py` | QObject, QApplication | Extract Qt to adapter |
+| `core/metadata/metadata_loader.py` | QObject, QApplication | **DONE** -- MetadataUIBridge protocol |
 | `core/metadata/metadata_writer.py` | QObject, QMessageBox | Extract Qt to adapter |
 | `core/metadata/parallel_loader.py` | QMessageBox, QObject | Extract Qt to adapter |
 | `core/metadata/command_manager.py` | QObject | Abstract to Protocol |
@@ -155,21 +155,28 @@ Move components that are purely Qt wrappers.
 
 Replace direct Qt usage with injected protocols.
 
-**Pattern:**
+**Pattern (implemented for MetadataLoader):**
 
 ```python
-# Before (in core)
+# Before (in core) -- REMOVED
 from PyQt5.QtCore import QObject, pyqtSignal
 
 class MetadataLoader(QObject):
     progress_updated = pyqtSignal(int)
+    def __init__(self, parent_window):
+        self._parent_window = parent_window  # direct UI coupling
 
-# After (in core)
-from oncutf.domain.protocols.progress import ProgressReporter
+# After (in core) -- CURRENT
+from oncutf.core.metadata.metadata_ui_bridge import MetadataUIBridge, NullMetadataUIBridge
 
 class MetadataLoader:
-    def __init__(self, progress_reporter: ProgressReporter):
-        self._progress = progress_reporter
+    def __init__(self, *, ui_bridge: MetadataUIBridge | None = None):
+        self._ui_bridge = ui_bridge or NullMetadataUIBridge()
+
+# Qt implementation (in ui/adapters/) -- bridges to real widgets
+from oncutf.ui.adapters.metadata_ui_bridge_qt import QtMetadataUIBridge
+bridge = QtMetadataUIBridge(parent_window)
+loader = MetadataLoader(ui_bridge=bridge)
 ```
 
 ### Phase 4: Signal Abstraction (Complex)

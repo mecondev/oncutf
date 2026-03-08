@@ -1,8 +1,8 @@
 # Migration Stance — Architecture Evolution Guide
 
-**Author:** Michael Economou  
-**Date:** 2026-01-01  
-**Last Updated:** 2026-01-25  
+**Author:** Michael Economou
+**Date:** 2026-01-01
+**Last Updated:** 2026-01-25
 **Status:** Active policy document — Phase E Complete (Typing Tightening)
 
 ---
@@ -95,19 +95,19 @@ defines **which patterns to use when**, preventing "hybrid forever" syndrome.
 
 ### DO NOT
 
-[X] Add new methods to `ui_managers/*_manager.py`  
-[X] Add new methods to `MainWindow` directly  
-[X] Create new mixins in `ui/mixins/`  
-[X] Put business logic in UI widgets  
-[X] Create new `*_manager.py` files in `ui_managers/`  
+[X] Add new methods to `ui_managers/*_manager.py`
+[X] Add new methods to `MainWindow` directly
+[X] Create new mixins in `ui/mixins/`
+[X] Put business logic in UI widgets
+[X] Create new `*_manager.py` files in `ui_managers/`
 
 ### DO
 
-[+] Create new controllers for new workflows  
-[+] Use behaviors for reusable UI interactions  
-[+] Use services/protocols for business logic  
-[+] Keep widgets as thin display shells  
-[+] Write tests for controllers (no Qt needed)  
+[+] Create new controllers for new workflows
+[+] Use behaviors for reusable UI interactions
+[+] Use services/protocols for business logic
+[+] Keep widgets as thin display shells
+[+] Write tests for controllers (no Qt needed)
 
 ---
 
@@ -153,10 +153,10 @@ When migrating a manager to the modern architecture:
 # oncutf/controllers/new_feature_controller.py
 class NewFeatureController:
     """UI-agnostic orchestration for new feature."""
-    
+
     def __init__(self, service: SomeService):
         self._service = service
-    
+
     def perform_action(self, data: SomeData) -> Result:
         """Orchestrate the action without Qt dependencies."""
         return self._service.do_something(data)
@@ -168,10 +168,10 @@ class NewFeatureController:
 # oncutf/ui_managers/old_manager.py
 class OldManager:
     """LEGACY: Delegates to NewFeatureController."""
-    
+
     def __init__(self, main_window):
         self._controller = NewFeatureController(...)
-    
+
     def old_method(self):
         """Backward compatibility - delegates to controller."""
         return self._controller.perform_action(...)
@@ -296,7 +296,7 @@ oncutf/
             graph_model.py      <- Node/edge data structures
             graph_validator.py  <- Connection rules
             graph_executor.py   <- Execute rename pipeline
-    
+
     ui/
         widgets/
             node_editor/        <- NEW: Node editor UI

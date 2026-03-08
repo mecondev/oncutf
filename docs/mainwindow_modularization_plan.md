@@ -1,7 +1,7 @@
 # Technical Plan: MainWindow Modularization via Delegate Files + UI Specs
 
-**Author:** Michael Economou  
-**Date:** 2026-01-10  
+**Author:** Michael Economou
+**Date:** 2026-01-10
 **Status:** Phase 0 COMPLETED - Delegate extraction successful
 
 **Achievement:** MainWindow reduced from 695 lines to 99 lines (85.7% reduction)
@@ -123,23 +123,23 @@ SHORTCUT_SPECS: list[ShortcutSpec] = [
     ShortcutSpec("Ctrl+A", "select_all_rows", "Select all files", "Selection"),
     ShortcutSpec("Ctrl+D", "clear_all_selection", "Clear selection", "Selection"),
     ShortcutSpec("Ctrl+I", "invert_selection", "Invert selection", "Selection"),
-    
+
     # Metadata
     ShortcutSpec("F5", "shortcut_load_metadata", "Load fast metadata", "Metadata"),
     ShortcutSpec("Shift+F5", "shortcut_load_extended_metadata", "Load extended metadata", "Metadata"),
     ShortcutSpec("Ctrl+S", "shortcut_save_selected_metadata", "Save selected metadata", "Metadata"),
     ShortcutSpec("Ctrl+Shift+S", "shortcut_save_all_metadata", "Save all metadata", "Metadata"),
-    
+
     # Operations
     ShortcutSpec("F2", "rename_files", "Execute rename", "Operations"),
     ShortcutSpec("Ctrl+H", "shortcut_calculate_hash_selected", "Calculate hash", "Operations"),
     ShortcutSpec("Delete", "clear_file_table_shortcut", "Clear file table", "Operations"),
-    
+
     # Undo/Redo
     ShortcutSpec("Ctrl+Z", "global_undo", "Undo", "Edit"),
     ShortcutSpec("Ctrl+Shift+Z", "global_redo", "Redo", "Edit"),
     ShortcutSpec("Ctrl+Y", "show_command_history", "Command history", "Edit"),
-    
+
     # View
     ShortcutSpec("Ctrl+Shift+C", "auto_color_by_folder", "Auto-color by folder", "View"),
     ShortcutSpec("Escape", "force_drag_cleanup", "Cancel drag operation", "View"),
@@ -216,12 +216,12 @@ FILE_TABLE_CONTEXT_MENU: list[MenuItemSpec | MenuGroupSpec] = [
     MenuItemSpec("open", "Open", "handle_open_file", "folder-open"),
     MenuItemSpec("open_folder", "Open containing folder", "handle_open_folder", "folder"),
     MenuItemSpec("separator1", "", "", separator_after=True),
-    
+
     MenuGroupSpec("metadata", "Metadata", [
         MenuItemSpec("load_meta", "Load metadata", "shortcut_load_metadata", "database", "F5"),
         MenuItemSpec("load_ext_meta", "Load extended metadata", "shortcut_load_extended_metadata", "database", "Shift+F5"),
     ]),
-    
+
     MenuItemSpec("separator2", "", "", separator_after=True),
     MenuItemSpec("select_all", "Select all", "select_all_rows", "check-square", "Ctrl+A"),
     MenuItemSpec("clear_sel", "Clear selection", "clear_all_selection", "square", "Ctrl+D"),
@@ -288,11 +288,11 @@ class MainWindow(
     QMainWindow
 ):
     """Main application window.
-    
+
     This class only contains initialization.
     All operations are delegated to handlers via delegate classes.
     """
-    
+
     def __init__(self, theme_callback=None):
         super().__init__()
         # ... initialization only (use InitializationOrchestrator)
@@ -400,19 +400,19 @@ With SHORTCUT_SPECS, a help dialog can be auto-generated:
 def show_shortcuts_help(self):
     """Show dialog with all available keyboard shortcuts."""
     from oncutf.ui.shortcut_specs import SHORTCUT_SPECS
-    
+
     # Group by category
     by_category = {}
     for spec in SHORTCUT_SPECS:
         by_category.setdefault(spec.category, []).append(spec)
-    
+
     # Build help text
     help_text = []
     for category, shortcuts in sorted(by_category.items()):
         help_text.append(f"\n{category}:")
         for s in shortcuts:
             help_text.append(f"  {s.key_sequence:20} {s.description}")
-    
+
     # Show dialog...
 ```
 

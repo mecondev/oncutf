@@ -1,7 +1,7 @@
 # Phase A Implementation Guide - Breaking Import Cycles
 
-**Author:** Michael Economou  
-**Date:** 2026-01-22  
+**Author:** Michael Economou
+**Date:** 2026-01-22
 **Status:** In Progress
 
 ## Overview
@@ -10,7 +10,8 @@ This guide describes how to break the import cycles identified in [import_cycles
 
 ## Architecture Created
 
-### New directories:
+### New directories
+
 - `oncutf/app/` - Application layer (use cases, ports, events)
 - `oncutf/app/ports/` - Protocol interfaces
 - `oncutf/app/use_cases/` - Workflow orchestration
@@ -22,7 +23,8 @@ This guide describes how to break the import cycles identified in [import_cycles
 - `oncutf/infra/filesystem/` - Filesystem adapters
 - `oncutf/ui/adapters/` - Qt adapters for ports
 
-### New modules created:
+### New modules created
+
 1. `app/ports/user_interaction.py` - Protocols for dialogs/status
 2. `ui/adapters/qt_user_interaction.py` - Qt implementations of ports
 3. `ui/adapters/__init__.py` - Legacy dialog adapter (for backward compatibility)
@@ -32,6 +34,7 @@ This guide describes how to break the import cycles identified in [import_cycles
 ### Pattern 1: Dialog Dependencies
 
 **Before (violates boundary):**
+
 ```python
 # oncutf/core/metadata/unified_manager.py
 def some_method(self):
@@ -41,6 +44,7 @@ def some_method(self):
 ```
 
 **After (uses ports):**
+
 ```python
 # oncutf/core/metadata/unified_manager.py
 from __future__ import annotations
@@ -52,13 +56,14 @@ if TYPE_CHECKING:
 class UnifiedMetadataManager:
     def __init__(self, ..., dialog_port: UserDialogPort | None = None):
         self._dialog = dialog_port
-        
+
     def some_method(self):
         if error and self._dialog:
             self._dialog.show_error("Error", message)
 ```
 
 **Wiring in main_window.py:**
+
 ```python
 # oncutf/ui/main_window.py
 from oncutf.ui.adapters.qt_user_interaction import QtUserDialogAdapter
@@ -70,25 +75,35 @@ metadata_manager = UnifiedMetadataManager(..., dialog_port=dialog_adapter)
 ### Pattern 2: Status Bar Dependencies
 
 **Before:**
+
 ```python
 if self.parent_window and hasattr(self.parent_window, "status_bar"):
     self.parent_window.status_bar.showMessage(message, 5000)
 ```
 
-**After:**
-```python
-from oncutf.app.ports.user_interaction import StatusReporter
+**After (concrete example -- MetadataUIBridge, implemented in Phase 4):**
 
-class SomeManager:
-    def __init__(self, ..., status_reporter: StatusReporter | None = None):
-        self._status = status_reporter
-        
+```python
+# core/metadata/metadata_ui_bridge.py -- protocol
+class MetadataUIBridge(Protocol):
+    def set_metadata_status(self, message: str, *, auto_reset: bool = False) -> None: ...
+
+# core/metadata/metadata_loader.py -- consumer
+class MetadataLoader:
+    def __init__(self, *, ui_bridge: MetadataUIBridge | None = None):
+        self._ui_bridge = ui_bridge or NullMetadataUIBridge()
+
     def some_method(self):
-        if self._status:
-            self._status.show_status(message, 5000)
+        self._ui_bridge.set_metadata_status(message, auto_reset=True)
+
+# ui/adapters/metadata_ui_bridge_qt.py -- Qt implementation
+class QtMetadataUIBridge:
+    def set_metadata_status(self, message, *, auto_reset=False):
+        self._window.status_manager.set_metadata_status(message, auto_reset=auto_reset)
 ```
 
 **Wiring:**
+
 ```python
 from oncutf.ui.adapters.qt_user_interaction import QtStatusReporter
 
@@ -101,6 +116,7 @@ manager = SomeManager(..., status_reporter=status_reporter)
 ### Pattern 3: FileItem → Database
 
 **Current violation:**
+
 ```python
 # oncutf/models/file_item.py
 def get_folder_id(self) -> int | None:
@@ -112,17 +128,19 @@ def get_folder_id(self) -> int | None:
 **Solution - Extract to Repository:**
 
 Step 1: Create repository in infra/db:
+
 ```python
 # oncutf/infra/db/file_repository.py
 class FileRepository:
     def __init__(self, db_manager):
         self._db = db_manager
-        
+
     def get_folder_id(self, folder_path: str) -> int | None:
         return self._db.get_folder_id(folder_path)
 ```
 
 Step 2: Remove database logic from FileItem:
+
 ```python
 # oncutf/models/file_item.py
 # Remove database import and methods
@@ -130,6 +148,7 @@ Step 2: Remove database logic from FileItem:
 ```
 
 Step 3: Use repository where needed:
+
 ```python
 # Where folder_id is needed
 from oncutf.infra.db.file_repository import FileRepository
@@ -141,17 +160,19 @@ folder_id = repo.get_folder_id(file_item.folder_path)
 ### Pattern 4: models → core/pyqt_imports
 
 **Current:**
+
 ```python
 # oncutf/models/file_table/icon_manager.py
 from oncutf.core.pyqt_imports import QColor, QIcon, QPainter, QPixmap
 ```
 
 **Solution:**
-Keep for now. The pyqt_imports module is a centralized import location. 
+Keep for now. The pyqt_imports module is a centralized import location.
 In a future phase, we may move it to `oncutf/shared/qt_imports.py` or similar,
 but this is low priority compared to breaking core→ui cycles.
 
 **Alternative (if needed):**
+
 ```python
 # Direct imports (acceptable for models in ui layer)
 from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
@@ -169,6 +190,7 @@ mv oncutf/utils/ui/ oncutf/ui/utilities/
 ```
 
 Update all imports:
+
 ```python
 # Before
 from oncutf.utils.ui.cursor_helper import wait_cursor
@@ -180,6 +202,7 @@ from oncutf.ui.utilities.cursor_helper import wait_cursor
 ### Pattern 6: utils/naming → core/database
 
 **Current violation:**
+
 ```python
 # oncutf/utils/naming/renamer.py
 from oncutf.core.database.database_manager import get_database_manager
@@ -187,6 +210,7 @@ from oncutf.core.database.database_manager import get_database_manager
 
 **Solution:**
 Move database operations to infra layer and pass as dependency:
+
 ```python
 # Inject database operations via port
 from oncutf.app.ports.database import RenameHistoryPort
@@ -198,19 +222,22 @@ class Renamer:
 
 ## Migration Checklist
 
-### High Priority (core→ui cycles):
+### High Priority (core→ui cycles)
+
 - [ ] Update `core/metadata/unified_manager.py` to use ports
 - [ ] Update `core/metadata/operations_manager.py` to use ports
 - [ ] Update `core/metadata/metadata_writer.py` to use ports
 - [ ] Update `core/file/operations_manager.py` to use ports
 - [ ] Update `core/events/context_menu/rotation_handlers.py` to use ports
 
-### Medium Priority (models→core):
+### Medium Priority (models→core)
+
 - [ ] Create `infra/db/file_repository.py`
 - [ ] Remove database logic from `models/file_item.py`
 - [ ] Update callers to use repository
 
-### Lower Priority (utils→core):
+### Lower Priority (utils→core)
+
 - [ ] Move `utils/ui/` → `ui/utilities/`
 - [ ] Update all imports
 - [ ] Fix `utils/naming/renamer.py` database dependency
