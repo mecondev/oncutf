@@ -33,6 +33,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        cache-dependency-glob: "**/pyproject.toml"
 
     - name: Install dependencies
       run: |
@@ -56,6 +57,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        cache-dependency-glob: "**/pyproject.toml"
 
     - name: Install dependencies
       run: |
@@ -88,6 +90,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
+        cache-dependency-glob: "**/pyproject.toml"
 
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
