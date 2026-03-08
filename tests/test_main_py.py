@@ -57,11 +57,11 @@ def test_app_paths_windows(monkeypatch, tmp_path):
 
 
 def test_cleanup_on_exit_calls_exiftool(monkeypatch):
-    # Import main and reset internal flag
-    import main
+    # Import lifecycle module where cleanup logic now lives
+    from oncutf.boot import lifecycle
 
     # Ensure cleanup flag is reset
-    monkeypatch.setattr(main, "_cleanup_done", False)
+    monkeypatch.setattr(lifecycle, "_cleanup_done", False)
 
     # Create a fake infra.external.exiftool_wrapper module with a callable ExifToolWrapper
     fake_mod = ModuleType("oncutf.infra.external.exiftool_wrapper")
@@ -81,12 +81,12 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
 
     try:
         # First call should invoke the fake cleanup
-        main.cleanup_on_exit()
+        lifecycle.cleanup_on_exit()
         assert calls["count"] == 1
-        assert main._cleanup_done is True
+        assert lifecycle._cleanup_done is True
 
         # Second call should be a no-op (already cleaned)
-        main.cleanup_on_exit()
+        lifecycle.cleanup_on_exit()
         assert calls["count"] == 1
 
     finally:
@@ -95,10 +95,10 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
 
 
 def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
-    import main
+    from oncutf.boot import lifecycle
 
     # Reset flag
-    monkeypatch.setattr(main, "_cleanup_done", False)
+    monkeypatch.setattr(lifecycle, "_cleanup_done", False)
 
     # Ensure no utils.exiftool_wrapper present
     sys.modules.pop("utils.exiftool_wrapper", None)
@@ -115,7 +115,7 @@ def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     try:
-        main.cleanup_on_exit()
+        lifecycle.cleanup_on_exit()
     finally:
         # restore import to avoid affecting other tests
         monkeypatch.setattr(builtins, "__import__", real_import)

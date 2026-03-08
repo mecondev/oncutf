@@ -24,10 +24,20 @@ from __future__ import annotations
 
 from oncutf.boot.app_factory import create_app, create_app_context
 from oncutf.boot.infra_wiring import register_infra_factories, wire_service_registry
+from oncutf.boot.lifecycle import (
+    perform_emergency_cleanup,
+    perform_graceful_shutdown,
+    setup_lifecycle_handlers,
+)
+from oncutf.boot.startup_orchestrator import run_startup
 
 __all__ = [
     "create_app",
     "create_app_context",
+    "perform_emergency_cleanup",
+    "perform_graceful_shutdown",
     "register_infra_factories",
+    "run_startup",
+    "setup_lifecycle_handlers",
     "wire_service_registry",
 ]
