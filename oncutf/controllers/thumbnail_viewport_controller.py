@@ -116,9 +116,10 @@ class ThumbnailViewportController(QObject):
             self._background_worker_count = 1
         self._current_priority = self.PRIORITY_HIGH
 
-        # Resume tracking - track what we've queued to avoid re-queuing on resume
-        self._queued_files: set[str] = set()  # All files ever queued
-        self._last_queue_priority = self.PRIORITY_HIGH
+        # Resume tracking - track what we've queued in the current session
+        # to avoid re-queueing on priority changes. Reset when file set changes.
+        self._queued_files: set[str] = set()  # Current session's queued files
+        self._last_file_set: frozenset[str] | None = None  # Track file set changes
 
         # Background timeout timer
         self._background_timeout_timer = QTimer()
@@ -277,8 +278,9 @@ class ThumbnailViewportController(QObject):
         Called when files are loaded into the model. Uses current priority
         based on viewport visibility (HIGH when visible, BACKGROUND when hidden).
 
-        Smart queueing: Tracks what has been queued to enable resume without
-        re-queueing on priority changes.
+        Smart queueing: Tracks what has been queued in the current session to
+        enable resume without re-queueing on priority changes. Resets tracking
+        when the file set changes (folder navigation).
 
         Args:
             size_px: Thumbnail size in pixels
@@ -315,6 +317,15 @@ class ThumbnailViewportController(QObject):
             )
 
         if file_paths:
+            # Detect file set change (folder navigation) and reset tracking
+            current_file_set = frozenset(file_paths)
+            if self._last_file_set != current_file_set:
+                logger.debug(
+                    "[ThumbnailViewportController] File set changed - resetting queued tracking"
+                )
+                self._queued_files.clear()
+                self._last_file_set = current_file_set
+
             # Update queued files tracking
             new_files = set(file_paths) - self._queued_files
             self._queued_files.update(file_paths)
@@ -382,18 +393,22 @@ class ThumbnailViewportController(QObject):
     def clear_pending_thumbnail_requests(self) -> None:
         """Clear pending thumbnail requests from ThumbnailManager.
 
-        Called when files are cleared to prevent stale thumbnail updates.
-        Also resets tracking state for fresh start.
+        Call this when files are removed from the model to prevent
+        'file not found' warnings from stale requests.
+        Also clears the failed files set to allow retry on next load.
+
+        NOTE: Does NOT clear _queued_files tracking to preserve cache reuse
+        across folder changes. The set tracks what has ever been queued in
+        this session to avoid re-queueing cached files.
         """
         if not self._thumbnail_manager:
             return
 
         try:
             self._thumbnail_manager.clear_pending_requests()
-            # Clear tracking state for fresh start
-            self._queued_files.clear()
+            # Keep _queued_files for cache dedup across folder changes
             logger.debug(
-                "[ThumbnailViewportController] Cleared pending requests and tracking state"
+                "[ThumbnailViewportController] Cleared pending requests (kept queued tracking)"
             )
         except Exception as e:
             logger.debug("[ThumbnailViewportController] Error clearing pending requests: %s", e)

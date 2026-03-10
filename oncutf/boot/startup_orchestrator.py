@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-def run_startup(app: QApplication, theme_manager: ThemeManager) -> None:
+def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | None = None) -> None:
     """Create splash screen, start boot worker, and set up dual-flag synchronization.
 
     When both the boot worker completes and the minimum splash time elapses,
@@ -36,6 +36,7 @@ def run_startup(app: QApplication, theme_manager: ThemeManager) -> None:
     Args:
         app: The QApplication instance.
         theme_manager: The initialized ThemeManager.
+        splash: Optional pre-created splash screen (if None, creates a new one).
 
     """
     from oncutf.config import SPLASH_SCREEN_DURATION, WAIT_CURSOR_SUPPRESS_AFTER_SPLASH_MS
@@ -43,18 +44,20 @@ def run_startup(app: QApplication, theme_manager: ThemeManager) -> None:
     from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
     from oncutf.utils.filesystem.path_utils import get_images_dir
 
-    splash_path = get_images_dir() / "splash.png"
-    logger.debug("Loading splash screen from: %s", splash_path, extra={"dev_only": True})
-
     try:
-        # Create and show splash screen immediately (responsive from start)
-        splash = CustomSplashScreen(str(splash_path))
-        splash.show()
-        splash.raise_()
-        splash.activateWindow()
-        # Process events multiple times to ensure splash is fully rendered
-        for _ in range(3):
-            app.processEvents()
+        # Use provided splash or create a new one
+        if splash is None:
+            splash_path = get_images_dir() / "splash.png"
+            logger.debug("Loading splash screen from: %s", splash_path, extra={"dev_only": True})
+            splash = CustomSplashScreen(str(splash_path))
+            splash.show()
+            splash.raise_()
+            splash.activateWindow()
+            # Process events multiple times to ensure splash is fully rendered
+            for _ in range(3):
+                app.processEvents()
+        else:
+            logger.debug("[Init] Using pre-created splash screen", extra={"dev_only": True})
 
         logger.info(
             "[App] Splash screen displayed (size: %dx%d)",

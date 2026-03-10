@@ -87,7 +87,37 @@ def main() -> int:
 
         # Create application
         app = QApplication(sys.argv)
+        logger.info("[App] QApplication created")
 
+        # Initialize theme manager early (needed for splash screen)
+        theme_manager = get_theme_manager()
+        logger.debug(
+            "ThemeManager initialized with theme: %s",
+            theme_manager.get_current_theme(),
+            extra={"dev_only": True},
+        )
+
+        # Show splash screen and set wait cursor immediately for responsiveness
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
+        from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
+        from oncutf.utils.filesystem.path_utils import get_images_dir
+
+        splash_path = get_images_dir() / "splash.png"
+        try:
+            splash = CustomSplashScreen(str(splash_path))
+            splash.show()
+            splash.raise_()
+            splash.activateWindow()
+            for _ in range(2):
+                app.processEvents()
+            logger.info("[App] Splash screen shown immediately for responsiveness")
+            # Set wait cursor so user sees the app is working
+            wait_cursor(show=True)
+        except Exception as e:
+            logger.warning("[App] Could not show splash screen: %s", e)
+            splash = None
+
+        # Continue with remaining initialization (while splash is visible)
         # Log locale information (important for date/time formatting)
         try:
             import locale
@@ -127,14 +157,6 @@ def main() -> int:
         logger.debug("Initializing JetBrains Mono fonts...", extra={"dev_only": True})
         _get_jetbrains_fonts()
 
-        # Initialize theme manager (singleton)
-        theme_manager = get_theme_manager()
-        logger.debug(
-            "ThemeManager initialized with theme: %s",
-            theme_manager.get_current_theme(),
-            extra={"dev_only": True},
-        )
-
         # Configure default services for dependency injection
         logger.debug("Configuring default services...", extra={"dev_only": True})
         from oncutf.app.ports import configure_default_services
@@ -142,8 +164,8 @@ def main() -> int:
         configure_default_services()
         logger.info("[App] Default services configured")
 
-        # Splash screen + boot worker (non-blocking)
-        run_startup(app, theme_manager)
+        # Boot worker + MainWindow initialization (splash already visible)
+        run_startup(app, theme_manager, splash=splash)
 
         # Run the Qt event loop
         exit_code = app.exec_()
