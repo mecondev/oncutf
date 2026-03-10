@@ -317,22 +317,16 @@ class ThumbnailViewportController(QObject):
             )
 
         if file_paths:
-            # Detect file set change (folder navigation) and reset tracking
+            # Detect file set change (folder navigation) and reset tracking.
+            # NOTE: clear_pending_requests() is already called by the viewport
+            # in _update_placeholder_visibility() before this method runs,
+            # which also sets _last_file_set = None.  We only need to reset
+            # the controller-level dedup tracking here.
             current_file_set = frozenset(file_paths)
             if self._last_file_set != current_file_set:
                 logger.debug(
-                    "[ThumbnailViewportController] File set changed - clearing pending requests"
-                    " and resetting queued tracking"
+                    "[ThumbnailViewportController] File set changed - resetting queued tracking"
                 )
-                # CRITICAL: Clear pending requests from previous folder BEFORE queuing new ones
-                # This prevents stale requests from blocking progress updates
-                try:
-                    self._thumbnail_manager.clear_pending_requests()
-                except Exception as e:
-                    logger.debug(
-                        "[ThumbnailViewportController] Error clearing pending on folder change: %s",
-                        e,
-                    )
                 self._queued_files.clear()
                 self._last_file_set = current_file_set
 

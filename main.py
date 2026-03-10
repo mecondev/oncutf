@@ -21,9 +21,36 @@ project_root = str(Path(__file__).resolve().parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# ---------------------------------------------------------------------------
+# EARLY SPLASH SCREEN -- show before heavy oncutf imports (~230ms saved)
+# Uses only PyQt5 stdlib; no oncutf dependencies.
+# ---------------------------------------------------------------------------
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication
 
+# Enable High DPI support BEFORE creating QApplication
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
+_early_app = QApplication(sys.argv)
+_early_splash = None
+
+_splash_path = Path(project_root) / "oncutf" / "resources" / "images" / "splash.png"
+if _splash_path.exists():
+    from PyQt5.QtWidgets import QSplashScreen
+
+    _pixmap = QPixmap(str(_splash_path))
+    if not _pixmap.isNull():
+        # Scale to 600x400
+        _pixmap = _pixmap.scaled(600, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        _early_splash = QSplashScreen(_pixmap, Qt.WindowStaysOnTopHint)
+        _early_splash.show()
+        _early_app.processEvents()
+
+# ---------------------------------------------------------------------------
+# Now load the rest of oncutf (heavy imports happen here)
+# ---------------------------------------------------------------------------
 from oncutf.boot.lifecycle import (
     perform_emergency_cleanup,
     perform_graceful_shutdown,
@@ -54,6 +81,8 @@ setup_lifecycle_handlers()
 
 def main() -> int:
     """Entry point for the oncutf application."""
+    app = _early_app  # Use the pre-created QApplication
+
     try:
         # CRITICAL: Set working directory to project root first
         os.chdir(project_root)
@@ -72,10 +101,6 @@ def main() -> int:
             logger.info("[App] System locale: %s", locale.getlocale())
             logger.info("[App] File system encoding: %s", sys.getfilesystemencoding())
 
-        # Enable High DPI support before creating QApplication
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-
         # Acquire lock file to prevent multiple instances
         from oncutf.utils.lock_file import acquire_lock
 
@@ -85,11 +110,9 @@ def main() -> int:
             print("Please close the other instance first.")
             return 1
 
-        # Create application
-        app = QApplication(sys.argv)
         logger.info("[App] QApplication created")
 
-        # Show splash screen IMMEDIATELY for responsiveness (simple version first)
+        # Upgrade early splash to full CustomSplashScreen (with version/animation)
         splash = None
         try:
             from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
@@ -102,26 +125,13 @@ def main() -> int:
                 splash.raise_()
                 splash.activateWindow()
                 app.processEvents()
-                logger.info("[App] Splash screen shown immediately at startup")
+                logger.info("[App] Full splash screen shown")
         except Exception as e:
-            logger.warning("[App] Could not show splash screen: %s", e)
-            splash = None
+            logger.warning("[App] Could not create full splash screen: %s", e)
 
-        # Set wait cursor for responsiveness while initializing
-        try:
-            from oncutf.ui.helpers.cursor_helper import wait_cursor
-            wait_cursor(show=True)
-        except Exception:
-            pass
-
-        # Continue with remaining initialization while splash is visible
-        # Initialize theme manager early (needed for splash screen updates)
-        theme_manager = get_theme_manager()
-        logger.debug(
-            "ThemeManager initialized with theme: %s",
-            theme_manager.get_current_theme(),
-            extra={"dev_only": True},
-        )
+        # Close early splash now that the full one is visible
+        if _early_splash is not None:
+            _early_splash.close()
 
         # Log locale information (important for date/time formatting)
         try:
@@ -161,6 +171,14 @@ def main() -> int:
         # Load JetBrains Mono fonts
         logger.debug("Initializing JetBrains Mono fonts...", extra={"dev_only": True})
         _get_jetbrains_fonts()
+
+        # Initialize theme manager (singleton)
+        theme_manager = get_theme_manager()
+        logger.debug(
+            "ThemeManager initialized with theme: %s",
+            theme_manager.get_current_theme(),
+            extra={"dev_only": True},
+        )
 
         # Configure default services for dependency injection
         logger.debug("Configuring default services...", extra={"dev_only": True})

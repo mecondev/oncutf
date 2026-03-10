@@ -569,10 +569,10 @@ class ThumbnailManager(QObject):
             # (one +=1 per queued item), so it is already correct.
             # Emit progress so the UI shows the right starting point.
             self.generation_progress.emit(self._completed_requests, self._total_requests)
-        elif cached_count > 0:
-            # Everything cached, nothing to generate -- emit a "complete"
-            # progress signal so the UI updates correctly without resetting
-            # any in-flight counters from an earlier session.
+        elif cached_count > 0 and self._total_requests > 0:
+            # Some items were queued in an earlier call this session AND all
+            # remaining files turned out to be cached.  Emit a "complete"
+            # signal so the UI finishes the progress bar correctly.
             total = max(self._total_requests, cached_count)
             completed = max(self._completed_requests, cached_count)
             self.generation_progress.emit(completed, total)

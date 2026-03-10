@@ -348,8 +348,12 @@ class FilesystemMonitor(Observable):
 
             for letter in string.ascii_uppercase:
                 drive_path = f"{letter}:\\"
-                if Path(drive_path).exists():
-                    drives.add(drive_path)
+                try:
+                    if Path(drive_path).exists():
+                        drives.add(drive_path)
+                except OSError:
+                    # Inaccessible drive (e.g. disconnected card reader)
+                    continue
 
         elif self._system == "Darwin":
             # macOS: mount points in /Volumes

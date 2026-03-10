@@ -1115,12 +1115,16 @@ class ThumbnailViewportWidget(QWidget):
 
             if self._loaded_file_count <= 0:
                 # Transitioning from empty / reset state to having files.
-                # Full reset: clear pending requests, animation state, and
-                # re-queue everything from scratch.
+                # Clear pending requests first, then queue to find out how
+                # many items actually need generation.
                 self._loaded_file_count = row_count
                 self._clear_pending_thumbnail_requests()
-                self._delegate.reset_for_new_files()
-                self._queue_all_thumbnails_for_background_loading()
+                queued = self._queue_all_thumbnails_for_background_loading()
+                if queued > 0:
+                    # Some items need loading -- reset animation state so
+                    # incoming thumbnails crossfade in cleanly.
+                    self._delegate.reset_for_new_files()
+                # else: all cached -- keep existing _completed_fades intact
             elif row_count != self._loaded_file_count:
                 # Incremental file-count change (streaming add / remove).
                 # Do NOT reset delegate animation state or clear pending
@@ -1143,7 +1147,7 @@ class ThumbnailViewportWidget(QWidget):
         # Delegate to controller
         self._controller.clear_pending_thumbnail_requests()
 
-    def _queue_all_thumbnails_for_background_loading(self) -> None:
+    def _queue_all_thumbnails_for_background_loading(self) -> int:
         """Queue all file thumbnails for background loading (priority=0).
 
         Called when files are loaded into the model. This ensures all thumbnails
@@ -1154,6 +1158,10 @@ class ThumbnailViewportWidget(QWidget):
         - Load ALL thumbnails immediately when files are loaded
         - Visible items get priority=1 (loaded first)
         - Non-visible items get priority=0 (background loading)
+
+        Returns:
+            Number of items actually queued for generation (0 if all cached).
+
         """
         import time
 
@@ -1164,7 +1172,7 @@ class ThumbnailViewportWidget(QWidget):
             logger.debug(
                 "[ThumbnailViewport] Skipping thumbnail loading - viewport not visible",
             )
-            return
+            return 0
 
         # STEP 1: Prioritize visible thumbnails first (priority=1)
         visible_paths = self._get_visible_file_paths()
@@ -1202,6 +1210,8 @@ class ThumbnailViewportWidget(QWidget):
             "[THUMBS-QUEUE] Completed at t=%.3fms",
             (time.time() - t0) * 1000,
         )
+
+        return queued_count
 
     def _mark_cached_rows_completed(self) -> None:
         """Pre-populate delegate's _completed_fades for rows with cached pixmaps.
