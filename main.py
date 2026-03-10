@@ -89,7 +89,33 @@ def main() -> int:
         app = QApplication(sys.argv)
         logger.info("[App] QApplication created")
 
-        # Initialize theme manager early (needed for splash screen)
+        # Show splash screen IMMEDIATELY for responsiveness (simple version first)
+        splash = None
+        try:
+            from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
+            from oncutf.utils.filesystem.path_utils import get_images_dir
+
+            splash_path = get_images_dir() / "splash.png"
+            if splash_path.exists():
+                splash = CustomSplashScreen(str(splash_path))
+                splash.show()
+                splash.raise_()
+                splash.activateWindow()
+                app.processEvents()
+                logger.info("[App] Splash screen shown immediately at startup")
+        except Exception as e:
+            logger.warning("[App] Could not show splash screen: %s", e)
+            splash = None
+
+        # Set wait cursor for responsiveness while initializing
+        try:
+            from oncutf.ui.helpers.cursor_helper import wait_cursor
+            wait_cursor(show=True)
+        except Exception:
+            pass
+
+        # Continue with remaining initialization while splash is visible
+        # Initialize theme manager early (needed for splash screen updates)
         theme_manager = get_theme_manager()
         logger.debug(
             "ThemeManager initialized with theme: %s",
@@ -97,27 +123,6 @@ def main() -> int:
             extra={"dev_only": True},
         )
 
-        # Show splash screen and set wait cursor immediately for responsiveness
-        from oncutf.ui.helpers.cursor_helper import wait_cursor
-        from oncutf.ui.widgets.custom_splash_screen import CustomSplashScreen
-        from oncutf.utils.filesystem.path_utils import get_images_dir
-
-        splash_path = get_images_dir() / "splash.png"
-        try:
-            splash = CustomSplashScreen(str(splash_path))
-            splash.show()
-            splash.raise_()
-            splash.activateWindow()
-            for _ in range(2):
-                app.processEvents()
-            logger.info("[App] Splash screen shown immediately for responsiveness")
-            # Set wait cursor so user sees the app is working
-            wait_cursor(show=True)
-        except Exception as e:
-            logger.warning("[App] Could not show splash screen: %s", e)
-            splash = None
-
-        # Continue with remaining initialization (while splash is visible)
         # Log locale information (important for date/time formatting)
         try:
             import locale

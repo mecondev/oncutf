@@ -321,8 +321,18 @@ class ThumbnailViewportController(QObject):
             current_file_set = frozenset(file_paths)
             if self._last_file_set != current_file_set:
                 logger.debug(
-                    "[ThumbnailViewportController] File set changed - resetting queued tracking"
+                    "[ThumbnailViewportController] File set changed - clearing pending requests"
+                    " and resetting queued tracking"
                 )
+                # CRITICAL: Clear pending requests from previous folder BEFORE queuing new ones
+                # This prevents stale requests from blocking progress updates
+                try:
+                    self._thumbnail_manager.clear_pending_requests()
+                except Exception as e:
+                    logger.debug(
+                        "[ThumbnailViewportController] Error clearing pending on folder change: %s",
+                        e,
+                    )
                 self._queued_files.clear()
                 self._last_file_set = current_file_set
 
@@ -393,22 +403,19 @@ class ThumbnailViewportController(QObject):
     def clear_pending_thumbnail_requests(self) -> None:
         """Clear pending thumbnail requests from ThumbnailManager.
 
-        Call this when files are removed from the model to prevent
-        'file not found' warnings from stale requests.
+        Called when files are cleared to prevent stale thumbnail updates.
         Also clears the failed files set to allow retry on next load.
-
-        NOTE: Does NOT clear _queued_files tracking to preserve cache reuse
-        across folder changes. The set tracks what has ever been queued in
-        this session to avoid re-queueing cached files.
         """
         if not self._thumbnail_manager:
             return
 
         try:
             self._thumbnail_manager.clear_pending_requests()
-            # Keep _queued_files for cache dedup across folder changes
+            # Clear tracking state for fresh start (when files are completely cleared)
+            self._queued_files.clear()
+            self._last_file_set = None
             logger.debug(
-                "[ThumbnailViewportController] Cleared pending requests (kept queued tracking)"
+                "[ThumbnailViewportController] Cleared pending requests and tracking state"
             )
         except Exception as e:
             logger.debug("[ThumbnailViewportController] Error clearing pending requests: %s", e)
