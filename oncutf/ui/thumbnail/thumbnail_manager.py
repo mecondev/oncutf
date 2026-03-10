@@ -196,6 +196,9 @@ class ThumbnailManager(QObject):
         # Track files that failed thumbnail generation (to avoid retrying)
         self._failed_files: set[str] = set()
 
+        # Track cached files already counted in progress (prevent double-counting)
+        self._counted_cached_files: set[str] = set()
+
         # Worker threads
         self._workers: list[ThumbnailWorker] = []
         self._max_workers = max_workers
@@ -545,7 +548,9 @@ class ThumbnailManager(QObject):
                 try:
                     stat = Path(file_path).stat()
                     if self._cache.get(file_path, stat.st_mtime, stat.st_size):
-                        cached_count += 1
+                        if file_path not in self._counted_cached_files:
+                            self._counted_cached_files.add(file_path)
+                            cached_count += 1
                         continue
                 except OSError:
                     continue  # Skip files with stat errors
@@ -560,22 +565,16 @@ class ThumbnailManager(QObject):
                 self._total_requests += 1
                 queued_count += 1
 
-        # Update progress counters.
-        # ACCUMULATE rather than replace -- multiple callers (initial queue,
-        # scroll prioritize, view-switch) may invoke this method in the same
-        # session.  Replacing counters causes the status bar to jump / reset.
-        if queued_count > 0:
-            # _total_requests was already incremented inside the loop above
-            # (one +=1 per queued item), so it is already correct.
-            # Emit progress so the UI shows the right starting point.
+        # Include newly-counted cached items in progress counters.
+        # They count as both "requested" and "already completed" so the
+        # status bar reflects the full file set, not just uncached items.
+        if cached_count > 0:
+            self._total_requests += cached_count
+            self._completed_requests += cached_count
+
+        # Emit progress so the UI shows the right starting point.
+        if queued_count > 0 or cached_count > 0:
             self.generation_progress.emit(self._completed_requests, self._total_requests)
-        elif cached_count > 0 and self._total_requests > 0:
-            # Some items were queued in an earlier call this session AND all
-            # remaining files turned out to be cached.  Emit a "complete"
-            # signal so the UI finishes the progress bar correctly.
-            total = max(self._total_requests, cached_count)
-            completed = max(self._completed_requests, cached_count)
-            self.generation_progress.emit(completed, total)
 
         # Start workers if not running (after counters initialization to avoid
         # overwriting progress from worker-complete callbacks).
@@ -625,6 +624,7 @@ class ThumbnailManager(QObject):
         # Reset progress counters so each new load session starts from zero
         self._total_requests = 0
         self._completed_requests = 0
+        self._counted_cached_files.clear()
 
     def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics.
