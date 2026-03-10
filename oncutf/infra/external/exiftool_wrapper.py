@@ -309,8 +309,11 @@ class ExifToolWrapper:
                 with contextlib.suppress(Exception):
                     proc.terminate()
             else:
-                with contextlib.suppress(Exception):
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                _killpg = getattr(os, "killpg", None)
+                _getpgid = getattr(os, "getpgid", None)
+                if _killpg and _getpgid:
+                    with contextlib.suppress(Exception):
+                        _killpg(_getpgid(proc.pid), signal.SIGTERM)
         except Exception:
             logger.debug(
                 "[ExifToolWrapper] Failed to terminate exiftool (%s)",
@@ -325,7 +328,13 @@ class ExifToolWrapper:
                     if os.name == "nt":
                         proc.kill()
                     else:
-                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        _killpg = getattr(os, "killpg", None)
+                        _getpgid = getattr(os, "getpgid", None)
+                        _sigkill = getattr(signal, "SIGKILL", signal.SIGTERM)
+                        if _killpg and _getpgid:
+                            _killpg(_getpgid(proc.pid), _sigkill)
+                        else:
+                            proc.kill()
 
     @staticmethod
     def _parse_json_output(output: str) -> MetadataDict | None:

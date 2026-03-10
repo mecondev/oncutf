@@ -1343,18 +1343,20 @@ class ThumbnailViewportWidget(QWidget):
             if hasattr(self, "placeholder_helper"):
                 self.placeholder_helper.show()
                 self.placeholder_helper.update_position()
-        elif row_count != self._loaded_file_count:
-            # File count changed while we were hidden -- need re-queue
-            logger.debug(
-                "[ThumbnailViewport] Viewport shown with %d files (loaded=%d)"
-                " - scheduling thumbnail queue",
-                row_count,
-                self._loaded_file_count,
-            )
-            schedule_ui_update(self._queue_all_thumbnails_for_background_loading, delay=0)
         else:
-            # Same file count -- just mark cached rows (no re-queue needed)
-            self._mark_cached_rows_completed()
+            # Has files -- ensure all thumbnails are queued.
+            # Handles both: file count changed while hidden, AND viewport was
+            # hidden when files were loaded (isVisible guard in
+            # _queue_all_thumbnails_for_background_loading skipped queuing).
+            # Controller dedup (_queued_files) prevents duplicate work.
+            if row_count != self._loaded_file_count:
+                logger.debug(
+                    "[ThumbnailViewport] Viewport shown with %d files (loaded=%d)"
+                    " - scheduling thumbnail queue",
+                    row_count,
+                    self._loaded_file_count,
+                )
+            schedule_ui_update(self._queue_all_thumbnails_for_background_loading, delay=0)
 
         logger.debug("[THUMBS-SHOW] showEvent END at t=%.3fms", (time.time() - t0) * 1000)
 
