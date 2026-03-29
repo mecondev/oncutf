@@ -1425,6 +1425,39 @@ class ThumbnailViewportWidget(QWidget):
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations
 
+    def refresh_thumbnail(self, file_path: str, pixmap: "QPixmap") -> None:
+        """Replace the displayed thumbnail for a file immediately (no async reload).
+
+        Used when the logical content of a cached thumbnail changes in-place
+        (e.g., after staging a metadata rotation change) so the viewport shows
+        the new pixmap without waiting for a file save / mtime change.
+
+        Unlike _on_thumbnail_ready(), this method forcibly removes the row from
+        _completed_fades so that register_fade() is not silently skipped for
+        rows whose initial crossfade already finished.
+
+        Args:
+            file_path: Absolute path to the file whose thumbnail should be updated
+            pixmap: New thumbnail pixmap to display
+
+        """
+        if not self._model or not self._model.files or pixmap.isNull():
+            return
+
+        for row, file_item in enumerate(self._model.files):
+            if file_item.full_path == file_path:
+                # Remove from completed-fades so register_fade() is not skipped
+                self._delegate._completed_fades.discard(row)
+                self._delegate.register_fade(row, pixmap)
+                index = self._model.index(row, 0)
+                self._list_view.update(index)
+                logger.debug(
+                    "[ThumbnailViewport] refresh_thumbnail for row=%d, file=%s",
+                    row,
+                    file_path,
+                )
+                return
+
     def cleanup(self) -> None:
         """Clean up viewport resources.
 

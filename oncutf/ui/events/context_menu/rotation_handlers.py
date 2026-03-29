@@ -367,6 +367,7 @@ class RotationHandlers:
         from PyQt5.QtGui import QTransform
 
         thumbnail_manager = getattr(self.parent_window, "thumbnail_manager", None)
+        thumbnail_viewport = getattr(self.parent_window, "thumbnail_viewport", None)
         if thumbnail_manager is None:
             return
 
@@ -395,9 +396,12 @@ class RotationHandlers:
                     angle,
                 )
 
-                # Emit thumbnail_ready so the viewport does register_fade() + repaint.
-                # Without this signal the cache update is invisible to the delegate.
-                thumbnail_manager.thumbnail_ready.emit(file_path, rotated)
+                # Use ThumbnailViewportWidget.refresh_thumbnail() which clears
+                # _completed_fades for this row so register_fade() is not skipped.
+                # A direct thumbnail_ready.emit() would be silently blocked by the
+                # _completed_fades guard in register_fade().
+                if thumbnail_viewport is not None:
+                    thumbnail_viewport.refresh_thumbnail(file_path, rotated)
 
             except (OSError, ValueError) as e:
                 logger.debug(
