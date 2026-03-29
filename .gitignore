@@ -68,15 +68,12 @@ backups/
 bin/**/*
 !bin/**/.gitkeep
 !bin/README.md
+!bin/**/LICENSE-*.txt
 
-# Platform-specific binaries
+# Platform-specific binaries (also ignored globally)
 *.exe
 *.dll
 *.dylib
-*.so
-
-# License files for bundled tools (keep these)
-!bin/LICENSE-*.txt
 
 # =======================================
 #  Test-related folders and outputs

@@ -1,0 +1,35 @@
+ExifTool - Read and write meta information in files
+Copyright 2003-2026, Phil Harvey
+
+This library is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself, either Perl version 5 or, at your option,
+any later version of Perl.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.
+
+Source: https://exiftool.org/
+License: Artistic License (same terms as Perl itself)
+
+--- Artistic License 2.0 ---
+
+Copyright (c) 2000-2006, The Perl Foundation.
+
+Everyone is permitted to copy and distribute verbatim copies of this
+license document, but changing it is not allowed.
+
+Preamble
+
+This license establishes the terms under which a given free software Package
+may be copied, modified, distributed, and/or redistributed. The intent is
+that the Copyright Holder maintains some artistic control over the development
+of that Package while still keeping the Package available as free software.
+
+You are always permitted to make arrangements wholly outside of this license
+directly with the Copyright Holder of a given Package. If the terms of this
+license do not permit the full use that you propose to make of the Package,
+you should contact the Copyright Holder and seek a different licensing
+arrangement.
+
+Full license text: https://opensource.org/licenses/Artistic-2.0
