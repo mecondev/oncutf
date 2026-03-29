@@ -630,6 +630,17 @@ class ExifToolWrapper:
                 metadata_changes,
             )
 
+            # Remove any leftover temp file from a previous crashed/timed-out run.
+            # exiftool refuses to write if "<path>_exiftool_tmp" exists.
+            _tmp_pre = Path(file_path_normalized + "_exiftool_tmp")
+            if _tmp_pre.exists():
+                with contextlib.suppress(OSError):
+                    _tmp_pre.unlink()
+                    logger.warning(
+                        "[ExifToolWrapper] Removed stale temp file before write: %s",
+                        _tmp_pre.name,
+                    )
+
             # Execute the command
             from oncutf.config import EXIFTOOL_TIMEOUT_WRITE
 
