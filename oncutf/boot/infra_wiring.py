@@ -63,18 +63,44 @@ def detect_external_tools() -> None:
     Must run once at boot, before any service that uses exiftool or ffmpeg.
     All downstream components read from FeatureAvailability instead of
     doing their own filesystem checks.
+
+    For video thumbnail capability, BOTH ffmpeg and ffprobe must be present
+    (bundled or system).  ffmpeg_available is set True only when both are found.
     """
+    import shutil
+    from pathlib import Path
+
     from oncutf.config.features import FeatureAvailability
-    from oncutf.utils.shared.external_tools import ToolName, is_tool_available
+    from oncutf.utils.shared.external_tools import (
+        ToolName,
+        get_bundled_tool_path,
+        is_tool_available,
+    )
 
     exiftool = is_tool_available(ToolName.EXIFTOOL)
-    ffmpeg = is_tool_available(ToolName.FFMPEG)
+
+    ffmpeg_ok = is_tool_available(ToolName.FFMPEG)
+    ffprobe_ok = False
+    if ffmpeg_ok:
+        # Prefer bundled ffprobe alongside bundled ffmpeg.
+        bundled_ffmpeg = get_bundled_tool_path(ToolName.FFMPEG)
+        if bundled_ffmpeg is not None:
+            _p = Path(bundled_ffmpeg)
+            bundled_ffprobe = _p.parent / _p.name.replace("ffmpeg", "ffprobe")
+            if bundled_ffprobe.exists():
+                ffprobe_ok = True
+        # Fall back to system ffprobe in PATH.
+        if not ffprobe_ok:
+            ffprobe_ok = shutil.which("ffprobe") is not None
+
+    ffmpeg = ffmpeg_ok and ffprobe_ok
     FeatureAvailability.update_availability(exiftool=exiftool, ffmpeg=ffmpeg)
 
     logger.info(
-        "[boot] External tools: exiftool=%s, ffmpeg=%s",
+        "[boot] External tools: exiftool=%s, ffmpeg=%s (ffprobe=%s)",
         "available" if exiftool else "not found",
         "available" if ffmpeg else "not found",
+        "available" if ffprobe_ok else "not found",
     )
 
 

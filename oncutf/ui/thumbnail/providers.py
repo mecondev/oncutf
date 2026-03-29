@@ -17,6 +17,7 @@ Usage:
 Note: VideoThumbnailProvider requires FFmpeg installed on system.
 """
 
+import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -349,9 +350,19 @@ class VideoThumbnailProvider(ThumbnailProvider):
             self.ffmpeg_path = ffmpeg_path
             self.ffmpeg_available = True
 
-        # Derive ffprobe path from ffmpeg path (same directory, replace executable name)
+        # Derive ffprobe path.  FeatureAvailability.ffmpeg_available guarantees that
+        # ffprobe was found at boot time (either bundled alongside ffmpeg or in system
+        # PATH).  Mirror the same resolution strategy here so self.ffprobe_path is
+        # always a usable path.
         _ffmpeg_p = Path(self.ffmpeg_path)
-        self.ffprobe_path = str(_ffmpeg_p.parent / _ffmpeg_p.name.replace("ffmpeg", "ffprobe"))
+        _derived_ffprobe = _ffmpeg_p.parent / _ffmpeg_p.name.replace("ffmpeg", "ffprobe")
+        if _derived_ffprobe.exists():
+            self.ffprobe_path = str(_derived_ffprobe)
+        else:
+            # Boot already verified ffprobe is in system PATH; resolve it now.
+            system_ffprobe = shutil.which("ffprobe")
+            self.ffprobe_path = system_ffprobe if system_ffprobe else "ffprobe"
+        logger.debug("Using ffprobe at: %s", self.ffprobe_path)
 
     def supports(self, file_path: str) -> bool:
         """Check if file is a supported video format.

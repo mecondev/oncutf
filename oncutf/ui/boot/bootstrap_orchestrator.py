@@ -76,9 +76,11 @@ class BootstrapOrchestrator:
         to import infra implementations.
         """
         from oncutf.boot import register_infra_factories, wire_service_registry
+        from oncutf.boot.infra_wiring import detect_external_tools
 
         register_infra_factories()
         wire_service_registry()
+        detect_external_tools()
 
         logger.debug(
             "Phase 0: Infra factories registered via boot layer",
