@@ -200,6 +200,7 @@ class RotationHandlers:
 
             modified_count = 0
             skipped_count = 0
+            original_rotations: dict[str, str] = {}
 
             for file_item in files_to_process:
                 current_rotation = self._get_current_rotation_for_file(file_item)
@@ -213,6 +214,7 @@ class RotationHandlers:
                     skipped_count += 1
                     continue
 
+                original_rotations[file_item.full_path] = current_rotation
                 staging_manager.stage_change(file_item.full_path, "Rotation", "0")
 
                 cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
@@ -241,6 +243,10 @@ class RotationHandlers:
 
             # Update UI to reflect changes
             if modified_count > 0:
+                # Update thumbnail previews immediately: rotate cached pixmaps so the
+                # user sees the "no rotation" orientation before the file is saved.
+                self._update_thumbnail_rotation_preview(original_rotations)
+
                 if hasattr(self.parent_window, "file_model"):
                     for file_item in files_to_process:
                         if file_item.metadata_status == "modified":
@@ -338,6 +344,62 @@ class RotationHandlers:
             show_error_message(
                 self.parent_window, "Error", f"Failed to apply rotation changes: {e!s}"
             )
+
+    def _update_thumbnail_rotation_preview(self, original_rotations: dict[str, str]) -> None:
+        """Update thumbnail cache with inverse-rotated previews for staged rotation-to-zero changes.
+
+        When rotation is staged to 0 but the file is not yet saved, the on-disk file
+        still carries the original rotation metadata, so the cached thumbnail still shows
+        the auto-rotated (corrected) orientation.  This method rotates each affected
+        pixmap by the inverse angle so the viewport shows the "no rotation" appearance
+        immediately, without waiting for the file to be saved.
+
+        After the file is saved and its mtime changes, the cache key changes (mtime-based),
+        so the thumbnail is regenerated from disk with the correct zero-rotation state.
+
+        Args:
+            original_rotations: Mapping of file_path -> original rotation angle string
+                                 (e.g. {"path/to/file.mp4": "90"})
+
+        """
+        from pathlib import Path
+
+        from PyQt5.QtGui import QTransform
+
+        thumbnail_manager = getattr(self.parent_window, "thumbnail_manager", None)
+        if thumbnail_manager is None:
+            return
+
+        for file_path, rotation_str in original_rotations.items():
+            try:
+                angle = int(rotation_str)
+                if angle == 0:
+                    continue
+
+                stat = Path(file_path).stat()
+                cached_pixmap = thumbnail_manager._cache.get(file_path, stat.st_mtime, stat.st_size)
+                if cached_pixmap is None or cached_pixmap.isNull():
+                    continue
+
+                # Undo the CW rotation that ffmpeg auto-applied for display.
+                # For rotate=90 metadata, ffmpeg rotated 90 CW; to show the raw frame
+                # (which rotation=0 will produce after save), rotate 90 CCW = -90.
+                rotated = cached_pixmap.transformed(QTransform().rotate(-angle))
+                if rotated.isNull():
+                    continue
+
+                thumbnail_manager._cache.put(file_path, stat.st_mtime, stat.st_size, rotated)
+                logger.debug(
+                    "[BulkRotation] Updated thumbnail preview for %s (undo %d deg)",
+                    Path(file_path).name,
+                    angle,
+                )
+            except (OSError, ValueError) as e:
+                logger.debug(
+                    "[BulkRotation] Could not update thumbnail preview for %s: %s",
+                    Path(file_path).name,
+                    e,
+                )
 
     def _get_current_rotation_for_file(self, file_item: FileItem) -> str:
         """Get the current rotation value for a file, checking cache first then file metadata.
