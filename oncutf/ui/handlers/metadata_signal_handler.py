@@ -56,6 +56,10 @@ class MetadataSignalHandler:
                 auto_reset=True,
             )
 
+        # Refresh thumbnail immediately if a rotation field was changed.
+        if "rotation" in key_path.lower():
+            self._refresh_thumbnail_after_rotation_edit(old_value, new_value)
+
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         # Just log the change for debugging
         logger.debug("[MetadataEdit] Modified metadata field: %s", key_path)
@@ -152,3 +156,88 @@ class MetadataSignalHandler:
                         widget.emit_if_changed()
         except Exception as e:
             logger.warning("[MainWindow] Error updating metadata widget: %s", e)
+
+    def _refresh_thumbnail_after_rotation_edit(self, old_value: str, new_value: str) -> None:
+        """Refresh the thumbnail for the currently selected file after a rotation edit.
+
+        Applies an in-place rotation to the cached pixmap so the thumbnail viewport
+        shows the new orientation immediately, without waiting for a file save.
+
+        The rotation angle applied is: new_angle - old_angle (normalised to 0-359).
+        If the cached pixmap cannot be found, the method returns silently.
+
+        Args:
+            old_value: Previous rotation value (e.g. "90", "90deg", "0")
+            new_value: New rotation value
+
+        """
+        from pathlib import Path
+
+        from PyQt5.QtGui import QTransform
+
+        thumbnail_manager = getattr(self.main_window, "thumbnail_manager", None)
+        thumbnail_viewport = getattr(self.main_window, "thumbnail_viewport", None)
+        if thumbnail_manager is None or thumbnail_viewport is None:
+            return
+
+        # Resolve the current FileItem (single-file metadata editing)
+        file_item = None
+        if hasattr(self.main_window, "metadata_tree_view"):
+            tree = self.main_window.metadata_tree_view
+            file_path = getattr(tree, "_current_file_path", None)
+            if file_path:
+                # Lightweight lookup: find matching FileItem in model
+                file_model = getattr(self.main_window, "file_model", None)
+                if file_model:
+                    for fi in file_model.files:
+                        if fi.full_path == file_path:
+                            file_item = fi
+                            break
+
+        if file_item is None:
+            return
+
+        # Parse angle strings: strip non-numeric suffix (e.g. "90deg" -> 90)
+        def _parse_angle(v: str) -> int:
+            try:
+                import re
+
+                m = re.search(r"-?\d+", v)
+                return int(m.group()) % 360 if m else 0
+            except (ValueError, AttributeError):
+                return 0
+
+        old_angle = _parse_angle(old_value)
+        new_angle = _parse_angle(new_value)
+        delta = (new_angle - old_angle) % 360
+        if delta == 0:
+            return
+
+        try:
+            stat = Path(file_item.full_path).stat()
+            cached_pixmap = thumbnail_manager._cache.get(
+                file_item.full_path, stat.st_mtime, stat.st_size
+            )
+            if cached_pixmap is None or cached_pixmap.isNull():
+                return
+
+            # The display pixmap was rotated CW by old_angle (ffmpeg auto-rotate).
+            # To show new_angle rotation we must undo old and apply new:
+            # net delta CW = new_angle - old_angle.
+            rotated = cached_pixmap.transformed(QTransform().rotate(delta))
+            if rotated.isNull():
+                return
+
+            thumbnail_manager._cache.put(file_item.full_path, stat.st_mtime, stat.st_size, rotated)
+            thumbnail_viewport.refresh_thumbnail(file_item.full_path, rotated)
+            logger.debug(
+                "[MetadataEdit] Refreshed thumbnail for %s (delta=%d deg)",
+                file_item.filename,
+                delta,
+            )
+        except (OSError, ValueError) as e:
+            logger.debug(
+                "[MetadataEdit] Could not refresh thumbnail for %s: %s",
+                file_item.full_path if file_item else "?",
+                e,
+            )
