@@ -642,13 +642,31 @@ class ExifToolWrapper:
                     )
 
             # Execute the command
+            # Use a dynamic timeout: base 60 s + 1 s per 5 MB of file size.
+            # exiftool with -overwrite_original copies the entire file, so large
+            # files (e.g. 4.5 GB on a USB drive) can take several minutes.
+            # Cap at 600 s (10 min) to avoid hanging forever on a broken drive.
             from oncutf.config import EXIFTOOL_TIMEOUT_WRITE
+
+            try:
+                _file_size_mb = Path(file_path_normalized).stat().st_size / (1024 * 1024)
+            except OSError:
+                _file_size_mb = 0.0
+            _dynamic_timeout = max(EXIFTOOL_TIMEOUT_WRITE, int(_file_size_mb / 5) + 60)
+            _dynamic_timeout = min(_dynamic_timeout, 600)
+            if _dynamic_timeout > EXIFTOOL_TIMEOUT_WRITE:
+                logger.info(
+                    "[ExifToolWrapper] Using extended timeout %ds for %.0f MB file: %s",
+                    _dynamic_timeout,
+                    _file_size_mb,
+                    Path(file_path_normalized).name,
+                )
 
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=EXIFTOOL_TIMEOUT_WRITE,
+                timeout=_dynamic_timeout,
                 encoding="utf-8",
                 errors="replace",
             )
@@ -666,8 +684,11 @@ class ExifToolWrapper:
 
         except subprocess.TimeoutExpired:
             logger.exception(
-                "[ExifToolWrapper] Timeout while writing metadata to: %s",
+                "[ExifToolWrapper] Timeout (%ds) while writing metadata to: %s (%.0f MB) -- "
+                "drive may be too slow for this file size",
+                _dynamic_timeout,
                 Path(file_path_normalized).name,
+                _file_size_mb,
             )
             # Clean up the temp file exiftool leaves behind on timeout.
             # Without this, the next save attempt fails with
