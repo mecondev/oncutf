@@ -46,6 +46,7 @@ from oncutf.config import (
     LOWER_SECTION_SPLIT_RATIO,
     METADATA_TREE_USE_CUSTOM_DELEGATE,
 )
+from oncutf.config.features import FeatureAvailability
 from oncutf.controllers.ui.protocols import LayoutContext
 from oncutf.ui.helpers.icons_loader import get_menu_icon
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
@@ -355,9 +356,17 @@ class LayoutController:
             btn.setAutoRaise(True)  # Flat appearance until hover/checked
             btn.setObjectName(f"viewport{spec.id.title()}Button")
 
-            # Tooltip includes shortcut hint
-            tooltip_text = f"{spec.tooltip} ({spec.shortcut})"
-            TooltipHelper.setup_tooltip(btn, tooltip_text, TooltipType.INFO)
+            # Tooltip includes shortcut hint; disable thumbs when ffmpeg is absent
+            if spec.id == "thumbs" and not FeatureAvailability.ffmpeg_available:
+                btn.setEnabled(False)
+                TooltipHelper.setup_tooltip(
+                    btn,
+                    f"Thumbnail view ({spec.shortcut}) - requires FFmpeg (not installed)",
+                    TooltipType.WARNING,
+                )
+            else:
+                tooltip_text = f"{spec.tooltip} ({spec.shortcut})"
+                TooltipHelper.setup_tooltip(btn, tooltip_text, TooltipType.INFO)
 
             # Keyboard shortcut
             shortcut = QShortcut(QKeySequence(spec.shortcut), parent_widget)
@@ -443,12 +452,30 @@ class LayoutController:
         # Connect viewport toggle signal
         self.parent_window.viewport_button_group.buttonClicked.connect(self._on_viewport_changed)
 
+        # Connect model signals so buttons are enabled only when files are present
+        self.parent_window.file_model.modelReset.connect(self._update_viewport_buttons_state)
+        self.parent_window.file_model.rowsInserted.connect(self._update_viewport_buttons_state)
+        self.parent_window.file_model.rowsRemoved.connect(self._update_viewport_buttons_state)
+        self._update_viewport_buttons_state()
+
         # Connect selection synchronization between FileTable and ThumbnailViewport
         self._setup_selection_sync()
 
         center_layout.addWidget(self.parent_window.viewport_stack)
         self.parent_window.center_frame.setMinimumWidth(230)
         self.parent_window.horizontal_splitter.addWidget(self.parent_window.center_frame)
+
+    def _update_viewport_buttons_state(self) -> None:
+        """Enable/disable viewport buttons based on loaded file count.
+
+        The details button is always enabled (it is the default/fallback view).
+        The thumbs button is enabled only when files are loaded AND ffmpeg is available.
+        """
+        has_files = bool(getattr(self.parent_window.file_model, "files", None))
+        for spec_id, btn in self.parent_window.viewport_buttons.items():
+            if spec_id == "thumbs":
+                btn.setEnabled(has_files and FeatureAvailability.ffmpeg_available)
+            # details button stays always enabled
 
     def _on_viewport_changed(self, button: "QToolButton") -> None:
         """Handle viewport toggle button click.
@@ -461,6 +488,26 @@ class LayoutController:
 
         from oncutf.utils.cursor_helper import wait_cursor
 
+        # Resolve button ID before entering the wait-cursor block so that
+        # no-op clicks (same view already active, or unknown button) return
+        # immediately without flashing the wait cursor.
+        button_id = None
+        for spec_id, btn in self.parent_window.viewport_buttons.items():
+            if btn == button:
+                button_id = spec_id
+                break
+
+        if button_id is None:
+            logger.warning("[LayoutController] Viewport button clicked but ID not found")
+            return
+
+        target_index = 0 if button_id == "details" else 1
+        current_index = self.parent_window.viewport_stack.currentIndex()
+
+        if current_index == target_index:
+            logger.debug("[VIEW-SWITCH] Already on %s view, ignoring", button_id)
+            return
+
         # Use restore_after=False to keep cursor active during worker adjustment
         with wait_cursor(restore_after=False):
             # Force wait cursor to be visible immediately
@@ -471,35 +518,11 @@ class LayoutController:
 
             t0 = time.time()
             try:
-                # Get button ID from viewport_buttons dict
-                button_id = None
-                for spec_id, btn in self.parent_window.viewport_buttons.items():
-                    if btn == button:
-                        button_id = spec_id
-                        break
-
-                if button_id is None:
-                    logger.warning("[LayoutController] Viewport button clicked but ID not found")
-                    return
-
                 logger.debug(
                     "[VIEW-SWITCH] Button clicked: %s at t=%.3fms",
                     button_id,
                     (time.time() - t0) * 1000,
                 )
-
-                # Map button ID to stack index
-                # VIEWPORT_SPECS order: ["details", "thumbs"]
-                target_index = 0 if button_id == "details" else 1
-                current_index = self.parent_window.viewport_stack.currentIndex()
-
-                # Skip if already on the requested view
-                if current_index == target_index:
-                    logger.debug(
-                        "[VIEW-SWITCH] Already on %s view, ignoring",
-                        button_id,
-                    )
-                    return
 
                 if button_id == "details":
                     self.parent_window.viewport_stack.setCurrentIndex(0)

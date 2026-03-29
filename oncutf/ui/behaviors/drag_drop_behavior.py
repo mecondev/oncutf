@@ -22,6 +22,7 @@ from PyQt5.QtCore import QEvent, QModelIndex, Qt
 from PyQt5.QtGui import QCursor, QDropEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication
 
+from oncutf.config.features import FeatureAvailability
 from oncutf.ui.drag.drag_manager import DragManager
 from oncutf.ui.drag.drag_visual_manager import (
     DragType,
@@ -601,6 +602,13 @@ class DragDropBehavior:
             True if drop was successful
 
         """
+        if not FeatureAvailability.exiftool_available:
+            logger.debug(
+                "[DragDropBehavior] Metadata tree drop skipped: ExifTool not available",
+                extra={"dev_only": True},
+            )
+            return False
+
         if not self._drag_data:
             logger.debug(
                 "[DragDropBehavior] No drag data for metadata tree drop",

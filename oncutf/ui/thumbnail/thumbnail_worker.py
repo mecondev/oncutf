@@ -164,6 +164,11 @@ class ThumbnailWorker(QThread):
         def _raise_null_pixmap() -> None:
             raise ThumbnailGenerationError(f"Generated null pixmap for {file_path}")
 
+        def _raise_ffmpeg_unavailable() -> None:
+            raise ThumbnailGenerationError(
+                "FFmpeg is not available. Install ffmpeg or place it in the bin/ directory."
+            )
+
         try:
             # Validate file exists
             if not Path(file_path).exists():
@@ -181,6 +186,8 @@ class ThumbnailWorker(QThread):
                 provider = self._image_provider
                 video_frame_time = None
             elif ext in self._video_extensions:
+                if not self._video_provider.ffmpeg_available:
+                    _raise_ffmpeg_unavailable()
                 provider = self._video_provider
                 video_frame_time = None  # Will be set by provider
             else:

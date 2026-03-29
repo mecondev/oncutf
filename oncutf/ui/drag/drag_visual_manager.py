@@ -32,6 +32,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import QApplication, QWidget
 
 from oncutf.config import ICON_SIZES
+from oncutf.config.features import FeatureAvailability
 from oncutf.ui.services.icon_service import get_menu_icon
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -607,9 +608,9 @@ class DragVisualManager:
                 if widget_class in ("FileListView", "ThumbnailViewportWidget"):
                     return True
 
-            # FileListView can only drop on MetadataTreeView
+            # FileListView can only drop on MetadataTreeView (requires exiftool)
             elif drag_source == "file_table" and widget_class == "MetadataTreeView":
-                return True
+                return FeatureAvailability.exiftool_available
 
             # Move to parent widget
             current_widget = current_widget.parent()

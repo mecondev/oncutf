@@ -77,6 +77,8 @@ class WidgetTooltipFilter(QObject):
     def _show_tooltip(self) -> None:
         """Show the tooltip."""
         try:
+            if not self.widget.isEnabled():
+                return
             from oncutf.ui.helpers.tooltip_helper import TooltipHelper
 
             TooltipHelper._show_persistent_tooltip(self.widget, self.tooltip)

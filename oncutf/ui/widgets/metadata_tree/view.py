@@ -371,19 +371,19 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Accept drag only if it comes from our application's file table.
-        Delegates to drag handler.
+        """Reject all drags over the metadata tree (read-only view).
+
+        Calling event.ignore() causes Qt to display the no-drop/prohibited
+        cursor, clearly communicating that drops are not accepted here.
         """
-        self._drag_handler.handle_drag_enter(event)
+        event.ignore()
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Continue accepting drag move events only for items from our file table.
-        Delegates to drag handler.
-        """
-        self._drag_handler.handle_drag_move(event)
+        """Reject all drag-move events over the metadata tree."""
+        event.ignore()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop events for file loading.
+        """Ignore drop events on the metadata tree.
         Delegates to drag handler.
         """
         self._drag_handler.handle_drop(event)

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from oncutf.config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
+from oncutf.config.features import FeatureAvailability
 from oncutf.core.metadata.metadata_ui_bridge import MetadataUIBridge, NullMetadataUIBridge
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -108,6 +109,10 @@ class MetadataLoader:
             from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
 
             self._parallel_loader = ParallelMetadataLoader()
+            if not self._parallel_loader.exiftool_available:
+                raise RuntimeError(
+                    "ExifTool is not available. Install exiftool or place it in the bin/ directory."
+                )
             logger.debug(
                 "[MetadataLoader] ParallelMetadataLoader initialized",
                 extra={"dev_only": True},
@@ -199,6 +204,17 @@ class MetadataLoader:
         """
         if not items:
             logger.debug("[MetadataLoader] No items provided for metadata loading")
+            return
+
+        if not FeatureAvailability.exiftool_available:
+            logger.warning(
+                "[MetadataLoader] ExifTool not available, skipping metadata load for %d file(s)",
+                len(items),
+            )
+            self._ui_bridge.set_metadata_status(
+                "ExifTool is not available. Install exiftool to enable metadata loading.",
+                operation_type="warning",
+            )
             return
 
         # Reset cancellation flag for new operation
@@ -462,6 +478,12 @@ class MetadataLoader:
                     "[MetadataLoader] Failed to load metadata for %s",
                     item.filename,
                 )
+                self._ui_bridge.set_metadata_status(
+                    "ExifTool is not available. Install exiftool to enable metadata loading.",
+                    operation_type="error",
+                    file_count=1,
+                    auto_reset=False,
+                )
             finally:
                 loading_dialog.close()
 
@@ -620,13 +642,23 @@ class MetadataLoader:
             return self._metadata_cancelled
 
         # Start parallel loading
-        self.parallel_loader.load_metadata_parallel(
-            items=needs_loading,
-            use_extended=use_extended,
-            progress_callback=on_progress,
-            completion_callback=on_completion,
-            cancellation_check=check_cancellation,
-        )
+        try:
+            self.parallel_loader.load_metadata_parallel(
+                items=needs_loading,
+                use_extended=use_extended,
+                progress_callback=on_progress,
+                completion_callback=on_completion,
+                cancellation_check=check_cancellation,
+            )
+        except RuntimeError:
+            loading_dialog.close()
+            logger.exception("[MetadataLoader] Cannot load metadata")
+            self._ui_bridge.set_metadata_status(
+                "ExifTool is not available. Install exiftool to enable metadata loading.",
+                operation_type="error",
+                file_count=len(needs_loading),
+                auto_reset=False,
+            )
 
     def _emit_data_changed_for_item(self, item: FileItem) -> None:
         """Emit dataChanged signal for a specific item in the file model."""

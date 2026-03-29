@@ -57,6 +57,27 @@ def register_infra_factories() -> None:
     logger.debug("[boot] Infra factories registered", extra={"dev_only": True})
 
 
+def detect_external_tools() -> None:
+    """Detect availability of external tools and populate FeatureAvailability.
+
+    Must run once at boot, before any service that uses exiftool or ffmpeg.
+    All downstream components read from FeatureAvailability instead of
+    doing their own filesystem checks.
+    """
+    from oncutf.config.features import FeatureAvailability
+    from oncutf.utils.shared.external_tools import ToolName, is_tool_available
+
+    exiftool = is_tool_available(ToolName.EXIFTOOL)
+    ffmpeg = is_tool_available(ToolName.FFMPEG)
+    FeatureAvailability.update_availability(exiftool=exiftool, ffmpeg=ffmpeg)
+
+    logger.info(
+        "[boot] External tools: exiftool=%s, ffmpeg=%s",
+        "available" if exiftool else "not found",
+        "available" if ffmpeg else "not found",
+    )
+
+
 def wire_service_registry() -> None:
     """Wire the service registry with concrete implementations.
 

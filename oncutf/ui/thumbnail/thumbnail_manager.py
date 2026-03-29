@@ -204,6 +204,11 @@ class ThumbnailManager(QObject):
         self._max_workers = max_workers
         self._shutdown_flag = False
 
+        # Read ffmpeg availability from the single boot-time check.
+        from oncutf.config.features import FeatureAvailability
+
+        self._ffmpeg_available: bool = FeatureAvailability.ffmpeg_available
+
         # Statistics
         self._total_requests = 0
         self._completed_requests = 0
@@ -223,6 +228,11 @@ class ThumbnailManager(QObject):
 
         """
         return self._max_workers
+
+    @property
+    def ffmpeg_available(self) -> bool:
+        """Whether ffmpeg is available for video thumbnail generation."""
+        return self._ffmpeg_available
 
     def get_thumbnail(self, file_path: str, size_px: int = 128) -> QPixmap:
         """Get thumbnail for file (from cache or queue for generation).

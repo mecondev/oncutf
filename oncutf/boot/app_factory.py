@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from oncutf.boot.infra_wiring import (
+    detect_external_tools,
     get_hash_cache_instance,
     get_metadata_cache_instance,
     register_infra_factories,
@@ -58,6 +59,7 @@ def create_app_context(parent: Any = None) -> QtAppContext:
     # First, register all infra factories
     register_infra_factories()
     wire_service_registry()
+    detect_external_tools()
 
     # Create the context
     from oncutf.ui.adapters.qt_app_context import QtAppContext
@@ -84,6 +86,7 @@ def create_app() -> AppComponents:
     # Register factories first
     register_infra_factories()
     wire_service_registry()
+    detect_external_tools()
 
     # Initialize core infrastructure
     from oncutf.app.services import get_rename_history_manager
@@ -113,4 +116,5 @@ def initialize_infrastructure() -> None:
     """
     register_infra_factories()
     wire_service_registry()
+    detect_external_tools()
     logger.debug("[boot] Infrastructure initialized", extra={"dev_only": True})

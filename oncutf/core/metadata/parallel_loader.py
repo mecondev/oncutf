@@ -62,14 +62,23 @@ class ParallelMetadataLoader:
             max_workers = min(cpu_count * 2, 16)  # Cap at 16 to avoid overwhelming system
 
         self.max_workers = max_workers
-        self._exiftool_wrapper = ExifToolWrapper()
+        self._exiftool_wrapper: ExifToolWrapper | None = None
+        try:
+            self._exiftool_wrapper = ExifToolWrapper()
+            self.exiftool_available = True
+        except RuntimeError:
+            self.exiftool_available = False
+            logger.warning(
+                "[ParallelMetadataLoader] ExifTool not available. Metadata loading disabled."
+            )
         self._cancelled = False
         self._active_processes: list[
             subprocess.Popen[str]
         ] = []  # Track active subprocess for cancellation
         self._process_lock = threading.Lock()
 
-        logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
+        if self.exiftool_available:
+            logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
 
     def load_metadata_parallel(
         self,
@@ -94,6 +103,11 @@ class ParallelMetadataLoader:
         """
         if not items:
             return []
+
+        if not self.exiftool_available:
+            raise RuntimeError(
+                "ExifTool is not available. Install exiftool or place it in the bin/ directory."
+            )
 
         # Reset cancellation flag
         self._cancelled = False
@@ -278,6 +292,7 @@ class ParallelMetadataLoader:
                 use_extended,
             )
 
+            assert self._exiftool_wrapper is not None  # guaranteed by exiftool_available check
             metadata = self._exiftool_wrapper.get_metadata(
                 item.full_path,
                 use_extended=use_extended,

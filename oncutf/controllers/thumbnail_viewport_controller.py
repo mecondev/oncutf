@@ -28,7 +28,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
-from oncutf.config.file_types import PREVIEWABLE_DOT_EXTENSIONS
+from oncutf.config.features import FeatureAvailability
+from oncutf.config.file_types import PREVIEWABLE_DOT_EXTENSIONS, VIDEO_DOT_EXTENSIONS
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
@@ -126,6 +127,10 @@ class ThumbnailViewportController(QObject):
         self._background_timeout_timer.setSingleShot(True)
         self._background_timeout_timer.timeout.connect(self._on_background_timeout)
 
+        # Track whether the ffmpeg-unavailable status message has already been shown
+        # to avoid repeating it for every video file in the queue.
+        self._ffmpeg_error_shown: bool = False
+
         # Connect to ThumbnailManager signals if available
         self._connect_thumbnail_manager()
 
@@ -136,6 +141,7 @@ class ThumbnailViewportController(QObject):
         if self._thumbnail_manager:
             self._thumbnail_manager.thumbnail_ready.connect(self._on_thumbnail_ready)
             self._thumbnail_manager.generation_progress.connect(self._on_thumbnail_progress)
+            self._thumbnail_manager.generation_error.connect(self._on_thumbnail_error)
             logger.debug("[ThumbnailViewportController] Connected to ThumbnailManager")
         else:
             logger.warning(
@@ -295,6 +301,14 @@ class ThumbnailViewportController(QObject):
 
         self._thumbnail_size = size_px
 
+        # Determine effective supported extensions: exclude video formats when
+        # ffmpeg is not available so they are never queued and cause no errors.
+        ffmpeg_ok: bool = FeatureAvailability.ffmpeg_available
+        if ffmpeg_ok:
+            effective_extensions = self.SUPPORTED_THUMBNAIL_EXTENSIONS
+        else:
+            effective_extensions = self.SUPPORTED_THUMBNAIL_EXTENSIONS - VIDEO_DOT_EXTENSIONS
+
         # Get all file paths from model and filter out unsupported formats
         file_paths = []
         skipped_count = 0
@@ -305,14 +319,14 @@ class ThumbnailViewportController(QObject):
                 from pathlib import Path
 
                 ext = Path(file_item.full_path).suffix.lower()
-                if ext in self.SUPPORTED_THUMBNAIL_EXTENSIONS:
+                if ext in effective_extensions:
                     file_paths.append(file_item.full_path)
                 else:
                     skipped_count += 1
 
         if skipped_count > 0:
             logger.debug(
-                "[ThumbnailViewportController] Skipped %d unsupported files (e.g., audio)",
+                "[ThumbnailViewportController] Skipped %d unsupported files (e.g., audio, video without ffmpeg)",
                 skipped_count,
             )
 
@@ -376,10 +390,14 @@ class ThumbnailViewportController(QObject):
         # Filter out unsupported file types (audio, etc.)
         from pathlib import Path
 
+        ffmpeg_ok = FeatureAvailability.ffmpeg_available
+        effective_extensions = (
+            self.SUPPORTED_THUMBNAIL_EXTENSIONS
+            if ffmpeg_ok
+            else self.SUPPORTED_THUMBNAIL_EXTENSIONS - VIDEO_DOT_EXTENSIONS
+        )
         filtered_paths = [
-            p
-            for p in visible_file_paths
-            if Path(p).suffix.lower() in self.SUPPORTED_THUMBNAIL_EXTENSIONS
+            p for p in visible_file_paths if Path(p).suffix.lower() in effective_extensions
         ]
 
         if not filtered_paths:
@@ -473,6 +491,23 @@ class ThumbnailViewportController(QObject):
         # Update status message
         status_msg = f"Loading thumbnails: {completed}/{total}"
         self.status_update.emit(status_msg)
+
+    def _on_thumbnail_error(self, file_path: str, error_msg: str) -> None:
+        """Handle thumbnail generation error.
+
+        Args:
+            file_path: Path of the file that failed
+            error_msg: Error description from the worker
+
+        """
+        logger.debug(
+            "[ThumbnailViewportController] Thumbnail error for %s: %s", file_path, error_msg
+        )
+        if "FFmpeg is not available" in error_msg and not self._ffmpeg_error_shown:
+            self._ffmpeg_error_shown = True
+            self.status_update.emit(
+                "FFmpeg not available - video thumbnails disabled. Install ffmpeg."
+            )
 
     # -------------------------------------------------------------------------
     # Selection Management

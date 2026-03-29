@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt5.QtWidgets import QAction, QListView, QMenu
 
+from oncutf.config.features import FeatureAvailability
 from oncutf.ui.helpers.stylesheet_utils import inject_font_family
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
@@ -263,6 +264,7 @@ class ContextMenuHandlers:
         menu.addSeparator()
 
         # === METADATA OPERATIONS (Selection-only) ===
+        exiftool_ok = FeatureAvailability.exiftool_available
         action_load_fast = create_action_with_shortcut(
             get_menu_icon("draft"), "Load Fast Metadata", "Ctrl+M"
         )
@@ -273,41 +275,53 @@ class ContextMenuHandlers:
         menu.addAction(action_load_fast)
         menu.addAction(action_load_extended)
 
-        # Smart enable/disable logic based on analysis
-        action_load_fast.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
-        action_load_extended.setEnabled(
-            has_selection and selected_analysis["enable_extended_selected"]
-        )
-
-        # Set smart tooltips with selection context
-        if has_selection:
-            sel_count = len(selected_files)
-            load_fast_tip = selected_analysis["fast_tooltip"]
-            if sel_count < total_files:
-                load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+        if not exiftool_ok:
+            # ExifTool not found: disable all metadata actions
+            _no_exiftool = "ExifTool not available - install exiftool to use metadata features"
+            action_load_fast.setEnabled(False)
+            action_load_extended.setEnabled(False)
             TooltipHelper.setup_action_tooltip(
-                action_load_fast, load_fast_tip, TooltipType.INFO, menu
+                action_load_fast, _no_exiftool, TooltipType.WARNING, menu
             )
-
-            load_ext_tip = selected_analysis["extended_tooltip"]
-            if sel_count < total_files:
-                load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
             TooltipHelper.setup_action_tooltip(
-                action_load_extended, load_ext_tip, TooltipType.INFO, menu
+                action_load_extended, _no_exiftool, TooltipType.WARNING, menu
             )
         else:
-            TooltipHelper.setup_action_tooltip(
-                action_load_fast,
-                "Select files first (Ctrl+A to select all)",
-                TooltipType.WARNING,
-                menu,
+            # Smart enable/disable logic based on analysis
+            action_load_fast.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
+            action_load_extended.setEnabled(
+                has_selection and selected_analysis["enable_extended_selected"]
             )
-            TooltipHelper.setup_action_tooltip(
-                action_load_extended,
-                "Select files first (Ctrl+A to select all)",
-                TooltipType.WARNING,
-                menu,
-            )
+
+            # Set smart tooltips with selection context
+            if has_selection:
+                sel_count = len(selected_files)
+                load_fast_tip = selected_analysis["fast_tooltip"]
+                if sel_count < total_files:
+                    load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+                TooltipHelper.setup_action_tooltip(
+                    action_load_fast, load_fast_tip, TooltipType.INFO, menu
+                )
+
+                load_ext_tip = selected_analysis["extended_tooltip"]
+                if sel_count < total_files:
+                    load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+                TooltipHelper.setup_action_tooltip(
+                    action_load_extended, load_ext_tip, TooltipType.INFO, menu
+                )
+            else:
+                TooltipHelper.setup_action_tooltip(
+                    action_load_fast,
+                    "Select files first (Ctrl+A to select all)",
+                    TooltipType.WARNING,
+                    menu,
+                )
+                TooltipHelper.setup_action_tooltip(
+                    action_load_extended,
+                    "Select files first (Ctrl+A to select all)",
+                    TooltipType.WARNING,
+                    menu,
+                )
 
         menu.addSeparator()
 
@@ -427,18 +441,26 @@ class ContextMenuHandlers:
         if hasattr(self.parent_window, "metadata_tree_view"):
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
 
-        action_save_all_modified.setEnabled(has_modifications)
+        action_save_all_modified.setEnabled(exiftool_ok and has_modifications)
 
-        TooltipHelper.setup_action_tooltip(
-            action_save_all_modified,
-            (
-                "Save all modified metadata (Ctrl+S)"
-                if has_modifications
-                else "No modified metadata to save"
-            ),
-            TooltipType.INFO if has_modifications else TooltipType.WARNING,
-            menu,
-        )
+        if not exiftool_ok:
+            TooltipHelper.setup_action_tooltip(
+                action_save_all_modified,
+                "ExifTool not available - cannot save metadata",
+                TooltipType.WARNING,
+                menu,
+            )
+        else:
+            TooltipHelper.setup_action_tooltip(
+                action_save_all_modified,
+                (
+                    "Save all modified metadata (Ctrl+S)"
+                    if has_modifications
+                    else "No modified metadata to save"
+                ),
+                TooltipType.INFO if has_modifications else TooltipType.WARNING,
+                menu,
+            )
 
         action_save_all_modified.triggered.connect(self.parent_window.shortcut_save_all_metadata)
 
@@ -470,9 +492,16 @@ class ContextMenuHandlers:
                         has_rotation_to_reset = True
                         break
 
-        action_set_rotation.setEnabled(has_selection and has_rotation_to_reset)
+        action_set_rotation.setEnabled(exiftool_ok and has_selection and has_rotation_to_reset)
 
-        if has_selection:
+        if not exiftool_ok:
+            TooltipHelper.setup_action_tooltip(
+                action_set_rotation,
+                "ExifTool not available - cannot write metadata",
+                TooltipType.WARNING,
+                menu,
+            )
+        elif has_selection:
             sel_count = len(selected_files)
             if has_rotation_to_reset:
                 rotation_tip = f"Reset rotation to 0 for {sel_count} selected file(s)"
@@ -567,12 +596,25 @@ class ContextMenuHandlers:
         menu.addAction(action_export_sel)
         menu.addAction(action_export_all)
 
-        # Enable/disable export actions based on metadata availability
-        action_export_sel.setEnabled(has_selection)
-        action_export_all.setEnabled(total_files > 0)
+        # Enable/disable export actions based on metadata availability and exiftool
+        action_export_sel.setEnabled(exiftool_ok and has_selection)
+        action_export_all.setEnabled(exiftool_ok and total_files > 0)
 
         # Smart tooltips
-        if has_selection:
+        if not exiftool_ok:
+            TooltipHelper.setup_action_tooltip(
+                action_export_sel,
+                "ExifTool is not available",
+                TooltipType.WARNING,
+                menu,
+            )
+            TooltipHelper.setup_action_tooltip(
+                action_export_all,
+                "ExifTool is not available",
+                TooltipType.WARNING,
+                menu,
+            )
+        elif has_selection:
             sel_count = len(selected_files)
             export_tip = f"Export metadata for {sel_count} selected file(s)"
             if sel_count < total_files:
@@ -588,14 +630,14 @@ class ContextMenuHandlers:
                 menu,
             )
 
-        if total_files > 0:
+        if total_files > 0 and exiftool_ok:
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
                 f"Export metadata for all {total_files} files in folder",
                 TooltipType.INFO,
                 menu,
             )
-        else:
+        elif exiftool_ok:
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
                 "No files have metadata to export",

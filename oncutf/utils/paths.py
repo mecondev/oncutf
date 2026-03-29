@@ -11,9 +11,9 @@ This module provides a unified interface for accessing all application paths:
 - Bundled tools directory (for PyInstaller)
 
 Platform-specific behavior:
-- Windows: %LOCALAPPDATA%/oncutf/
-- Linux: ~/.local/share/oncutf/
-- macOS: ~/Library/Application Support/oncutf/
+- Windows: %LOCALAPPDATA%/oncut/oncutf/
+- Linux: ~/.local/share/oncut/oncutf/
+- macOS: ~/Library/Application Support/oncut/oncutf/
 
 Usage:
     from oncutf.utils.paths import AppPaths
@@ -25,6 +25,7 @@ Usage:
 
 import os
 import platform
+import shutil
 import sys
 from pathlib import Path
 
@@ -32,7 +33,8 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
-# Application name for path construction
+# Organization and application name for path construction
+ORG_NAME = "oncut"
 APP_NAME = "oncutf"
 
 
@@ -74,13 +76,29 @@ class AppPaths:
             base = os.environ.get("LOCALAPPDATA")
             if not base:
                 base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local")
-            return Path(base) / APP_NAME
+            return Path(base) / ORG_NAME / APP_NAME
 
         if system == "Darwin":
             # macOS: Use Application Support
-            return Path.home() / "Library" / "Application Support" / APP_NAME
+            return Path.home() / "Library" / "Application Support" / ORG_NAME / APP_NAME
 
         # Linux and others: Use XDG_DATA_HOME or ~/.local/share
+        xdg_data = os.environ.get("XDG_DATA_HOME")
+        if xdg_data:
+            return Path(xdg_data) / ORG_NAME / APP_NAME
+        return Path.home() / ".local" / "share" / ORG_NAME / APP_NAME
+
+    @classmethod
+    def _get_legacy_data_dir(cls) -> Path:
+        """Get legacy (pre-org-prefix) data directory path for one-time migration."""
+        system = platform.system()
+        if system == "Windows":
+            base = os.environ.get("LOCALAPPDATA")
+            if not base:
+                base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local")
+            return Path(base) / APP_NAME
+        if system == "Darwin":
+            return Path.home() / "Library" / "Application Support" / APP_NAME
         xdg_data = os.environ.get("XDG_DATA_HOME")
         if xdg_data:
             return Path(xdg_data) / APP_NAME
@@ -96,6 +114,21 @@ class AppPaths:
         """
         if cls._user_data_dir is None:
             cls._user_data_dir = cls._get_platform_data_dir()
+
+            # One-time migration: move data from legacy flat path to org-prefixed path
+            legacy_dir = cls._get_legacy_data_dir()
+            if (
+                legacy_dir != cls._user_data_dir
+                and legacy_dir.exists()
+                and not cls._user_data_dir.exists()
+            ):
+                cls._user_data_dir.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(legacy_dir), str(cls._user_data_dir))
+                logger.info(
+                    "[AppPaths] Migrated data directory: %s -> %s",
+                    legacy_dir,
+                    cls._user_data_dir,
+                )
 
         # Ensure directory exists
         cls._user_data_dir.mkdir(parents=True, exist_ok=True)

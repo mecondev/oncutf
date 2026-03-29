@@ -330,21 +330,28 @@ class VideoThumbnailProvider(ThumbnailProvider):
         """
         super().__init__(max_size)
 
-        # Auto-detect ffmpeg path if not provided
+        # Read availability from the single boot-time check (FeatureAvailability).
+        # If an explicit path was injected (tests / bundled run), treat it as available.
         if ffmpeg_path is None:
-            from oncutf.utils.shared.external_tools import ToolName, get_tool_path
+            from oncutf.config.features import FeatureAvailability
 
-            try:
+            if FeatureAvailability.ffmpeg_available:
+                from oncutf.utils.shared.external_tools import ToolName, get_tool_path
+
                 self.ffmpeg_path = get_tool_path(ToolName.FFMPEG, prefer_bundled=True)
+                self.ffmpeg_available = True
                 logger.debug("Using ffmpeg at: %s", self.ffmpeg_path)
-            except FileNotFoundError:
-                logger.warning(
-                    "FFmpeg not found. Video thumbnail generation will fail. "
-                    "Install ffmpeg or place it in bin/ directory."
-                )
-                self.ffmpeg_path = "ffmpeg"  # Fallback (will fail gracefully)
+            else:
+                self.ffmpeg_available = False
+                self.ffmpeg_path = "ffmpeg"  # kept for reference only; never executed
+                logger.debug("FFmpeg not available (detected at boot). Video thumbnails disabled.")
         else:
             self.ffmpeg_path = ffmpeg_path
+            self.ffmpeg_available = True
+
+        # Derive ffprobe path from ffmpeg path (same directory, replace executable name)
+        _ffmpeg_p = Path(self.ffmpeg_path)
+        self.ffprobe_path = str(_ffmpeg_p.parent / _ffmpeg_p.name.replace("ffmpeg", "ffprobe"))
 
     def supports(self, file_path: str) -> bool:
         """Check if file is a supported video format.
@@ -373,6 +380,11 @@ class VideoThumbnailProvider(ThumbnailProvider):
 
         """
         import time
+
+        if not self.ffmpeg_available:
+            raise ThumbnailGenerationError(
+                "FFmpeg is not available. Install ffmpeg or place it in the bin/ directory."
+            )
 
         if not Path(file_path).exists():
             raise ThumbnailGenerationError(f"File not found: {file_path}")
@@ -447,7 +459,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
             # Optimized: Use -select_streams v:0 to only probe first video stream
             # This is faster than probing the entire format
             cmd = [
-                "ffprobe",
+                self.ffprobe_path,
                 "-v",
                 "error",
                 "-select_streams",
@@ -471,7 +483,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
             if not duration_str or duration_str == "N/A":
                 # Fallback to format duration if stream duration not available
                 cmd = [
-                    "ffprobe",
+                    self.ffprobe_path,
                     "-v",
                     "error",
                     "-show_entries",
@@ -507,6 +519,13 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 duration,
                 Path(file_path).name,
             )
+        except FileNotFoundError:
+            logger.warning(
+                "[VideoThumbnailProvider] ffprobe not found at '%s'. "
+                "Install ffmpeg or place it in the bin/ directory.",
+                self.ffprobe_path,
+            )
+            return None
         except (
             subprocess.CalledProcessError,
             ValueError,
@@ -612,6 +631,11 @@ class VideoThumbnailProvider(ThumbnailProvider):
             pixmap = QPixmap.fromImage(scaled_image)
             if pixmap.isNull():
                 raise ThumbnailGenerationError("Failed to create pixmap from frame")
+        except FileNotFoundError:
+            raise ThumbnailGenerationError(
+                f"FFmpeg not found at '{self.ffmpeg_path}'. "
+                "Install ffmpeg or place it in the bin/ directory."
+            ) from None
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
             raise ThumbnailGenerationError(f"FFmpeg extraction failed: {e}") from e
         else:

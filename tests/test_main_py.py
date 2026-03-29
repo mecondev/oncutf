@@ -17,18 +17,18 @@ def test_app_paths_unix(monkeypatch, tmp_path):
         # On Windows, test LOCALAPPDATA behavior
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
         path = AppPaths.get_user_data_dir()
-        assert "oncutf" in str(path)
+        assert "oncut" in str(path) and "oncutf" in str(path)
     elif platform.system() == "Darwin":
         # On macOS, use Application Support directory (XDG_DATA_HOME not standard on macOS)
         AppPaths.reset()
         path = AppPaths.get_user_data_dir()
-        assert "Library/Application Support/oncutf" in str(path)
+        assert "Library/Application Support/oncut/oncutf" in str(path)
     else:
         # On Linux, test XDG_DATA_HOME behavior
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_data"))
         AppPaths.reset()  # Reset again after env change
         path = AppPaths.get_user_data_dir()
-        assert str(tmp_path / "xdg_data" / "oncutf") == str(path)
+        assert str(tmp_path / "xdg_data" / "oncut" / "oncutf") == str(path)
 
     # Cleanup
     AppPaths.reset()
@@ -46,11 +46,11 @@ def test_app_paths_windows(monkeypatch, tmp_path):
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
         AppPaths.reset()
         path = AppPaths.get_user_data_dir()
-        assert str(tmp_path / "localappdata" / "oncutf") == str(path)
+        assert str(tmp_path / "localappdata" / "oncut" / "oncutf") == str(path)
     else:
         # On Unix, just verify function works
         path = AppPaths.get_user_data_dir()
-        assert "oncutf" in str(path)
+        assert "oncut" in str(path) and "oncutf" in str(path)
 
     # Cleanup
     AppPaths.reset()
