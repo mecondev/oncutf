@@ -658,6 +658,14 @@ class ExifToolWrapper:
                 "[ExifToolWrapper] Timeout while writing metadata to: %s",
                 Path(file_path_normalized).name,
             )
+            # Clean up the temp file exiftool leaves behind on timeout.
+            # Without this, the next save attempt fails with
+            # "Temporary file already exists: <path>_exiftool_tmp".
+            _tmp = Path(file_path_normalized + "_exiftool_tmp")
+            if _tmp.exists():
+                with contextlib.suppress(OSError):
+                    _tmp.unlink()
+                    logger.info("[ExifToolWrapper] Cleaned up leftover temp file: %s", _tmp.name)
             return False
         except Exception:
             logger.exception("[ExifToolWrapper] Exception while writing metadata")

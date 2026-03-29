@@ -40,13 +40,13 @@ class QtUserDialogAdapter:
         """Show warning message."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
-        CustomMessageDialog.warning(self._parent, title, message)
+        CustomMessageDialog.show_warning(self._parent, title, message)
 
     def show_error(self, title: str, message: str) -> None:
         """Show error message."""
         from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
 
-        CustomMessageDialog.critical(self._parent, title, message)
+        CustomMessageDialog.show_error(self._parent, title, message)
 
     def ask_yes_no(self, title: str, message: str) -> bool:
         """Ask yes/no question. Returns True for yes, False for no."""

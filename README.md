@@ -396,7 +396,7 @@ When bundled with the application (in `bin/`), the following tools are included 
 respective licenses. The oncutf project does **not** modify these tools.
 
 | Tool | License | Source |
-|---|---|---|
+| ---- | ------- | ------ |
 | **ExifTool** by Phil Harvey | Artistic License 2.0 / GPL | [exiftool.org](https://exiftool.org/) |
 | **FFmpeg** / **FFprobe** | GPL v3 | [ffmpeg.org](https://ffmpeg.org/) |
 
