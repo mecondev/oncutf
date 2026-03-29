@@ -331,7 +331,14 @@ class UnifiedMetadataManager(QObject):
         _loading_dialog = None
 
         file_count = len(files_to_save)
-        save_mode = "single_file_wait_cursor" if file_count == 1 else "multiple_files_dialog"
+        # Always use the progress dialog when saving on exit, so the user can see
+        # progress even for a single file that may take a long time (e.g. large MP4
+        # on a slow/USB drive).
+        save_mode = (
+            "single_file_wait_cursor"
+            if file_count == 1 and not is_exit_save
+            else "multiple_files_dialog"
+        )
 
         logger.info(
             "[UnifiedMetadataManager] Saving metadata for %d file(s) using mode: %s",

@@ -88,41 +88,26 @@ class RotationHandlers:
                 logger.debug("[BulkRotation] User cancelled operation", extra={"dev_only": True})
                 return
 
-        try:
-            from oncutf.ui.dialogs.bulk_rotation_dialog import BulkRotationDialog
+        from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
+        from oncutf.ui.services.dialog_positioning import ensure_dialog_centered
 
-            final_files = BulkRotationDialog.get_bulk_rotation_choice(
-                self.parent_window, files_to_process, self.parent_window.metadata_cache
-            )
+        count = len(files_to_process)
+        noun = "file" if count == 1 else "files"
+        msg = f"Set rotation to 0 deg for {count} {noun}?"
+        dlg = CustomMessageDialog(
+            "Set Rotation to 0",
+            msg,
+            ["Cancel", "Apply"],
+            self.parent_window,
+        )
+        ensure_dialog_centered(dlg, self.parent_window)
+        dlg.exec_()
+        if dlg.selected != "Apply":
+            logger.debug("[BulkRotation] User cancelled bulk rotation", extra={"dev_only": True})
+            return
 
-            if not final_files:
-                logger.debug(
-                    "[BulkRotation] User cancelled bulk rotation or no files selected",
-                    extra={"dev_only": True},
-                )
-                return
-
-            logger.info("[BulkRotation] Processing %d files", len(final_files))
-            self._apply_bulk_rotation(final_files)
-
-        except ImportError:
-            logger.exception("[BulkRotation] Failed to import BulkRotationDialog")
-            from oncutf.app.services import show_error_message
-
-            show_error_message(
-                self.parent_window,
-                "Error",
-                "Bulk rotation dialog is not available. Please check the installation.",
-            )
-        except Exception as e:
-            logger.exception("[BulkRotation] Unexpected error")
-            from oncutf.app.services import show_error_message
-
-            show_error_message(
-                self.parent_window,
-                "Error",
-                f"An error occurred during bulk rotation: {e!s}",
-            )
+        logger.info("[BulkRotation] Processing %d files", len(files_to_process))
+        self._apply_bulk_rotation(files_to_process)
 
     def _has_metadata_loaded(self, file_item: FileItem) -> bool:
         """Check if a file has metadata loaded in cache."""
