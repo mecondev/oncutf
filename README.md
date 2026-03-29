@@ -388,12 +388,26 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for full details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for full details.
+
+### Third-Party Tools
+
+When bundled with the application (in `bin/`), the following tools are included under their
+respective licenses. The oncutf project does **not** modify these tools.
+
+| Tool | License | Source |
+|---|---|---|
+| **ExifTool** by Phil Harvey | Artistic License 2.0 / GPL | [exiftool.org](https://exiftool.org/) |
+| **FFmpeg** / **FFprobe** | GPL v3 | [ffmpeg.org](https://ffmpeg.org/) |
+
+License texts for bundled tools: [`bin/LICENSE-exiftool-artistic.txt`](bin/LICENSE-exiftool-artistic.txt),
+[`bin/LICENSE-ffmpeg-gplv3.txt`](bin/LICENSE-ffmpeg-gplv3.txt)
 
 ---
 
 ## Acknowledgments
 
 - **[ExifTool](https://exiftool.org/)** by Phil Harvey - The backbone of metadata extraction
+- **[FFmpeg](https://ffmpeg.org/)** - Video frame extraction for thumbnail generation
 - **PyQt5** by Riverbank Computing - Robust GUI framework
 - **The open-source community** - For inspiration and best practices
