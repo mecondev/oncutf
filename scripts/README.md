@@ -58,7 +58,7 @@ python scripts/translate_greek_to_english.py --root path/to/dir
 **Sample output:**
 
 ```output
-Scanning repository: /mnt/data_1/edu/Python/oncutf
+Scanning repository: /media/meconet/data_1/Dev_Projects/Python/oncutf
 Mode: DRY-RUN (no changes will be made)
 Extensions: .py, .txt, .md, .json
 --------------------------------------------------------------------------------
