@@ -18,26 +18,49 @@ bin/
 
 **Download Links:**
 - **Windows:** [exiftool.org](https://exiftool.org/) - Download `exiftool-12.xx.zip`, extract `exiftool(-k).exe` and rename to `exiftool.exe`
-- **macOS:** [exiftool.org](https://exiftool.org/) - Download `ExifTool-12.xx.dmg` or use `brew install exiftool`, then copy binary
-- **Linux:** Install via package manager (`sudo apt install exiftool`) or download from [exiftool.org](https://exiftool.org/)
+- **macOS:** [exiftool.org](https://exiftool.org/) - Download `ExifTool-XX.dmg` or use `brew install exiftool`, then copy binary
+- **Linux:** Download `Image-ExifTool-XX.tar.gz` from [exiftool.org](https://exiftool.org/), extract and copy both `exiftool` and `lib/` into `bin/linux/`.
+  The Perl script uses `lib/` from the same directory, so both must be present.
+
+  Quick install script:
+  ```bash
+  LATEST=$(curl -s https://exiftool.org/ | grep -oP 'Image-ExifTool-[\d.]+\.tar\.gz' | head -1)
+  curl -s "https://exiftool.org/$LATEST" -o /tmp/exiftool.tar.gz
+  tar -xzf /tmp/exiftool.tar.gz -C /tmp/
+  cp /tmp/Image-ExifTool-*/exiftool bin/linux/
+  cp -r /tmp/Image-ExifTool-*/lib bin/linux/
+  chmod +x bin/linux/exiftool
+  ```
 
 **File Names:**
 - Windows: `exiftool.exe`
 - macOS: `exiftool` (universal binary for Intel + Apple Silicon)
-- Linux: `exiftool`
+- Linux: `exiftool` + `lib/` subdirectory
 
-### FFmpeg (Optional - for future video features)
-**Purpose:** Video processing, thumbnail generation, format conversion
+### FFmpeg + FFprobe (required for video thumbnails)
+**Purpose:** Video frame extraction for thumbnail generation
+
+**Note:** Both `ffmpeg` AND `ffprobe` must be present. The app checks for both at boot;
+if either is missing, the thumbnail viewport is disabled.
 
 **Download Links:**
-- **Windows:** [ffmpeg.org](https://ffmpeg.org/download.html#build-windows) - Download static build, extract `ffmpeg.exe` from `bin/`
-- **macOS:** [ffmpeg.org](https://ffmpeg.org/download.html#build-mac) or `brew install ffmpeg`, then copy binary
-- **Linux:** Install via package manager (`sudo apt install ffmpeg`) or download from [ffmpeg.org](https://ffmpeg.org/download.html#build-linux)
+- **Windows:** [ffmpeg.org](https://ffmpeg.org/download.html#build-windows) - Download static build, extract `ffmpeg.exe` and `ffprobe.exe` from `bin/`
+- **macOS:** [ffmpeg.org](https://ffmpeg.org/download.html#build-mac) or `brew install ffmpeg`, then copy both binaries
+- **Linux:** Download static build from [johnvansickle.com/ffmpeg](https://johnvansickle.com/ffmpeg/) (includes both `ffmpeg` and `ffprobe`).
+
+  Quick install script:
+  ```bash
+  curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg-static.tar.xz
+  tar -xJf /tmp/ffmpeg-static.tar.xz -C /tmp/
+  FFMPEG_DIR=$(ls -d /tmp/ffmpeg-*-amd64-static)
+  cp "$FFMPEG_DIR/ffmpeg" "$FFMPEG_DIR/ffprobe" bin/linux/
+  chmod +x bin/linux/ffmpeg bin/linux/ffprobe
+  ```
 
 **File Names:**
-- Windows: `ffmpeg.exe`
-- macOS: `ffmpeg` (universal binary for Intel + Apple Silicon)
-- Linux: `ffmpeg`
+- Windows: `ffmpeg.exe`, `ffprobe.exe`
+- macOS: `ffmpeg`, `ffprobe` (universal binaries for Intel + Apple Silicon)
+- Linux: `ffmpeg`, `ffprobe`
 
 ## Installation Instructions
 
