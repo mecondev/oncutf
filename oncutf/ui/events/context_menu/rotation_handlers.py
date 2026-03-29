@@ -394,6 +394,11 @@ class RotationHandlers:
                     Path(file_path).name,
                     angle,
                 )
+
+                # Emit thumbnail_ready so the viewport does register_fade() + repaint.
+                # Without this signal the cache update is invisible to the delegate.
+                thumbnail_manager.thumbnail_ready.emit(file_path, rotated)
+
             except (OSError, ValueError) as e:
                 logger.debug(
                     "[BulkRotation] Could not update thumbnail preview for %s: %s",
