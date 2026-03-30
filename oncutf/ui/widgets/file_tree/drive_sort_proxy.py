@@ -9,13 +9,28 @@ for normal files and folders.
 
 from __future__ import annotations
 
+import ctypes
 import os
-import platform
+import sys
 from typing import Any
 
 from PyQt5.QtCore import QSortFilterProxyModel, Qt
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
+
+# Load StrCmpLogicalW for Windows Explorer-compatible filename sorting.
+# This function sorts the same way Windows Explorer does: underscores and
+# other special characters appear before alphabetical entries, and numeric
+# segments within names are compared as numbers (natural sort).
+_StrCmpLogicalW: Any = None
+if sys.platform == "win32":
+    try:
+        _shlwapi = ctypes.windll.Shlwapi  # type: ignore[attr-defined]
+        _StrCmpLogicalW = _shlwapi.StrCmpLogicalW
+        _StrCmpLogicalW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
+        _StrCmpLogicalW.restype = ctypes.c_int
+    except Exception:
+        _StrCmpLogicalW = None
 
 logger = get_cached_logger(__name__)
 
@@ -71,7 +86,7 @@ class DriveSortProxyModel(QSortFilterProxyModel):
             if not source:
                 return super().lessThan(left, right)
 
-            if platform.system() == "Windows":
+            if sys.platform == "win32":
                 left_parent = left.parent()
                 right_parent = right.parent()
 
@@ -87,6 +102,15 @@ class DriveSortProxyModel(QSortFilterProxyModel):
             right_is_dir = source.isDir(right)
             if left_is_dir != right_is_dir:
                 return left_is_dir
+
+            # Use StrCmpLogicalW on Windows to match Explorer's sort order.
+            # Qt's locale-aware default (super().lessThan) puts underscores
+            # after letters on Windows, but Explorer puts them before.
+            if _StrCmpLogicalW is not None:
+                left_name = source.data(left, Qt.DisplayRole)
+                right_name = source.data(right, Qt.DisplayRole)
+                if isinstance(left_name, str) and isinstance(right_name, str):
+                    return _StrCmpLogicalW(left_name, right_name) < 0
 
             return super().lessThan(left, right)
         except Exception as e:

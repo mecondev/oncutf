@@ -18,7 +18,7 @@ from typing import ClassVar, Literal
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QWidget
 
 from oncutf.config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -123,8 +123,9 @@ class ProgressDialog(QDialog):
 
     def _setup_dialog(self) -> None:
         """Setup the dialog UI and properties."""
-        # Frameless dialog
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        # Frameless dialog - Qt.Tool prevents parent window from showing as inactive
+        # on Windows (avoids white/grey title bar on the main window)
+        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setModal(True)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -155,27 +156,20 @@ class ProgressDialog(QDialog):
         setup_dialog_size_and_center(self, self.waiting_widget)
 
     def _setup_wait_cursor(self) -> None:
-        """Setup wait cursor for both parent window and dialog."""
-        # Set wait cursor on parent if available (main window)
-        if self.parent():
-            self.parent().setCursor(Qt.WaitCursor)
+        """Setup application-wide wait cursor."""
+        # Use QApplication.setOverrideCursor so the wait cursor covers ALL widgets,
+        # not only the parent and dialog. This matches what wait_cursor() context
+        # manager does and ensures consistency across all operation types.
+        QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        # Set wait cursor on the dialog as well
-        self.setCursor(Qt.WaitCursor)
-
-        logger.debug("[ProgressDialog] Wait cursor set on parent and dialog")
+        logger.debug("[ProgressDialog] Wait cursor set application-wide")
 
     def _restore_cursors(self) -> None:
-        """Restore normal cursors on parent window and dialog."""
-        # Force cleanup of all override cursors
+        """Restore application-wide cursor to default."""
+        # Pop any override cursors set by _setup_wait_cursor or external callers
         force_restore_cursor()
 
-        # Set normal cursor on parent (main window) and dialog
-        if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)
-        self.setCursor(Qt.ArrowCursor)
-
-        logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
+        logger.debug("[ProgressDialog] Cursors restored application-wide")
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle ESC key for cancellation with improved responsiveness and save protection."""
