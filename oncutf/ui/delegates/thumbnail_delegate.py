@@ -36,6 +36,10 @@ from oncutf.config.file_types import FILETYPE_ICON_MAP, PREVIEWABLE_EXTENSIONS, 
 from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR, QLABEL_PRIMARY_TEXT
 from oncutf.config.ui.thumbnail import (
     BACKGROUND_COLOR_SELECTED as _BG_SELECTED,
+    BADGE_ICON_COLOR,
+    BADGE_ICON_SIZE,
+    BADGE_MARGIN,
+    BADGE_OPACITY,
     CROSSFADE_DURATION_MS,
     FILENAME_HEIGHT,
     FILENAME_MARGIN,
@@ -51,11 +55,13 @@ from oncutf.config.ui.thumbnail import (
     NO_PREVIEW_ICON_COLOR,
     NO_PREVIEW_ICON_OPACITY,
     NO_PREVIEW_ICON_SIZE,
+    SHIMMER_PHASE_MAX,
     SHIMMER_PHASE_STEP,
     SHIMMER_TICK_MS,
     SKELETON_BG_COLOR as _SK_BG,
     SKELETON_SHAPE_COLOR as _SK_SHAPE,
     SKELETON_SHIMMER_ALPHA,
+    TYPE_ICON_SIZE,
     VIDEO_BADGE_BACKGROUND as _VB_BG,
     VIDEO_BADGE_MARGIN,
     VIDEO_BADGE_PADDING,
@@ -117,16 +123,24 @@ class ThumbnailDelegate(QStyledItemDelegate):
     NO_PREVIEW_ICON_OPACITY = NO_PREVIEW_ICON_OPACITY
     NO_PREVIEW_ICON_COLOR = NO_PREVIEW_ICON_COLOR
 
+    # -- Badge overlay (bottom-left filetype, bottom-right LOG) ---------------
+    BADGE_ICON_SIZE = BADGE_ICON_SIZE
+    BADGE_MARGIN = BADGE_MARGIN
+    TYPE_ICON_SIZE = TYPE_ICON_SIZE
+    BADGE_OPACITY = BADGE_OPACITY
+    BADGE_ICON_COLOR = BADGE_ICON_COLOR
+
     # -- Animation timing (from config.ui.thumbnail) -------------------------
     CROSSFADE_DURATION_MS = CROSSFADE_DURATION_MS
     SHIMMER_TICK_MS = SHIMMER_TICK_MS
     SHIMMER_PHASE_STEP = SHIMMER_PHASE_STEP
+    SHIMMER_PHASE_MAX = SHIMMER_PHASE_MAX
 
     # -- File type data (from config.file_types) -----------------------------
     PREVIEWABLE_EXTENSIONS: ClassVar[frozenset[str]] = PREVIEWABLE_EXTENSIONS
 
-    # Filetype icon cache: (extension, size) -> QPixmap
-    _filetype_icon_cache: ClassVar[dict[tuple[str, int], QPixmap]] = {}
+    # Filetype icon cache: (extension, size, color) -> QPixmap
+    _filetype_icon_cache: ClassVar[dict[tuple[str, int, str], QPixmap]] = {}
 
     def __init__(self, parent: "QWidget | None" = None):
         """Initialize the thumbnail delegate.
@@ -146,6 +160,13 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self._fade_states: dict[int, tuple[float, QPixmap]] = {}
         # rows whose crossfade has completed -- never re-register these
         self._completed_fades: set[int] = set()
+
+        # Rows needing animation repaint (shimmer or crossfade) -- for targeted updates
+        self._animated_rows: set[int] = set()
+
+        # Scaled pixmap cache: (pixmap.cacheKey(), target_size) -> scaled_pixmap
+        self._scaled_cache: dict[tuple[int, tuple[int, int]], QPixmap] = {}
+        self._SCALED_CACHE_MAX = 200
 
         # Single shared timer drives both shimmer and crossfade repaints
         self._shimmer_timer = QTimer(self)
@@ -173,6 +194,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
         """
         self._fade_states.clear()
         self._completed_fades.clear()
+        self._animated_rows.clear()
+        self._scaled_cache.clear()
         self._loading_active = False
         # Stop timer if running -- it will be restarted by start_shimmer()
         if self._shimmer_timer.isActive():
@@ -236,13 +259,15 @@ class ThumbnailDelegate(QStyledItemDelegate):
             self._shimmer_timer.start()
 
     def _tick(self) -> None:
-        """Advance shimmer phase and trigger viewport repaint.
+        """Advance shimmer phase and trigger targeted viewport repaint.
 
-        Called by _shimmer_timer every SHIMMER_TICK_MS ms. Also handles
-        cleanup of completed crossfade transitions.
-
+        Only repaints items that need animation (shimmer or crossfade),
+        not the entire viewport. Modeled after the C++ oncut-lut-engine
+        approach of tracking animated rects.
         """
-        self._shimmer_phase = (self._shimmer_phase + self.SHIMMER_PHASE_STEP) % 1.0
+        self._shimmer_phase = (
+            self._shimmer_phase + self.SHIMMER_PHASE_STEP
+        ) % self.SHIMMER_PHASE_MAX
 
         # Move completed fades into _completed_fades so paint() never re-registers them
         now_ms = time.monotonic() * 1000.0
@@ -254,10 +279,20 @@ class ThumbnailDelegate(QStyledItemDelegate):
                 self._completed_fades.add(row)
         self._fade_states = still_active
 
-        # Trigger viewport repaint for visible items
+        # Targeted repaint: only update rects that were marked as animated
         parent = self.parent()
-        if parent is not None:
-            parent.viewport().update()
+        if parent is not None and self._animated_rows:
+            vp = parent.viewport()
+            rows_to_update = self._animated_rows.copy()
+            self._animated_rows.clear()
+            model = parent.model()
+            if model is not None:
+                for row in rows_to_update:
+                    index = model.index(row, 0)
+                    if index.isValid():
+                        rect = parent.visualRect(index)
+                        if rect.isValid():
+                            vp.update(rect)
 
         # Self-stop when no animation is needed
         if not self._loading_active and not self._fade_states:
@@ -368,34 +403,36 @@ class ThumbnailDelegate(QStyledItemDelegate):
             # Crossfade: skeleton fades out, thumbnail fades in
             start_ms, real_pixmap = self._fade_states[row]
             t = min(1.0, (time.monotonic() * 1000.0 - start_ms) / self.CROSSFADE_DURATION_MS)
-            orientation = self._get_orientation_from_metadata(file_item, index)
 
             painter.setOpacity(1.0 - t)
-            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, thumbnail_rect, extension)
             painter.setOpacity(t)
             self._draw_thumbnail(painter, thumbnail_rect, real_pixmap)
             painter.setOpacity(1.0)
 
             # Status icons only after fade is mostly done (avoids icon pop-in)
             show_icons = t > 0.7
+            self._animated_rows.add(row)  # needs repaint next tick
 
         elif has_real_pixmap:
             # During an active loading session: only show real pixmap for rows
             # that completed a fade. This prevents the race-condition flash where
             # the cache has the pixmap before register_fade() was called.
             if (self._loading_active or self._fade_states) and row not in self._completed_fades:
-                orientation = self._get_orientation_from_metadata(file_item, index)
-                self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+                self._draw_skeleton_placeholder(
+                    painter, skeleton_fill_rect, thumbnail_rect, extension
+                )
                 show_icons = False
+                self._animated_rows.add(row)  # needs repaint next tick
             else:
                 self._draw_thumbnail(painter, thumbnail_rect, pixmap)
                 show_icons = True
 
         elif is_previewable:
             # Loading: shimmer skeleton only
-            orientation = self._get_orientation_from_metadata(file_item, index)
-            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, orientation)
+            self._draw_skeleton_placeholder(painter, skeleton_fill_rect, thumbnail_rect, extension)
             show_icons = False
+            self._animated_rows.add(row)  # needs repaint next tick
 
         else:
             # No preview possible: permanent file-type silhouette
@@ -405,6 +442,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Status icons and video badge only when thumbnail is (or nearly) final
         if show_icons:
             self._draw_status_icons(painter, frame_rect, file_item, index)
+            # Bottom-left: filetype badge (Ready + Failed, matching C++ lut-engine)
+            self._draw_filetype_badge(painter, thumbnail_rect, extension)
+            # Bottom-right: LOG badge (future: detect LOG profile in video metadata)
+            has_log = getattr(file_item, "has_log", False)
+            self._draw_log_badge(painter, thumbnail_rect, has_log)
 
         duration = getattr(file_item, "duration", None)
         if show_icons and duration:
@@ -516,10 +558,23 @@ class ThumbnailDelegate(QStyledItemDelegate):
         thumbnail_rect: QRect,
         thumbnail_pixmap: QPixmap,
     ) -> None:
-        """Draw the thumbnail image centered within the thumbnail rect."""
-        scaled = thumbnail_pixmap.scaled(
-            thumbnail_rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
+        """Draw the thumbnail image centered within the thumbnail rect.
+
+        Uses a scaled pixmap cache to avoid expensive QPixmap.scaled()
+        on every paint() call.
+        """
+        target_size = (thumbnail_rect.width(), thumbnail_rect.height())
+        cache_key = (thumbnail_pixmap.cacheKey(), target_size)
+
+        scaled = self._scaled_cache.get(cache_key)
+        if scaled is None:
+            scaled = thumbnail_pixmap.scaled(
+                thumbnail_rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            if len(self._scaled_cache) >= self._SCALED_CACHE_MAX:
+                self._scaled_cache.clear()
+            self._scaled_cache[cache_key] = scaled
+
         x = thumbnail_rect.left() + (thumbnail_rect.width() - scaled.width()) // 2
         y = thumbnail_rect.top() + (thumbnail_rect.height() - scaled.height()) // 2
         painter.drawPixmap(x, y, scaled)
@@ -527,53 +582,65 @@ class ThumbnailDelegate(QStyledItemDelegate):
     def _draw_skeleton_placeholder(
         self,
         painter: QPainter,
-        thumbnail_rect: QRect,
-        orientation: str,
+        fill_rect: QRect,
+        shimmer_rect: QRect,
+        extension: str,
     ) -> None:
         """Draw animated shimmer skeleton for loading state.
 
-        Shows a dark base fill with a sweeping highlight gradient and an
-        orientation-aware inner shape (portrait vs landscape).
+        Matches C++ oncut-lut-engine layout:
+        1. Dark fill on fill_rect (frame interior, covers padding area)
+        2. Shimmer gradient on shimmer_rect (thumbnail area only)
+        3. Centered filetype icon on shimmer_rect
 
         Args:
             painter: QPainter
-            thumbnail_rect: Target rectangle inside the frame
-            orientation: "portrait", "landscape", or "unknown" (defaults landscape)
+            fill_rect: Full interior rect (frame minus border, includes padding)
+            shimmer_rect: Thumbnail rect (where shimmer + icon are drawn)
+            extension: Lowercase file extension for icon lookup
 
         """
         painter.setPen(Qt.NoPen)
 
-        # Base fill
+        # Base fill covers full interior (including padding area)
         painter.setBrush(QBrush(self.SKELETON_BG_COLOR))
-        painter.drawRect(thumbnail_rect)
+        painter.drawRect(fill_rect)
 
-        # Shimmer gradient: sweeps left to right based on shared phase
+        # Shimmer gradient: diagonal sweep confined to shimmer_rect.
+        # Only draw during active sweep phase (phase < 1.0).
+        # When phase >= 1.0: pause (no shimmer band visible).
         phase = self._shimmer_phase
-        tw = thumbnail_rect.width()
-        band_cx = thumbnail_rect.left() + phase * (tw + 80) - 40
-        shimmer = QLinearGradient(band_cx - 50, 0.0, band_cx + 50, 0.0)
-        shimmer.setColorAt(0.0, QColor(255, 255, 255, 0))
-        shimmer.setColorAt(0.5, QColor(255, 255, 255, self.SKELETON_SHIMMER_ALPHA))
-        shimmer.setColorAt(1.0, QColor(255, 255, 255, 0))
-        painter.setBrush(QBrush(shimmer))
-        painter.drawRect(thumbnail_rect)
+        if phase < 1.0:
+            # Diagonal gradient: bottom-left to top-right with shallow angle (~-25deg)
+            # Matches C++ lut-engine: start(left, bottom) -> end(right, top + 0.35*h)
+            start_x = float(shimmer_rect.left())
+            start_y = float(shimmer_rect.bottom())
+            end_x = float(shimmer_rect.right())
+            end_y = float(shimmer_rect.top() + shimmer_rect.height() * 0.35)
 
-        # Orientation-aware inner shape -- 16:9 for landscape, 9:16 for portrait.
-        # Proportions match a typical video/photo crop so the hint looks like
-        # the content that will replace it. Positioned centred in the skeleton fill.
-        th = thumbnail_rect.height()
-        if orientation == "portrait":
-            # 9:16 portrait crop, ~75% of available width
-            iw = int(tw * 0.75)
-            ih = min(int(iw * 16 / 9), int(th * 0.97))
-        else:
-            # 16:9 landscape crop, ~88% of available width
-            iw = int(tw * 0.88)
-            ih = int(iw * 9 / 16)
-        ix = thumbnail_rect.left() + (thumbnail_rect.width() - iw) // 2
-        iy = thumbnail_rect.top() + (thumbnail_rect.height() - ih) // 2
-        painter.setBrush(QBrush(self.SKELETON_SHAPE_COLOR))
-        painter.drawRoundedRect(QRect(ix, iy, iw, ih), 3, 3)
+            shimmer = QLinearGradient(start_x, start_y, end_x, end_y)
+
+            band_half = 0.14  # band half-width
+            transparent = QColor(255, 255, 255, 0)
+            highlight = QColor(255, 255, 255, self.SKELETON_SHIMMER_ALPHA)
+
+            shimmer.setColorAt(0.0, transparent)
+            shimmer.setColorAt(max(0.001, phase - band_half), transparent)
+            shimmer.setColorAt(min(max(0.002, phase), 0.998), highlight)
+            shimmer.setColorAt(min(0.999, phase + band_half), transparent)
+            shimmer.setColorAt(1.0, transparent)
+
+            painter.setBrush(QBrush(shimmer))
+            painter.drawRect(shimmer_rect)
+
+        # Centered filetype icon (dimmed, like C++ lut-engine loading state)
+        icon_px = self._get_filetype_icon(extension, self.TYPE_ICON_SIZE, "#808080")
+        if not icon_px.isNull():
+            ix = shimmer_rect.left() + (shimmer_rect.width() - icon_px.width()) // 2
+            iy = shimmer_rect.top() + (shimmer_rect.height() - icon_px.height()) // 2
+            painter.setOpacity(0.35)
+            painter.drawPixmap(ix, iy, icon_px)
+            painter.setOpacity(1.0)
 
     def _draw_no_preview_placeholder(
         self,
@@ -605,80 +672,89 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter.drawPixmap(ix, iy, icon_px)
             painter.setOpacity(1.0)
 
-    def _get_orientation_from_metadata(self, file_item: "FileItem", index: "QModelIndex") -> str:
-        """Return orientation hint from cached metadata if available.
+    def _draw_filetype_badge(
+        self,
+        painter: QPainter,
+        thumbnail_rect: QRect,
+        extension: str,
+    ) -> None:
+        """Draw file-type icon badge at bottom-left of thumbnail area.
+
+        Shown on Ready and Failed thumbnails, matching the C++ lut-engine
+        media-type badge layout.
 
         Args:
-            file_item: FileItem to inspect
-            index: Model index used to reach the metadata cache
-
-        Returns:
-            "portrait" if height > width, "landscape" otherwise
+            painter: QPainter
+            thumbnail_rect: Thumbnail rect (badge anchored to its bottom-left)
+            extension: Lowercase file extension for icon lookup
 
         """
-        try:
-            model = index.model() if index is not None else None
-            if model is None or not hasattr(model, "parent_window"):
-                return "landscape"
-            parent_window = model.parent_window
-            if parent_window is None or not hasattr(parent_window, "metadata_cache"):
-                return "landscape"
-            entry = parent_window.metadata_cache.get_entry(file_item.full_path)
-            if entry is None or not entry.data:
-                return "landscape"
+        icon_px = self._get_filetype_icon(extension, self.BADGE_ICON_SIZE, self.BADGE_ICON_COLOR)
+        if icon_px.isNull():
+            return
 
-            width_keys = [
-                "EXIF:ImageWidth",
-                "File:ImageWidth",
-                "PNG:ImageWidth",
-                "ExifImageWidth",
-                "PixelXDimension",
-            ]
-            height_keys = [
-                "EXIF:ImageHeight",
-                "File:ImageHeight",
-                "PNG:ImageHeight",
-                "ExifImageHeight",
-                "PixelYDimension",
-            ]
-            width: int | None = None
-            height: int | None = None
-            for key in width_keys:
-                if key in entry.data:
-                    try:
-                        width = int(entry.data[key])
-                        break
-                    except (ValueError, TypeError):
-                        pass
-            for key in height_keys:
-                if key in entry.data:
-                    try:
-                        height = int(entry.data[key])
-                        break
-                    except (ValueError, TypeError):
-                        pass
+        bx = thumbnail_rect.left() + self.BADGE_MARGIN
+        by = thumbnail_rect.bottom() - self.BADGE_ICON_SIZE - self.BADGE_MARGIN
 
-            if width and height:
-                return "portrait" if height > width else "landscape"
-        except Exception:
-            pass
-        return "landscape"
+        painter.setOpacity(self.BADGE_OPACITY)
+        painter.drawPixmap(bx, by, icon_px)
+        painter.setOpacity(1.0)
+
+    def _draw_log_badge(
+        self,
+        painter: QPainter,
+        thumbnail_rect: QRect,
+        has_log: bool,
+    ) -> None:
+        """Draw LOG badge at bottom-right of thumbnail area.
+
+        Placeholder for future LOG profile detection. Renders a small "L"
+        indicator when the file is detected as having a LOG curve.
+
+        Args:
+            painter: QPainter
+            thumbnail_rect: Thumbnail rect (badge anchored to its bottom-right)
+            has_log: Whether LOG profile is detected for this file
+
+        """
+        if not has_log:
+            return
+
+        badge_size = self.BADGE_ICON_SIZE
+        bx = thumbnail_rect.right() - badge_size - self.BADGE_MARGIN
+        by = thumbnail_rect.bottom() - badge_size - self.BADGE_MARGIN
+        badge_rect = QRectF(bx, by, badge_size, badge_size)
+
+        # Semi-transparent background pill
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor(0, 0, 0, 140)))
+        painter.setOpacity(self.BADGE_OPACITY)
+        painter.drawRoundedRect(badge_rect, 3, 3)
+
+        # "L" text
+        font = QFont()
+        font.setPointSize(8)
+        font.setBold(True)
+        painter.setFont(font)
+        painter.setPen(QColor(255, 255, 255))
+        painter.drawText(badge_rect, Qt.AlignCenter, "L")
+        painter.setOpacity(1.0)
 
     @classmethod
-    def _get_filetype_icon(cls, extension: str, size: int) -> QPixmap:
+    def _get_filetype_icon(cls, extension: str, size: int, color: str = "") -> QPixmap:
         """Load and return a filetype SVG icon at the requested size, with caching.
-
-        Icons are colorized with NO_PREVIEW_ICON_COLOR for a muted appearance.
 
         Args:
             extension: Lowercase file extension without leading dot
             size: Icon size in pixels (square)
+            color: CSS hex color string for tinting (default: NO_PREVIEW_ICON_COLOR)
 
         Returns:
             QPixmap of the icon, or null QPixmap on failure
 
         """
-        cache_key = (extension, size)
+        tint = color or cls.NO_PREVIEW_ICON_COLOR
+        cache_key = (extension, size, tint)
         if cache_key in cls._filetype_icon_cache:
             return cls._filetype_icon_cache[cache_key]
 
@@ -688,7 +764,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         if not svg_path.exists():
             svg_path = icons_dir / "description.svg"
 
-        pixmap = cls._render_svg_icon(svg_path, size, cls.NO_PREVIEW_ICON_COLOR)
+        pixmap = cls._render_svg_icon(svg_path, size, tint)
         cls._filetype_icon_cache[cache_key] = pixmap
         return pixmap
 

@@ -1239,6 +1239,41 @@ class ThumbnailViewportWidget(QWidget):
             if cached is not None:
                 self._delegate.mark_row_completed(row)
 
+    def _mark_visible_cached_rows_completed(self) -> None:
+        """Mark cached rows as completed for currently visible items only.
+
+        Lightweight version of _mark_cached_rows_completed() that only checks
+        items in the current viewport. Called on scroll to fix stuck shimmer
+        for cached thumbnails that scroll into view.
+        """
+        manager = self._controller._thumbnail_manager
+        if manager is None:
+            return
+
+        viewport_rect = self._list_view.viewport().rect()
+        if not viewport_rect.isValid():
+            return
+
+        row_count = self._model.rowCount()
+        for row in range(row_count):
+            # Skip already-completed rows
+            if row in self._delegate._completed_fades:
+                continue
+
+            index = self._model.index(row, 0)
+            item_rect = self._list_view.visualRect(index)
+
+            if not viewport_rect.intersects(item_rect):
+                continue
+
+            file_item = index.data(Qt.UserRole)
+            if file_item is None:
+                continue
+
+            cached = manager._check_cache(file_item.full_path, 128)
+            if cached is not None:
+                self._delegate.mark_row_completed(row)
+
     def _get_visible_file_paths(self) -> list[str]:
         """Get list of file paths for currently visible thumbnails.
 
@@ -1289,8 +1324,9 @@ class ThumbnailViewportWidget(QWidget):
     def _process_scroll_change(self) -> None:
         """Process scroll change after debounce delay.
 
-        Only re-queues thumbnails if the visible range has changed significantly
-        (more than 20% difference) to avoid unnecessary re-queuing.
+        Always marks cached rows as completed for newly visible items to prevent
+        stuck shimmer on items that are already in cache. Re-queues only when
+        visible range has changed significantly (>50% new items).
         """
         visible_paths = self._get_visible_file_paths()
         if not visible_paths:
@@ -1299,7 +1335,13 @@ class ThumbnailViewportWidget(QWidget):
         # Convert to set for efficient comparison
         visible_set = set(visible_paths)
 
-        # Check if visible range changed significantly
+        # ALWAYS mark cached rows completed for visible items.
+        # This is the key fix for "stuck shimmer" after scroll -- cached items
+        # that scroll into view need to be in _completed_fades or the paint()
+        # state machine will draw shimmer forever.
+        self._mark_visible_cached_rows_completed()
+
+        # Check if visible range changed enough to warrant re-prioritizing
         if self._last_visible_range is not None:
             # Calculate overlap
             intersection = visible_set & self._last_visible_range

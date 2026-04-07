@@ -8,7 +8,7 @@
 
 ---
 
-## 🚀 Quick Links
+## Quick Links
 
 - **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & layer structure
 - **[Master Plan](docs/2025_12_19.md)** — Current status and next steps

@@ -28,6 +28,13 @@ INDICATOR_MARGIN = 8  # Distance from corners of frame
 VIDEO_BADGE_MARGIN = 4  # Distance from bottom-right corner
 VIDEO_BADGE_PADDING = 4  # Padding inside badge
 
+# File-type / status badges (overlays on thumbnail area)
+BADGE_ICON_SIZE = 16  # Bottom-left filetype, bottom-right LOG badge (px)
+BADGE_MARGIN = 3  # Distance from thumbnail rect edges (px)
+TYPE_ICON_SIZE = 36  # Centered file-type icon during loading (px)
+BADGE_OPACITY = 0.9  # Overlay badge opacity (0.0 - 1.0)
+BADGE_ICON_COLOR = "#ffffff"  # White overlay for badges
+
 # =====================================================================
 # Colors -- frame & selection
 # =====================================================================
@@ -67,5 +74,8 @@ NO_PREVIEW_ICON_COLOR = "#4a5568"  # Dark gray-blue for contrast with light bg
 
 CROSSFADE_DURATION_MS = 500.0  # Skeleton -> thumbnail fade (ms)
 
-SHIMMER_TICK_MS = 40  # Timer interval (~25 fps)
-SHIMMER_PHASE_STEP = 0.04  # Phase advance per tick (1.0 = full sweep)
+SHIMMER_TICK_MS = 33  # Timer interval (~30 fps)
+SHIMMER_PHASE_STEP = 0.025  # Phase advance per tick
+# Phase range: 0.0 -> 1.0 = diagonal sweep, 1.0 -> SHIMMER_PHASE_MAX = pause.
+# At 33ms tick and 0.025 step: sweep ~1.3s, pause ~0.66s, total cycle ~2s.
+SHIMMER_PHASE_MAX = 1.5  # Phase wraps at this value (values > 1.0 = pause)
