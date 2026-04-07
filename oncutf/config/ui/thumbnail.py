@@ -63,10 +63,41 @@ SKELETON_SHIMMER_ALPHA = 28  # Shimmer highlight alpha (0-255)
 # Colors -- no-preview placeholder (permanent state)
 # =====================================================================
 
-NO_PREVIEW_BG_COLOR = (210, 210, 210)  # Light grey background for non-image files
+NO_PREVIEW_BG_COLOR = (48, 50, 56)  # Dark background for non-previewable files
 NO_PREVIEW_ICON_SIZE = 48  # Filetype silhouette size (px)
 NO_PREVIEW_ICON_OPACITY = 0.88  # 88% opacity for better visibility
-NO_PREVIEW_ICON_COLOR = "#4a5568"  # Dark gray-blue for contrast with light bg
+NO_PREVIEW_ICON_COLOR = "#6b7280"  # Muted gray for dark background
+
+# =====================================================================
+# Colors -- error placeholder (failed thumbnail generation)
+# =====================================================================
+
+ERROR_BG_COLOR = (42, 44, 50)  # Dark fill matching skeleton
+ERROR_ICON_SIZE = 48  # Warning triangle size (px)
+ERROR_ICON_COLOR = "#e06060"  # Muted red warning
+
+# =====================================================================
+# Loading type icon (centered during shimmer)
+# =====================================================================
+
+LOADING_TYPE_ICON_SIZE = 48  # Same as no-preview
+LOADING_TYPE_ICON_OPACITY = 0.35  # Subtle hint during loading
+LOADING_TYPE_ICON_COLOR = "#6b7280"  # Muted gray
+
+# =====================================================================
+# Badge opacity (active vs inactive)
+# =====================================================================
+
+BADGE_ACTIVE_OPACITY = 0.85
+BADGE_INACTIVE_OPACITY = 0.25
+
+# =====================================================================
+# LOG profile badge (bottom-right, video files only)
+# =====================================================================
+
+LOG_BADGE_COLOR_ACTIVE = "#4ade80"  # Green for detected LOG profile
+LOG_BADGE_COLOR_INACTIVE = "#6b7280"  # Gray for no LOG
+LOG_BADGE_FONT_SIZE = 7  # Tiny label font size
 
 # =====================================================================
 # Animation timing

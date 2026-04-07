@@ -494,6 +494,7 @@ class ThumbnailViewportWidget(QWidget):
 
         # Connect controller signals for thumbnail updates
         self._controller.thumbnail_ready.connect(self._on_thumbnail_ready)
+        self._controller.thumbnail_error.connect(self._on_thumbnail_error)
         self._controller.thumbnail_progress.connect(self._on_thumbnail_progress)
         self._controller.viewport_mode_changed.connect(
             lambda mode: self.viewport_mode_changed.emit(mode)
@@ -1466,6 +1467,17 @@ class ThumbnailViewportWidget(QWidget):
                 return
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations
+
+    def _on_thumbnail_error(self, file_path: str) -> None:
+        """Handle thumbnail_error signal -- mark file as failed in delegate."""
+        if not self._model or not self._model.files:
+            return
+        self._delegate.register_error(file_path)
+        for row, file_item in enumerate(self._model.files):
+            if file_item.full_path == file_path:
+                index = self._model.index(row, 0)
+                self._list_view.update(index)
+                return
 
     def refresh_thumbnail(self, file_path: str, pixmap: "QPixmap") -> None:
         """Replace the displayed thumbnail for a file immediately (no async reload).

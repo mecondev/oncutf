@@ -223,6 +223,7 @@ module = [
     "oncutf.controllers.ui.signal_controller",
     "oncutf.controllers.module_drag_drop_manager",
     "oncutf.controllers.header_interaction_controller",
+    "oncutf.controllers.thumbnail_viewport_controller",
 
     # Qt-heavy models
     "oncutf.models.file_table.*",

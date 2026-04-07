@@ -17,6 +17,7 @@ Usage:
 Note: VideoThumbnailProvider requires FFmpeg installed on system.
 """
 
+import os
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
@@ -30,6 +31,16 @@ from oncutf.config.file_types import IMAGE_DOT_EXTENSIONS, RAW_DOT_EXTENSIONS, V
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+# Windows: hide console window for subprocess calls
+CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
+
+
+def _subprocess_kwargs() -> dict[str, int]:
+    """Return extra kwargs for subprocess calls (Windows console suppression)."""
+    if os.name == "nt":
+        return {"creationflags": CREATE_NO_WINDOW}
+    return {}
 
 
 class ThumbnailGenerationError(Exception):
@@ -488,6 +499,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 text=True,
                 timeout=10,
                 check=True,
+                **_subprocess_kwargs(),
             )
 
             duration_str = result.stdout.strip()
@@ -509,6 +521,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
                     text=True,
                     timeout=10,
                     check=True,
+                    **_subprocess_kwargs(),
                 )
                 duration_str = result.stdout.strip()
 
@@ -624,6 +637,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
                 capture_output=True,
                 timeout=15,
                 check=True,
+                **_subprocess_kwargs(),
             )
 
             # Load image from bytes (JPEG format)

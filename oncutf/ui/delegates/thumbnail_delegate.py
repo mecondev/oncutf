@@ -41,6 +41,9 @@ from oncutf.config.ui.thumbnail import (
     BADGE_MARGIN,
     BADGE_OPACITY,
     CROSSFADE_DURATION_MS,
+    ERROR_BG_COLOR as _ERR_BG,
+    ERROR_ICON_COLOR,
+    ERROR_ICON_SIZE,
     FILENAME_HEIGHT,
     FILENAME_MARGIN,
     FRAME_BORDER_WIDTH,
@@ -123,6 +126,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
     NO_PREVIEW_ICON_OPACITY = NO_PREVIEW_ICON_OPACITY
     NO_PREVIEW_ICON_COLOR = NO_PREVIEW_ICON_COLOR
 
+    # Error placeholder
+    ERROR_BG_COLOR = QColor(*_ERR_BG)
+    ERROR_ICON_SIZE = ERROR_ICON_SIZE
+    ERROR_ICON_COLOR = ERROR_ICON_COLOR
+
     # -- Badge overlay (bottom-left filetype, bottom-right LOG) ---------------
     BADGE_ICON_SIZE = BADGE_ICON_SIZE
     BADGE_MARGIN = BADGE_MARGIN
@@ -164,6 +172,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # Rows needing animation repaint (shimmer or crossfade) -- for targeted updates
         self._animated_rows: set[int] = set()
 
+        # Paths that failed thumbnail generation (error state)
+        self._failed_paths: set[str] = set()
+
         # Scaled pixmap cache: (pixmap.cacheKey(), target_size) -> scaled_pixmap
         self._scaled_cache: dict[tuple[int, tuple[int, int]], QPixmap] = {}
         self._SCALED_CACHE_MAX = 200
@@ -196,10 +207,15 @@ class ThumbnailDelegate(QStyledItemDelegate):
         self._completed_fades.clear()
         self._animated_rows.clear()
         self._scaled_cache.clear()
+        self._failed_paths.clear()
         self._loading_active = False
         # Stop timer if running -- it will be restarted by start_shimmer()
         if self._shimmer_timer.isActive():
             self._shimmer_timer.stop()
+
+    def register_error(self, file_path: str) -> None:
+        """Mark *file_path* as failed so the delegate shows an error state."""
+        self._failed_paths.add(file_path)
 
     def start_shimmer(self) -> None:
         """Start shimmer animation for loading state (called from viewport).
@@ -388,6 +404,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         has_real_pixmap = isinstance(pixmap, QPixmap) and not pixmap.isNull()
         extension = file_item.extension.lower()
         is_previewable = extension in self.PREVIEWABLE_EXTENSIONS
+        is_failed = file_item.full_path in self._failed_paths
 
         # Skeleton fills the full frame interior (border inset only, includes padding).
         # This ensures the dark bg covers the frame padding area so no light-colored
@@ -399,7 +416,12 @@ class ThumbnailDelegate(QStyledItemDelegate):
             -self.FRAME_BORDER_WIDTH,
         )
 
-        if row in self._fade_states:
+        if is_failed and not has_real_pixmap:
+            # Error: thumbnail generation failed -- show error placeholder
+            self._draw_error_placeholder(painter, skeleton_fill_rect, thumbnail_rect, extension)
+            show_icons = True
+
+        elif row in self._fade_states:
             # Crossfade: skeleton fades out, thumbnail fades in
             start_ms, real_pixmap = self._fade_states[row]
             t = min(1.0, (time.monotonic() * 1000.0 - start_ms) / self.CROSSFADE_DURATION_MS)
@@ -669,6 +691,35 @@ class ThumbnailDelegate(QStyledItemDelegate):
             ix = thumbnail_rect.left() + (thumbnail_rect.width() - icon_px.width()) // 2
             iy = thumbnail_rect.top() + (thumbnail_rect.height() - icon_px.height()) // 2
             painter.setOpacity(self.NO_PREVIEW_ICON_OPACITY)
+            painter.drawPixmap(ix, iy, icon_px)
+            painter.setOpacity(1.0)
+
+    def _draw_error_placeholder(
+        self,
+        painter: QPainter,
+        fill_rect: QRect,
+        thumbnail_rect: QRect,
+        extension: str,
+    ) -> None:
+        """Draw error state: dark bg with a muted-red warning triangle.
+
+        Args:
+            painter: QPainter
+            fill_rect: Full interior rect (including padding)
+            thumbnail_rect: Inner thumbnail rect
+            extension: Lowercase file extension for filetype icon
+
+        """
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(self.ERROR_BG_COLOR))
+        painter.drawRect(fill_rect)
+
+        # Warning triangle icon (Material Design "warning" codepoint)
+        icon_px = self._get_filetype_icon(extension, self.ERROR_ICON_SIZE, self.ERROR_ICON_COLOR)
+        if not icon_px.isNull():
+            ix = thumbnail_rect.left() + (thumbnail_rect.width() - icon_px.width()) // 2
+            iy = thumbnail_rect.top() + (thumbnail_rect.height() - icon_px.height()) // 2
+            painter.setOpacity(0.7)
             painter.drawPixmap(ix, iy, icon_px)
             painter.setOpacity(1.0)
 

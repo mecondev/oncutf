@@ -74,6 +74,7 @@ class ThumbnailViewportController(QObject):
     # Signals for UI updates
     thumbnail_ready = pyqtSignal(str, QPixmap)  # file_path, pixmap
     thumbnail_progress = pyqtSignal(int, int)  # completed, total
+    thumbnail_error = pyqtSignal(str)  # file_path that failed
     status_update = pyqtSignal(str)  # status message
     files_reordered = pyqtSignal()  # manual order changed
     viewport_mode_changed = pyqtSignal(str)  # "manual" or "sorted"
@@ -503,6 +504,7 @@ class ThumbnailViewportController(QObject):
         logger.debug(
             "[ThumbnailViewportController] Thumbnail error for %s: %s", file_path, error_msg
         )
+        self.thumbnail_error.emit(file_path)
         if "FFmpeg is not available" in error_msg and not self._ffmpeg_error_shown:
             self._ffmpeg_error_shown = True
             self.status_update.emit(
