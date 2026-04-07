@@ -361,7 +361,7 @@ class VideoThumbnailProvider(ThumbnailProvider):
         else:
             # Boot already verified ffprobe is in system PATH; resolve it now.
             system_ffprobe = shutil.which("ffprobe")
-            self.ffprobe_path = system_ffprobe if system_ffprobe else "ffprobe"
+            self.ffprobe_path = system_ffprobe or "ffprobe"
         logger.debug("Using ffprobe at: %s", self.ffprobe_path)
 
     def supports(self, file_path: str) -> bool:
