@@ -199,7 +199,11 @@ def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | No
             timer_type=TimerType.GENERIC,
         )
 
-        # Add timeout safety fallback (10 seconds)
+        # Add timeout safety fallback
+        from oncutf.config.app import DEBUG_FRESH_START
+
+        init_timeout = 30000 if DEBUG_FRESH_START else 10000
+
         def timeout_fallback() -> None:
             """Emergency fallback if initialization hangs."""
             if not init_state["window"]:
@@ -210,7 +214,7 @@ def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | No
 
         get_timer_manager().schedule(
             timeout_fallback,
-            delay=10000,  # 10 seconds
+            delay=init_timeout,
             timer_type=TimerType.GENERIC,
         )
 
