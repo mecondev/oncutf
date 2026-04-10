@@ -39,9 +39,12 @@ BADGE_ICON_COLOR = "#ffffff"  # White overlay for badges
 # Colors -- frame & selection
 # =====================================================================
 
-FRAME_COLOR_NORMAL = (200, 200, 200)  # RGB
+FRAME_COLOR_NORMAL = (100, 100, 100)  # RGB
 FRAME_COLOR_HOVER = (100, 150, 255)  # RGB
 FRAME_COLOR_SELECTED = (50, 120, 255)  # RGB
+FRAME_BG_COLOR_DEFAULT = (100, 100, 100)  # RGB -- default frame fill (no color tag)
+FRAME_BG_OPACITY_NORMAL = 0.4  # Frame fill opacity when unselected
+FRAME_BG_OPACITY_SELECTED = 0.7  # Frame fill opacity when selected
 BACKGROUND_COLOR_SELECTED = (50, 120, 255, 40)  # RGBA
 
 # =====================================================================
@@ -75,6 +78,7 @@ NO_PREVIEW_ICON_COLOR = "#6b7280"  # Muted gray for dark background
 ERROR_BG_COLOR = (42, 44, 50)  # Dark fill matching skeleton
 ERROR_ICON_SIZE = 48  # Warning triangle size (px)
 ERROR_ICON_COLOR = "#e06060"  # Muted red warning
+ERROR_ICON_OPACITY = 0.7  # Error icon draw opacity
 
 # =====================================================================
 # Loading type icon (centered during shimmer)
@@ -98,6 +102,14 @@ BADGE_INACTIVE_OPACITY = 0.25
 LOG_BADGE_COLOR_ACTIVE = "#4ade80"  # Green for detected LOG profile
 LOG_BADGE_COLOR_INACTIVE = "#6b7280"  # Gray for no LOG
 LOG_BADGE_FONT_SIZE = 7  # Tiny label font size
+LOG_BADGE_BG = (0, 0, 0, 140)  # RGBA -- semi-transparent pill behind "L"
+LOG_BADGE_TEXT = (255, 255, 255)  # RGB -- "L" text color
+
+# =====================================================================
+# Font sizes (pt)
+# =====================================================================
+
+THUMBNAIL_FONT_SIZE = 8  # Badge text + filename font size (pt)
 
 # =====================================================================
 # Animation timing

@@ -43,9 +43,13 @@ from oncutf.config.ui.thumbnail import (
     CROSSFADE_DURATION_MS,
     ERROR_BG_COLOR as _ERR_BG,
     ERROR_ICON_COLOR,
+    ERROR_ICON_OPACITY,
     ERROR_ICON_SIZE,
     FILENAME_HEIGHT,
     FILENAME_MARGIN,
+    FRAME_BG_COLOR_DEFAULT as _FRAME_BG_DEFAULT,
+    FRAME_BG_OPACITY_NORMAL,
+    FRAME_BG_OPACITY_SELECTED,
     FRAME_BORDER_WIDTH,
     FRAME_COLOR_HOVER as _FC_HOVER,
     FRAME_COLOR_NORMAL as _FC_NORMAL,
@@ -54,6 +58,10 @@ from oncutf.config.ui.thumbnail import (
     HASH_ICON_SIZE,
     INDICATOR_ICON_SIZE,
     INDICATOR_MARGIN,
+    LOADING_TYPE_ICON_COLOR,
+    LOADING_TYPE_ICON_OPACITY,
+    LOG_BADGE_BG as _LOG_BG,
+    LOG_BADGE_TEXT as _LOG_TEXT,
     NO_PREVIEW_BG_COLOR as _NP_BG,
     NO_PREVIEW_ICON_COLOR,
     NO_PREVIEW_ICON_OPACITY,
@@ -64,6 +72,7 @@ from oncutf.config.ui.thumbnail import (
     SKELETON_BG_COLOR as _SK_BG,
     SKELETON_SHAPE_COLOR as _SK_SHAPE,
     SKELETON_SHIMMER_ALPHA,
+    THUMBNAIL_FONT_SIZE,
     TYPE_ICON_SIZE,
     VIDEO_BADGE_BACKGROUND as _VB_BG,
     VIDEO_BADGE_MARGIN,
@@ -111,6 +120,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
     FRAME_COLOR_NORMAL = QColor(*_FC_NORMAL)
     FRAME_COLOR_HOVER = QColor(*_FC_HOVER)
     FRAME_COLOR_SELECTED = QColor(*_FC_SELECTED)
+    FRAME_BG_COLOR_DEFAULT = QColor(*_FRAME_BG_DEFAULT)
+    FRAME_BG_OPACITY_NORMAL = FRAME_BG_OPACITY_NORMAL
+    FRAME_BG_OPACITY_SELECTED = FRAME_BG_OPACITY_SELECTED
     BACKGROUND_COLOR_SELECTED = QColor(*_BG_SELECTED)
     VIDEO_BADGE_BACKGROUND = QColor(*_VB_BG)
     VIDEO_BADGE_TEXT = QColor(*_VB_TEXT)
@@ -130,6 +142,18 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ERROR_BG_COLOR = QColor(*_ERR_BG)
     ERROR_ICON_SIZE = ERROR_ICON_SIZE
     ERROR_ICON_COLOR = ERROR_ICON_COLOR
+    ERROR_ICON_OPACITY = ERROR_ICON_OPACITY
+
+    # LOG badge
+    LOG_BADGE_BG = QColor(*_LOG_BG)
+    LOG_BADGE_TEXT = QColor(*_LOG_TEXT)
+
+    # Loading type icon
+    LOADING_TYPE_ICON_OPACITY = LOADING_TYPE_ICON_OPACITY
+    LOADING_TYPE_ICON_COLOR = LOADING_TYPE_ICON_COLOR
+
+    # Font
+    THUMBNAIL_FONT_SIZE = THUMBNAIL_FONT_SIZE
 
     # -- Badge overlay (bottom-left filetype, bottom-right LOG) ---------------
     BADGE_ICON_SIZE = BADGE_ICON_SIZE
@@ -562,13 +586,15 @@ class ThumbnailDelegate(QStyledItemDelegate):
         if is_hover and not is_selected:
             border_color = self.FRAME_COLOR_HOVER
 
-        background_color = QColor(255, 255, 255)
+        background_color = QColor(self.FRAME_BG_COLOR_DEFAULT)
         if getattr(file_item, "color", "none") != "none":
             color_value = QColor(file_item.color)
             if color_value.isValid():
                 background_color = color_value
 
-        background_color.setAlphaF(0.7 if is_selected else 0.4)
+        background_color.setAlphaF(
+            self.FRAME_BG_OPACITY_SELECTED if is_selected else self.FRAME_BG_OPACITY_NORMAL
+        )
 
         painter.setPen(QPen(border_color, self.FRAME_BORDER_WIDTH))
         painter.setBrush(QBrush(background_color))
@@ -656,11 +682,13 @@ class ThumbnailDelegate(QStyledItemDelegate):
             painter.drawRect(shimmer_rect)
 
         # Centered filetype icon (dimmed, like C++ lut-engine loading state)
-        icon_px = self._get_filetype_icon(extension, self.TYPE_ICON_SIZE, "#808080")
+        icon_px = self._get_filetype_icon(
+            extension, self.TYPE_ICON_SIZE, self.LOADING_TYPE_ICON_COLOR
+        )
         if not icon_px.isNull():
             ix = shimmer_rect.left() + (shimmer_rect.width() - icon_px.width()) // 2
             iy = shimmer_rect.top() + (shimmer_rect.height() - icon_px.height()) // 2
-            painter.setOpacity(0.35)
+            painter.setOpacity(self.LOADING_TYPE_ICON_OPACITY)
             painter.drawPixmap(ix, iy, icon_px)
             painter.setOpacity(1.0)
 
@@ -719,7 +747,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         if not icon_px.isNull():
             ix = thumbnail_rect.left() + (thumbnail_rect.width() - icon_px.width()) // 2
             iy = thumbnail_rect.top() + (thumbnail_rect.height() - icon_px.height()) // 2
-            painter.setOpacity(0.7)
+            painter.setOpacity(self.ERROR_ICON_OPACITY)
             painter.drawPixmap(ix, iy, icon_px)
             painter.setOpacity(1.0)
 
@@ -778,16 +806,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         # Semi-transparent background pill
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(QColor(0, 0, 0, 140)))
+        painter.setBrush(QBrush(self.LOG_BADGE_BG))
         painter.setOpacity(self.BADGE_OPACITY)
         painter.drawRoundedRect(badge_rect, 3, 3)
 
         # "L" text
         font = QFont()
-        font.setPointSize(8)
+        font.setPointSize(self.THUMBNAIL_FONT_SIZE)
         font.setBold(True)
         painter.setFont(font)
-        painter.setPen(QColor(255, 255, 255))
+        painter.setPen(self.LOG_BADGE_TEXT)
         painter.drawText(badge_rect, Qt.AlignCenter, "L")
         painter.setOpacity(1.0)
 
@@ -950,7 +978,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         # Calculate text size
         font = QFont()
-        font.setPointSize(8)
+        font.setPointSize(self.THUMBNAIL_FONT_SIZE)
         font.setBold(True)
         metrics = QFontMetrics(font)
         text_width = metrics.horizontalAdvance(duration_text)
@@ -1005,7 +1033,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         # Use smaller font for filename
         font = painter.font()
-        font.setPointSize(8)
+        font.setPointSize(self.THUMBNAIL_FONT_SIZE)
         painter.setFont(font)
 
         # Draw text with word wrap and elision
