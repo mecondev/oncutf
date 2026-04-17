@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from oncutf.domain.metadata import MetadataModeDecision
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -60,18 +61,21 @@ class MetadataShortcutHandler:
     # Mode Determination Methods
     # =========================================================================
 
-    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> MetadataModeDecision:
         """Determines whether to use extended mode based on modifier keys.
 
         Args:
             modifier_state: Qt.KeyboardModifiers to use, or None for current state
 
         Returns:
-            tuple: (skip_metadata, use_extended)
+            MetadataModeDecision with semantics:
 
             - skip_metadata = True  -> No metadata scan (no modifiers)
             - skip_metadata = False & use_extended = False -> Fast scan (Ctrl)
             - skip_metadata = False & use_extended = True  -> Extended scan (Ctrl+Shift)
+
+            NamedTuple-based, so existing tuple-unpacking call sites
+            (``skip, ext = ...``) continue to work unchanged.
 
         """
         from PyQt5.QtCore import Qt
@@ -103,7 +107,7 @@ class MetadataShortcutHandler:
             use_extended,
         )
 
-        return skip_metadata, use_extended
+        return MetadataModeDecision(skip_metadata=skip_metadata, use_extended=use_extended)
 
     def should_use_extended_metadata(self, modifier_state: Any = None) -> bool:
         """Returns True if Ctrl+Shift are both held.

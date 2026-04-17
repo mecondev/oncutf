@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from oncutf.controllers.protocols import MetadataExporterProtocol
     from oncutf.core.metadata import UnifiedMetadataManagerProtocol
     from oncutf.core.metadata.structured_manager import StructuredMetadataManager
+    from oncutf.domain.metadata import MetadataModeDecision
     from oncutf.models.file_item import FileItem
 
 logger = logging.getLogger(__name__)
@@ -242,26 +243,30 @@ class MetadataController:
     # Metadata Configuration
     # -------------------------------------------------------------------------
 
-    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> MetadataModeDecision:
         """Determine metadata mode based on keyboard modifiers.
 
-        Returns (load_metadata, use_extended) based on modifier state:
-        - Shift only: (True, False) - Load fast metadata
-        - Ctrl+Shift: (True, True) - Load extended metadata
-        - Otherwise: (False, False) - No metadata loading
+        Returns a :class:`MetadataModeDecision` describing the scan to run:
+
+        - ``skip_metadata=True``: no metadata scan (no Ctrl).
+        - ``skip_metadata=False, use_extended=False``: fast scan (Ctrl).
+        - ``skip_metadata=False, use_extended=True``: extended scan (Ctrl+Shift).
+
+        The result is a NamedTuple, so existing call sites that perform
+        tuple unpacking (``skip, ext = ...``) continue to work.
 
         Args:
             modifier_state: Qt.KeyboardModifiers to use, or None for current state
 
         Returns:
-            tuple: (load_metadata: bool, use_extended: bool)
+            MetadataModeDecision: Named decision describing the scan mode.
 
         """
         result = self._unified_metadata_mgr.determine_metadata_mode(modifier_state)
         logger.debug(
-            "[MetadataController] determine_metadata_mode: load=%s, extended=%s",
-            result[0],
-            result[1],
+            "[MetadataController] determine_metadata_mode: skip=%s, extended=%s",
+            result.skip_metadata,
+            result.use_extended,
         )
         return result
 

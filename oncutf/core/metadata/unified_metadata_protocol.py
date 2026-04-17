@@ -25,6 +25,8 @@ Usage:
 
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+from oncutf.domain.metadata import MetadataModeDecision
+
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
 
@@ -75,14 +77,14 @@ class UnifiedMetadataManagerProtocol(Protocol):
     # Mode Determination
     # -------------------------------------------------------------------------
 
-    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> MetadataModeDecision:
         """Determine metadata mode based on keyboard modifiers.
 
         Args:
             modifier_state: Qt.KeyboardModifiers or None
 
         Returns:
-            Tuple of (load_metadata, use_extended)
+            MetadataModeDecision (NamedTuple of skip_metadata/use_extended).
 
         """
         ...

@@ -7,4 +7,6 @@ Metadata extraction and processing logic.
 NOTE: MetadataExtractor moved to core/metadata/metadata_extractor.py
 """
 
-__all__: list[str] = []
+from oncutf.domain.metadata.mode_decision import MetadataModeDecision
+
+__all__ = ["MetadataModeDecision"]
