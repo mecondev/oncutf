@@ -14,8 +14,6 @@ Features:
 - Error handling per file (failures don't stop the batch)
 """
 
-import subprocess
-import threading
 import traceback
 from collections.abc import Callable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -72,10 +70,10 @@ class ParallelMetadataLoader:
                 "[ParallelMetadataLoader] ExifTool not available. Metadata loading disabled."
             )
         self._cancelled = False
-        self._active_processes: list[
-            subprocess.Popen[str]
-        ] = []  # Track active subprocess for cancellation
-        self._process_lock = threading.Lock()
+        # NOTE: Process management lives entirely in the persistent
+        # ExifToolWrapper (-stay_open True). This loader only schedules
+        # work via ThreadPoolExecutor; cancellation is signalled via
+        # the cancellation flag and pending-future cancellation.
 
         if self.exiftool_available:
             logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
@@ -160,26 +158,6 @@ class ParallelMetadataLoader:
                             "[ParallelMetadataLoader] Cancellation detected - stopping immediately"
                         )
                         self._cancelled = True
-
-                        # Terminate all active ExifTool processes
-                        with self._process_lock:
-                            terminated_count = 0
-                            for proc in self._active_processes:
-                                try:
-                                    if proc and proc.poll() is None:  # Still running
-                                        proc.terminate()
-                                        terminated_count += 1
-                                except Exception as e:
-                                    logger.debug(
-                                        "[ParallelMetadataLoader] Error terminating process: %s",
-                                        e,
-                                    )
-                            if terminated_count > 0:
-                                logger.info(
-                                    "[ParallelMetadataLoader] Terminated %d active processes",
-                                    terminated_count,
-                                )
-                            self._active_processes.clear()
 
                         # Cancel all pending futures
                         cancelled_count = 0
@@ -357,38 +335,14 @@ class ParallelMetadataLoader:
         return self._cancelled
 
     def cleanup(self) -> None:
-        """Clean up resources including active subprocesses.
+        """Clean up resources.
 
-        This should be called during application shutdown to ensure
-        all ExifTool processes are terminated.
+        The persistent ExifTool process is owned by ExifToolWrapper and
+        cleaned up by its own close() method (called separately during
+        shutdown). This method only flips the cancellation flag so any
+        in-flight futures observe it on their next check.
         """
         self._cancelled = True
-
-        # Terminate any active ExifTool subprocesses
-        with self._process_lock:
-            terminated_count = 0
-            for proc in self._active_processes:
-                try:
-                    if proc and proc.poll() is None:  # Still running
-                        proc.terminate()
-                        # Wait briefly for termination
-                        try:
-                            proc.wait(timeout=0.5)
-                        except subprocess.TimeoutExpired:
-                            proc.kill()  # Force kill if terminate doesn't work
-                        terminated_count += 1
-                except Exception as e:
-                    logger.debug(
-                        "[ParallelMetadataLoader] Error terminating process during cleanup: %s",
-                        e,
-                    )
-            if terminated_count > 0:
-                logger.info(
-                    "[ParallelMetadataLoader] Terminated %d processes during cleanup",
-                    terminated_count,
-                )
-            self._active_processes.clear()
-
         logger.info("[ParallelMetadataLoader] Cleanup completed")
 
 
