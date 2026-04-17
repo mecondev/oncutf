@@ -215,15 +215,6 @@ class PersistentHashCache:
             "hit_rate_percent": round(hit_rate, 2),
         }
 
-    # Backward compatibility methods
-    def get(self, file_path: str) -> str | None:
-        """Get hash with default algorithm (backward compatibility)."""
-        return self.get_hash(file_path)
-
-    def __contains__(self, file_path: str) -> bool:
-        """Check if file has hash (backward compatibility)."""
-        return self.has_hash(file_path)
-
 
 # =====================================
 # Global Instance Management

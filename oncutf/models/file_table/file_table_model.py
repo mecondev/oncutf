@@ -474,6 +474,3 @@ class FileTableModel(QAbstractTableModel):
     def _update_icons_immediately(self) -> None:
         """Updates icons immediately for all files that have cached data."""
         self._file_ops._update_icons_immediately()
-
-    def _delayed_icon_update(self) -> None:
-        """Delayed icon update (no-op for backward compatibility)."""
