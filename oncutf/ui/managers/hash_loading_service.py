@@ -23,7 +23,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt
 
 from oncutf.config import STATUS_COLORS
 from oncutf.models.file_item import FileItem
@@ -286,7 +286,6 @@ class HashLoadingService:
 
         self._hash_worker.start()
 
-    @pyqtSlot(str, str)
     def _on_file_hash_calculated(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated.
 
@@ -338,7 +337,6 @@ class HashLoadingService:
             # out-of-order signal delivery. Qt will repaint on the next
             # event loop iteration via the dataChanged emit above.
 
-    @pyqtSlot()
     def _on_hash_finished(self) -> None:
         """Handle hash loading completion."""
         self._cleanup_hash_worker()
