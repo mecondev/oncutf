@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.paths import AppPaths
 
 logger = get_cached_logger(__name__)
 
@@ -78,7 +79,7 @@ class DiskCache:
     def __init__(self, cache_dir: str | None = None) -> None:
         """Initialize disk cache in the specified directory."""
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".oncutf" / "cache")
+            cache_dir = str(AppPaths.get_cache_dir() / "disk")
 
         self.cache_dir: str = cache_dir
         Path(cache_dir).mkdir(parents=True, exist_ok=True)

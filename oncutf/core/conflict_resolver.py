@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from oncutf.utils.logging.logger_factory import get_cached_logger
+from oncutf.utils.paths import AppPaths
 
 logger = get_cached_logger(__name__)
 
@@ -86,7 +87,7 @@ class ConflictResolver:
     def __init__(self, backup_dir: str | None = None):
         """Initialize conflict resolver with backup directory and strategies."""
         if backup_dir is None:
-            backup_dir = str(Path.home() / ".oncutf" / "backups")
+            backup_dir = str(AppPaths.get_user_data_dir() / "backups")
 
         self.backup_dir = backup_dir
         Path(backup_dir).mkdir(parents=True, exist_ok=True)
