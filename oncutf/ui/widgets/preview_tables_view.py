@@ -17,7 +17,7 @@ Features:
 from pathlib import Path
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QBrush, QColor, QIcon
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -29,6 +29,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from oncutf.config import PREVIEW_VALIDATION_BG
 from oncutf.ui.helpers.placeholder_helper import create_placeholder_helper
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 from oncutf.ui.theme_manager import get_theme_manager
@@ -555,6 +556,11 @@ class PreviewTablesView(QWidget):
                 icon_item.setIcon(QIcon(icon_path))
             self.icon_table.setItem(row, 0, icon_item)
 
+            # Inline validation feedback: tint the row background for
+            # invalid/duplicate entries so problems are visible without
+            # having to scan the icon column or read tooltips.
+            self._apply_validation_tint(row, status, icon_item)
+
             # Set tooltip for new name
             if status != "valid":
                 tooltip = self._get_status_tooltip(status, new_name)
@@ -562,6 +568,31 @@ class PreviewTablesView(QWidget):
                 TooltipHelper.setup_item_tooltip(
                     self.new_names_table, new_name_item, tooltip, tooltip_type
                 )
+
+    def _apply_validation_tint(self, row: int, status: str, icon_item: QTableWidgetItem) -> None:
+        """Apply a subtle background tint to a preview row.
+
+        Tints the old-name, new-name, and icon cells uniformly so the
+        whole row stands out for problematic entries (invalid filename
+        or duplicate target). Colors come from PREVIEW_VALIDATION_BG so
+        they can be themed without touching this code.
+
+        Args:
+            row: Zero-based row index in the preview tables.
+            status: Validation status key ('valid', 'invalid',
+                'duplicate', 'unchanged').
+            icon_item: The icon-column item, already set on the icon table.
+
+        """
+        color_hex = PREVIEW_VALIDATION_BG.get(status, "")
+        if not color_hex:
+            return
+        brush = QBrush(QColor(color_hex))
+        for table in (self.old_names_table, self.new_names_table):
+            cell = table.item(row, 0)
+            if cell is not None:
+                cell.setBackground(brush)
+        icon_item.setBackground(brush)
 
     def _get_status_tooltip(self, status: str, new_name: str) -> str:
         """Get tooltip text for a given status."""

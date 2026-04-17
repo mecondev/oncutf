@@ -35,6 +35,16 @@ PREVIEW_INDICATOR_SHAPE = "circle"
 PREVIEW_INDICATOR_SIZE = (14, 14)
 PREVIEW_INDICATOR_BORDER = {"color": "#222222", "thickness": 1}
 
+# Subtle cell-background tints applied to rename preview rows so users
+# get inline visual feedback in addition to the per-row status icon.
+# Empty string means "no tint" (use the table's default background).
+PREVIEW_VALIDATION_BG = {
+    "valid": "",
+    "unchanged": "",
+    "invalid": "#3a1f1f",
+    "duplicate": "#3a311a",
+}
+
 STATUS_AUTO_RESET_DELAY = 3000
 
 TOOLTIP_DURATION = 2500

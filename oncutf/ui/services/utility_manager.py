@@ -56,7 +56,13 @@ class UtilityManager:
     def event_filter(self, obj, event):
         """Captures global keyboard modifier state (Ctrl, Shift)."""
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
-            self.main_window.modifier_state = QApplication.keyboardModifiers()
+            modifiers = QApplication.keyboardModifiers()
+            self.main_window.modifier_state = modifiers
+            # Keep the status-bar metadata mode indicator in sync with
+            # the keys actually held right now.
+            indicator = getattr(self.main_window, "metadata_mode_indicator", None)
+            if indicator is not None:
+                indicator.update_from_modifiers(int(modifiers))
             logger.debug(
                 "[Modifiers] eventFilter saw: %s with modifiers=%d",
                 event.type(),
