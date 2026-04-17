@@ -25,7 +25,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import QItemSelectionModel, QObject, Qt, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
 
 from oncutf.config.features import FeatureAvailability
@@ -255,6 +255,7 @@ class ThumbnailViewportController(QObject):
             (time.time() - t0) * 1000,
         )
 
+    @pyqtSlot()
     def _on_background_timeout(self) -> None:
         """Pause thumbnail loading after background timeout."""
         if not self._is_background_mode:
@@ -466,6 +467,7 @@ class ThumbnailViewportController(QObject):
             "active_workers": stats.get("active_workers", 0),
         }
 
+    @pyqtSlot(str, QPixmap)
     def _on_thumbnail_ready(self, file_path: str, pixmap: QPixmap) -> None:
         """Handle thumbnail ready signal from ThumbnailManager.
 
@@ -478,6 +480,7 @@ class ThumbnailViewportController(QObject):
         self.thumbnail_ready.emit(file_path, pixmap)
         logger.debug("[ThumbnailViewportController] Thumbnail ready: %s", file_path)
 
+    @pyqtSlot(int, int)
     def _on_thumbnail_progress(self, completed: int, total: int) -> None:
         """Handle thumbnail generation progress.
 
@@ -493,6 +496,7 @@ class ThumbnailViewportController(QObject):
         status_msg = f"Loading thumbnails: {completed}/{total}"
         self.status_update.emit(status_msg)
 
+    @pyqtSlot(str, str)
     def _on_thumbnail_error(self, file_path: str, error_msg: str) -> None:
         """Handle thumbnail generation error.
 

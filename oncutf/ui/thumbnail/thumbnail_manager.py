@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
 
 from oncutf.config.file_types import PREVIEWABLE_EXTENSIONS
@@ -401,6 +401,7 @@ class ThumbnailManager(QObject):
 
             logger.debug("Started worker thread (total: %d)", len(self._workers))
 
+    @pyqtSlot(str, QPixmap)
     def _on_worker_thumbnail_ready(self, file_path: str, pixmap: QPixmap) -> None:
         """Handle thumbnail ready signal from worker.
 
@@ -435,6 +436,7 @@ class ThumbnailManager(QObject):
             self._total_requests,
         )
 
+    @pyqtSlot(str, str)
     def _on_worker_error(self, file_path: str, error_msg: str) -> None:
         """Handle generation error from worker.
 

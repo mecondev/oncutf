@@ -27,8 +27,9 @@ from PyQt5.QtCore import (
     Qt,
     QTimer,
     pyqtSignal,
+    pyqtSlot,
 )
-from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QPixmap
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -47,7 +48,6 @@ from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
-    from PyQt5.QtGui import QPixmap
 
     from oncutf.models.file_table.file_table_model import FileTableModel
 
@@ -448,6 +448,7 @@ class ThumbnailViewportWidget(QWidget):
 
         return status_widget
 
+    @pyqtSlot(int)
     def _on_zoom_slider_changed(self, value: int) -> None:
         """Handle zoom slider value change.
 
@@ -819,6 +820,7 @@ class ThumbnailViewportWidget(QWidget):
         finally:
             self._context_menu_open = False
 
+    @pyqtSlot(int, int)
     def _on_thumbnail_progress(self, completed: int, total: int) -> None:
         """Handle thumbnail loading progress updates.
 
@@ -835,6 +837,7 @@ class ThumbnailViewportWidget(QWidget):
         if total > 0 and completed >= total:
             self._delegate.stop_shimmer()
 
+    @pyqtSlot()
     def _spin_tick(self) -> None:
         """Advance spinner rotation by one step."""
         if not self._spinner_base_pixmap:
@@ -1309,6 +1312,7 @@ class ThumbnailViewportWidget(QWidget):
 
         return visible_paths
 
+    @pyqtSlot()
     def _on_viewport_scrolled(self) -> None:
         """Handle viewport scroll - debounced to avoid excessive re-queuing.
 
@@ -1322,6 +1326,7 @@ class ThumbnailViewportWidget(QWidget):
         # Restart debounce timer (cancels previous timer if still running)
         self._scroll_debounce_timer.start()
 
+    @pyqtSlot()
     def _process_scroll_change(self) -> None:
         """Process scroll change after debounce delay.
 
@@ -1428,6 +1433,7 @@ class ThumbnailViewportWidget(QWidget):
 
         logger.debug("[THUMBS-HIDE] hideEvent END at t=%.3fms", (time.time() - t0) * 1000)
 
+    @pyqtSlot(str, QPixmap)
     def _on_thumbnail_ready(self, file_path: str, pixmap: "QPixmap") -> None:
         """Handle thumbnail_ready signal from ThumbnailManager.
 
@@ -1468,6 +1474,7 @@ class ThumbnailViewportWidget(QWidget):
         # File not in model - likely cleared while thumbnails were loading (expected behavior)
         # No warning needed as this is a normal race condition during clear operations
 
+    @pyqtSlot(str)
     def _on_thumbnail_error(self, file_path: str) -> None:
         """Handle thumbnail_error signal -- mark file as failed in delegate."""
         if not self._model or not self._model.files:
