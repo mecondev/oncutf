@@ -47,6 +47,11 @@ _parser.add_argument(
     action="store_true",
     help="skip the splash screen on startup",
 )
+_parser.add_argument(
+    "-c", "--clean",
+    action="store_true",
+    help="delete database and config.json on startup (fresh start)",
+)
 # Parse known args so Qt's own flags (--platform, -style, etc.) pass through
 _cli_args, _qt_argv = _parser.parse_known_args()
 
@@ -59,6 +64,13 @@ if _cli_args.version:
 
 # Reconstruct sys.argv with only the Qt-compatible remainder
 sys.argv = [sys.argv[0], *_qt_argv]
+
+if _cli_args.clean:
+    # Mutate the config module attribute before any oncutf module reads it.
+    # database_manager and startup_orchestrator import DEBUG_FRESH_START lazily
+    # (inside method bodies), so this mutation takes effect in time.
+    import oncutf.config.app as _app_cfg
+    _app_cfg.DEBUG_FRESH_START = True
 
 # ---------------------------------------------------------------------------
 # EARLY SPLASH SCREEN -- show before heavy oncutf imports (~230ms saved)
