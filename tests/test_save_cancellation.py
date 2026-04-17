@@ -76,14 +76,14 @@ class TestSaveCancellation:
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
+        # Writer needs a parent_window too (it stores its own ref)
+        manager._writer.parent_window = manager.parent_window
 
-        # Mock show_info_message in the unified_manager module where it's used
-        with patch(
-            "oncutf.ui.managers.metadata_unified_manager.show_info_message"
-        ) as mock_show_info:
+        # show_info_message is imported into the writer module; patch it there.
+        with patch("oncutf.core.metadata.metadata_writer.show_info_message") as mock_show_info:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
-            manager._show_save_results(
+            manager._writer._show_save_results(
                 success_count=5,
                 failed_files=[],
                 files_to_save=files_to_save,
@@ -105,20 +105,17 @@ class TestSaveCancellation:
         manager = UnifiedMetadataManager()
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
+        manager._writer.parent_window = manager.parent_window
 
-        # Mock both show_info_message and show_warning_message in unified_manager module
+        # Mock both info/warning in the writer module (the live impl)
         with (
-            patch(
-                "oncutf.ui.managers.metadata_unified_manager.show_info_message"
-            ) as mock_show_info,
-            patch(
-                "oncutf.ui.managers.metadata_unified_manager.show_warning_message"
-            ) as mock_show_warning,
+            patch("oncutf.core.metadata.metadata_writer.show_info_message") as mock_show_info,
+            patch("oncutf.core.metadata.metadata_writer.show_warning_message") as mock_show_warning,
         ):
             files_to_save = [MagicMock() for _ in range(10)]
 
             # Test cancelled operation (uses show_info_message)
-            manager._show_save_results(
+            manager._writer._show_save_results(
                 success_count=5,
                 failed_files=[],
                 files_to_save=files_to_save,
@@ -129,7 +126,7 @@ class TestSaveCancellation:
             # Test failed operation (uses show_warning_message)
             mock_show_info.reset_mock()
             mock_show_warning.reset_mock()
-            manager._show_save_results(
+            manager._writer._show_save_results(
                 success_count=5,
                 failed_files=["file1.jpg", "file2.jpg"],
                 files_to_save=files_to_save,
@@ -225,19 +222,36 @@ class TestSaveCancellation:
             return True
 
         manager._exiftool_wrapper.write_metadata = mock_write_metadata
+        # Writer holds its own exiftool wrapper getter; point it to the same mock
+        manager._writer._exiftool_wrapper = manager._exiftool_wrapper
+        manager._writer.parent_window = manager.parent_window
 
         # Mock progress dialog and other dependencies
-        # Note: ProgressDialog is imported inside the function, so we patch the source module
         with (
             patch("oncutf.ui.helpers.progress_dialog.ProgressDialog") as mock_dialog_class,
-            patch("oncutf.ui.managers.metadata_unified_manager.show_info_message"),
-            patch("oncutf.ui.managers.metadata_unified_manager.show_warning_message"),
+            patch("oncutf.core.metadata.metadata_writer.show_info_message"),
+            patch("oncutf.core.metadata.metadata_writer.show_warning_message"),
         ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog
 
-            # Call the save method
-            manager._save_metadata_files(
+            # Sync cancellation flag to writer when set on manager
+            def cancel_writer():
+                manager._writer._save_cancelled = True
+
+            # When the mocked write_metadata triggers manager cancel, propagate
+            original_mock = mock_write_metadata
+
+            def proxy(path, mods):
+                result = original_mock(path, mods)
+                if manager._save_cancelled:
+                    cancel_writer()
+                return result
+
+            manager._writer._exiftool_wrapper.write_metadata = proxy
+
+            # Call the live save method (writer)
+            manager._writer._save_metadata_files(
                 mock_files, mock_staging.get_all_staged_changes(), is_exit_save=False
             )
 
