@@ -25,7 +25,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from typing_extensions import deprecated
 
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.ui.widgets.styled_combo_box import StyledComboBox
@@ -222,21 +221,6 @@ class TextRemovalModule(BaseRenameModule):
             .replace(">", "&gt;")
             .replace('"', "&quot;")
         )
-
-    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_text_changed(self) -> None:
-        """Handle text input changes (legacy method for compatibility)."""
-        self._on_setting_changed()
-
-    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_position_changed(self) -> None:
-        """Handle position combo changes (legacy method for compatibility)."""
-        self._on_setting_changed()
-
-    @deprecated("Connect directly to module_changed signal. Will be removed in v2.0.")
-    def on_case_changed(self) -> None:
-        """Handle case sensitivity changes (legacy method for compatibility)."""
-        self._on_setting_changed()
 
     def get_data(self) -> dict[str, Any]:
         """Get the current configuration data.

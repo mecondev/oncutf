@@ -19,7 +19,6 @@ from PyQt5.QtWidgets import (
     QStyleOptionViewItem,
     QTableView,
 )
-from typing_extensions import deprecated
 
 from oncutf.ui.delegates.ui_delegates import FileTableHoverDelegate
 from oncutf.ui.theme_manager import get_theme_manager
@@ -283,15 +282,3 @@ class ColorColumnDelegate(FileTableHoverDelegate):
 
         QApplication.restoreOverrideCursor()
         logger.info("[ColorColumnDelegate] Cursor restored")
-
-    @deprecated("Use _set_files_color() with single-element list. Will be removed in v2.0.")
-    def _set_file_color(self, model, index, color):
-        """Set the color tag for a single file (legacy method for compatibility).
-
-        Args:
-            model: Data model
-            index: Model index
-            color: Selected color (hex string or "none")
-
-        """
-        self._set_files_color(model, [index.row()], color)

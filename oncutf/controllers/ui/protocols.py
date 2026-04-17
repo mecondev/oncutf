@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     )
 
     from oncutf.app.state.context import AppContext as ApplicationContext
-    from oncutf.models.file_table_model import FileTableModel
+    from oncutf.models.file_table import FileTableModel
     from oncutf.ui.managers.shortcut_manager import ShortcutManager
     from oncutf.ui.managers.splitter_manager import SplitterManager
     from oncutf.ui.managers.status_manager import StatusManager
