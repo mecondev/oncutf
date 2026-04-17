@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (
     QAction,
     QMenu,
@@ -283,6 +283,7 @@ class SpecifiedTextModule(BaseRenameModule):
         )
         self.updated.emit(self)
 
+    @pyqtSlot(bool)
     def _on_validation_changed(self, is_valid: bool) -> None:
         """Handle validation state changes from the ValidatedLineEdit.
 

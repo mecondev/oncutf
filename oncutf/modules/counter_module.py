@@ -10,7 +10,7 @@ sequential file names based on configurable start value, step, and padding.
 
 from typing import Any
 
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QHBoxLayout,
@@ -90,6 +90,7 @@ class CounterModule(BaseRenameModule):
         # Initialize _last_value to prevent duplicate signals
         self._last_value = str(self.get_data())
 
+    @pyqtSlot()
     def _on_value_change(self) -> None:
         """Triggered when any of the spinboxes change.
         Emits update only if data has truly changed.

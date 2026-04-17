@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -138,6 +138,7 @@ class TextRemovalModule(BaseRenameModule):
 
         self._update_preview()
 
+    @pyqtSlot()
     def _on_setting_changed(self) -> None:
         """Handle any setting change with debounced preview update."""
         text = self.text_input.text()

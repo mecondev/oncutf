@@ -19,7 +19,7 @@ Classes:
 
 from typing import ClassVar
 
-from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer
+from PyQt5.QtCore import QEvent, QObject, QPoint, Qt, QTimer, pyqtSlot
 from PyQt5.QtGui import QHelpEvent
 from PyQt5.QtWidgets import (
     QApplication,
@@ -74,6 +74,7 @@ class WidgetTooltipFilter(QObject):
 
         return False
 
+    @pyqtSlot()
     def _show_tooltip(self) -> None:
         """Show the tooltip."""
         try:
@@ -184,6 +185,7 @@ class CustomTooltip(QLabel):
         self.hide_tooltip()
         event.accept()
 
+    @pyqtSlot()
     def hide_tooltip(self) -> None:
         """Hide the tooltip."""
         self._timer.stop()
@@ -245,6 +247,7 @@ class ActionTooltipFilter(QObject):
 
         return False
 
+    @pyqtSlot()
     def _show_tooltip(self) -> None:
         """Show custom tooltip for current action."""
         if not self.current_action or self.current_action not in self.tooltip_data:
@@ -329,6 +332,7 @@ class ItemTooltipFilter(QObject):
 
         return False
 
+    @pyqtSlot()
     def _show_tooltip(self) -> None:
         """Show tooltip for current item."""
         if not self.current_item or id(self.current_item) not in self.tooltip_data:
