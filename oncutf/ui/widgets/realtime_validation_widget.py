@@ -6,7 +6,7 @@ Date: 2025-05-01
 Real-time Validation Widget for immediate validation feedback.
 """
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSlot
 from PyQt5.QtWidgets import (
     QFrame,
     QLabel,
@@ -96,6 +96,7 @@ class RealTimeValidationWidget(QWidget):
         label.setProperty("class", f"ValidationStatus_{status_type}")
         return label
 
+    @pyqtSlot()
     def update_validation(self):
         """Update the validation display."""
         try:

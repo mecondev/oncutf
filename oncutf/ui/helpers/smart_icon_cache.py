@@ -30,6 +30,7 @@ from PyQt5.QtCore import (
     Qt,
     QTimer,
     pyqtSignal,
+    pyqtSlot,
 )
 from PyQt5.QtGui import QIcon, QPixmap
 
@@ -379,6 +380,7 @@ class SmartIconCache(QObject):
                 "current_theme": self._current_theme,
             }
 
+    @pyqtSlot()
     def _perform_cleanup(self) -> None:
         """Perform periodic cleanup."""
         try:

@@ -17,7 +17,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QEvent, QPoint, Qt
+from PyQt5.QtCore import QEvent, QPoint, Qt, pyqtSlot
 from PyQt5.QtWidgets import (
     QAction,
     QHeaderView,
@@ -382,6 +382,7 @@ class InteractiveHeader(QHeaderView):
             self._auto_scroll_timer = None
         self._auto_scroll_direction = 0
 
+    @pyqtSlot()
     def _perform_auto_scroll(self) -> None:
         """Perform one step of auto-scroll in the current direction."""
         if self._auto_scroll_direction == 0:

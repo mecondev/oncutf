@@ -11,7 +11,7 @@ Designed to scale and support future drag & drop reordering.
 Now supports QtAppContext for optimized access patterns.
 """
 
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QFrame,
@@ -123,6 +123,7 @@ class RenameModulesArea(QWidget):
             # QtAppContext not available or not ready yet
             return None
 
+    @pyqtSlot()
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
         self._preview_timer_id = self._schedule_preview_update(
@@ -492,6 +493,7 @@ class RenameModulesArea(QWidget):
             self.scroll_direction = 0
             self.auto_scroll_timer.stop()
 
+    @pyqtSlot()
     def handle_auto_scroll(self):
         """Perform the actual auto-scrolling."""
         if self.scroll_direction == 0:

@@ -8,7 +8,7 @@ Handles signal connections between UI components.
 
 from typing import Any
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QLineEdit, QMenu
 
 from oncutf.controllers.ui.protocols import SignalContext
@@ -210,6 +210,7 @@ class SignalController:
         """Enable SelectionStore mode after signals are connected."""
         schedule_selection_update(self.parent_window._enable_selection_store_mode, 100)
 
+    @pyqtSlot()
     def _refresh_file_table(self) -> None:
         """Refresh file table (F5) - reloads files and clears ALL state."""
         from oncutf.ui.adapters.qt_app_context import get_qt_app_context
@@ -320,6 +321,7 @@ class SignalController:
         global_pos = line_edit.mapToGlobal(position)
         menu.exec_(global_pos)
 
+    @pyqtSlot()
     def _on_metadata_search_text_changed(self) -> None:
         """Handle text changes in the metadata search field."""
         text = self.parent_window.metadata_search_field.text()
@@ -331,6 +333,7 @@ class SignalController:
         # Always expand all groups after filtering
         schedule_ui_update(self.parent_window.metadata_tree_view.expandAll, 10)
 
+    @pyqtSlot()
     def _clear_metadata_search(self) -> None:
         """Clear the metadata search field."""
         self.parent_window.metadata_search_field.clear()
