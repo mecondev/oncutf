@@ -323,7 +323,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 **Canonical Patterns (Single Source of Truth):**
 
 | Domain | Canonical | Legacy/Supporting |
-| -------- | ----------- | ------------------- |
+| ------ | --------- | ----------------- |
 | Rename Pipeline | `UnifiedRenameEngine` | `utils/naming/*` (helpers only) |
 | Column Management | `UnifiedColumnService` | `ColumnManager` (thin adapter) |
 | UI Components | Behaviors (`ui/behaviors/`) | Mixins (no new mixins) |
