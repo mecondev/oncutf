@@ -22,6 +22,7 @@ from typing import Any
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from oncutf.domain.metadata import MetadataModeDecision
 from oncutf.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
@@ -205,7 +206,7 @@ class UnifiedMetadataManager(QObject):
         """Delegate to loader."""
         return self._loader.determine_loading_mode(file_count)
 
-    def determine_metadata_mode(self, modifier_state: Any = None) -> tuple[bool, bool]:
+    def determine_metadata_mode(self, modifier_state: Any = None) -> MetadataModeDecision:
         """Delegate to shortcut_handler."""
         return self._shortcut_handler.determine_metadata_mode(modifier_state)
 

@@ -4,6 +4,8 @@ Author: Michael Economou
 Date: 2026-01-10
 """
 
+from oncutf.domain.metadata import MetadataModeDecision
+
 
 class MetadataDelegates:
     """Delegate class for metadata operations.
@@ -59,7 +61,7 @@ class MetadataDelegates:
         """Get common metadata fields via MetadataController."""
         return self.metadata_controller.get_common_metadata_fields()
 
-    def determine_metadata_mode(self) -> tuple[bool, bool]:
+    def determine_metadata_mode(self) -> MetadataModeDecision:
         """Determine metadata mode via MetadataController."""
         return self.metadata_controller.determine_metadata_mode()
 
