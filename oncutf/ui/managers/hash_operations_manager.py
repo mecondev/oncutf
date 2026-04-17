@@ -388,13 +388,8 @@ class HashOperationsManager:
                             left_index = model.index(row, 0)
                             right_index = model.index(row, model.columnCount() - 1)
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
-
-                            # Force immediate repaint
-                            from PyQt5.QtWidgets import QApplication
-
-                            app_instance = QApplication.instance()
-                            if app_instance:
-                                app_instance.processEvents()
+                            # NOTE: no processEvents() here; this is a queued-signal slot,
+                            # calling processEvents() inside a slot causes re-entrancy.
                             break
 
             except Exception as e:

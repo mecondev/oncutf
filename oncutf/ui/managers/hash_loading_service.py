@@ -331,10 +331,11 @@ class HashLoadingService:
                 except Exception:
                     pass
 
-            # Force immediate UI update to show out-of-order completion
-            from PyQt5.QtWidgets import QApplication
-
-            QApplication.processEvents()
+            # NOTE: do NOT call QApplication.processEvents() here.
+            # This method is invoked from a queued signal slot; calling
+            # processEvents() inside a slot causes re-entrancy and
+            # out-of-order signal delivery. Qt will repaint on the next
+            # event loop iteration via the dataChanged emit above.
 
     def _on_hash_finished(self) -> None:
         """Handle hash loading completion."""
@@ -657,13 +658,9 @@ class HashLoadingService:
         if self._hash_progress_dialog:
             self._hash_progress_dialog.set_count(current, total)
             self._hash_progress_dialog.set_filename(filename)
-
-            # Force UI update
-            from PyQt5.QtWidgets import QApplication
-
-            app_instance = QApplication.instance()
-            if app_instance:
-                app_instance.processEvents()
+            # NOTE: no processEvents() here. This is a queued-signal slot;
+            # forcing the event loop from inside a slot causes re-entrancy.
+            # Dialog updates will be painted on the next event loop tick.
 
         if self._on_progress_callback:
             self._on_progress_callback(current, total, filename)
@@ -694,13 +691,8 @@ class HashLoadingService:
                     estimated_total = None
 
                 self._hash_progress_dialog.set_time_info(elapsed, estimated_total)
-
-            # Force UI update
-            from PyQt5.QtWidgets import QApplication
-
-            app_instance = QApplication.instance()
-            if app_instance:
-                app_instance.processEvents()
+            # NOTE: no processEvents() here. This is a queued-signal slot;
+            # forcing the event loop from inside a slot causes re-entrancy.
 
     def _on_operation_file_hash(self, file_path: str, hash_value: str = "") -> None:
         """Handle individual file hash calculated during operation.
@@ -725,12 +717,7 @@ class HashLoadingService:
                             left_index = model.index(row, 0)
                             right_index = model.index(row, model.columnCount() - 1)
                             model.dataChanged.emit(left_index, right_index, [Qt.DisplayRole])
-
-                            from PyQt5.QtWidgets import QApplication
-
-                            app_instance = QApplication.instance()
-                            if app_instance:
-                                app_instance.processEvents()
+                            # NOTE: no processEvents() here; this is a slot.
                             break
             except Exception as e:
                 logger.debug(
