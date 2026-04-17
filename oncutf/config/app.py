@@ -11,13 +11,7 @@ Application-level configuration: app info, debug flags, logging settings.
 # =====================================
 
 # Fresh start - if True, deletes database AND config.json on startup
-DEBUG_FRESH_START = False
-
-# Development/Testing Settings
-DEV_SIMULATE_SCREEN = False
-
-# Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
-DEV_SIMULATED_SCREEN = {"width": 1280, "height": 1024, "name": "Simulated Screen"}
+DEBUG_FRESH_START = True
 
 # =====================================
 # APPLICATION INFORMATION
