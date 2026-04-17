@@ -39,6 +39,31 @@
    python main.py
    ```
 
+## Command-Line Arguments
+
+```
+python main.py [options]
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `-V`, `--version` | Print version string and exit. |
+| `--debug` | Set log level to DEBUG (default is INFO). |
+| `--no-splash` | Skip the splash screen on startup (useful during development). |
+| `-h`, `--help` | Show help message and exit. |
+
+Qt passes any unrecognised flags through to the Qt platform plugin
+(e.g. `-platform xcb`, `-style Fusion`).
+
+### Examples
+
+```bash
+python main.py --version          # oncutf 1.3
+python main.py --debug            # full debug logging
+python main.py --no-splash        # skip splash (faster dev loop)
+python main.py --no-splash --debug
+```
+
 ## Development Commands
 
 ### Code Quality
@@ -170,7 +195,7 @@ logger = get_cached_logger(__name__)
 #### Log Levels
 
 | Level | Usage |
-| ------- | ------- |
+| ----- | ----- |
 | `DEBUG` | Development-only messages, verbose details |
 | `INFO` | Operation milestones (file loaded, rename completed) |
 | `WARNING` | Recoverable issues (failed to load optional data) |

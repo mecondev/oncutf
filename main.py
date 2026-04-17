@@ -22,6 +22,45 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # ---------------------------------------------------------------------------
+# CLI argument parsing -- BEFORE QApplication so --version / --help exit fast
+# ---------------------------------------------------------------------------
+import argparse
+
+_parser = argparse.ArgumentParser(
+    prog="oncutf",
+    description="oncutf -- batch file renaming with EXIF/metadata support",
+    add_help=True,
+)
+_parser.add_argument(
+    "-V", "--version",
+    action="store_true",
+    help="print version and exit",
+)
+_parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="set log level to DEBUG (default: INFO)",
+)
+_parser.add_argument(
+    "--no-splash",
+    dest="no_splash",
+    action="store_true",
+    help="skip the splash screen on startup",
+)
+# Parse known args so Qt's own flags (--platform, -style, etc.) pass through
+_cli_args, _qt_argv = _parser.parse_known_args()
+
+if _cli_args.version:
+    # oncutf/config/app.py has no heavy deps; safe to import early
+    from oncutf.config.app import APP_NAME, APP_VERSION
+
+    print(f"{APP_NAME} {APP_VERSION}")
+    sys.exit(0)
+
+# Reconstruct sys.argv with only the Qt-compatible remainder
+sys.argv = [sys.argv[0], *_qt_argv]
+
+# ---------------------------------------------------------------------------
 # EARLY SPLASH SCREEN -- show before heavy oncutf imports (~230ms saved)
 # Uses only PyQt5 stdlib; no oncutf dependencies.
 # ---------------------------------------------------------------------------
@@ -37,7 +76,7 @@ _early_app = QApplication(sys.argv)
 _early_splash = None
 
 _splash_path = Path(project_root) / "oncutf" / "resources" / "images" / "splash.png"
-if _splash_path.exists():
+if not _cli_args.no_splash and _splash_path.exists():
     from PyQt5.QtWidgets import QSplashScreen
 
     _pixmap = QPixmap(str(_splash_path))
@@ -65,6 +104,9 @@ from oncutf.utils.paths import AppPaths
 # Configure logging to use centralized user data directory
 logs_dir = str(AppPaths.get_logs_dir())
 ConfigureLogger(log_name="oncutf", log_dir=logs_dir)
+
+if _cli_args.debug:
+    logging.getLogger().setLevel(logging.DEBUG)
 
 logger = logging.getLogger()
 
