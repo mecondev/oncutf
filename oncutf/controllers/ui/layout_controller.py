@@ -878,8 +878,9 @@ class LayoutController:
         self.parent_window.bottom_layout.addWidget(self.parent_window.lower_section_splitter)
 
     def _setup_bottom_controls(self) -> None:
-        """Setup bottom controls (status label and rename button)."""
+        """Setup bottom controls (status label, metadata mode indicator, rename button)."""
         from oncutf.ui.managers.status_manager import StatusManager
+        from oncutf.ui.widgets.metadata_mode_indicator import MetadataModeIndicator
 
         self._controls_layout = QHBoxLayout()
         self.parent_window.status_label = QLabel("")
@@ -890,12 +891,16 @@ class LayoutController:
             status_label=self.parent_window.status_label
         )
 
+        # Metadata mode indicator: reflects Ctrl/Ctrl+Shift state in real time.
+        self.parent_window.metadata_mode_indicator = MetadataModeIndicator()
+
         self.parent_window.rename_button = QPushButton("Rename Files")
         self.parent_window.rename_button.setEnabled(False)
         self.parent_window.rename_button.setFixedWidth(120)
 
         self._controls_layout.addWidget(self.parent_window.status_label)
         self._controls_layout.addStretch()
+        self._controls_layout.addWidget(self.parent_window.metadata_mode_indicator)
         self._controls_layout.addWidget(self.parent_window.rename_button)
 
     def _setup_footer(self) -> None:
