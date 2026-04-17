@@ -19,16 +19,27 @@ def test_app_paths_unix(monkeypatch, tmp_path):
         path = AppPaths.get_user_data_dir()
         assert "oncut" in str(path) and "oncutf" in str(path)
     elif platform.system() == "Darwin":
-        # On macOS, use Application Support directory (XDG_DATA_HOME not standard on macOS)
+        # On macOS, use Application Support directory for data
         AppPaths.reset()
         path = AppPaths.get_user_data_dir()
         assert "Library/Application Support/oncut/oncutf" in str(path)
+        # Cache goes to Library/Caches
+        cache = AppPaths.get_cache_dir()
+        assert "Library/Caches/oncut/oncutf" in str(cache)
     else:
-        # On Linux, test XDG_DATA_HOME behavior
+        # On Linux, data uses XDG_DATA_HOME
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_data"))
-        AppPaths.reset()  # Reset again after env change
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg_config"))
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "xdg_cache"))
+        AppPaths.reset()
         path = AppPaths.get_user_data_dir()
         assert str(tmp_path / "xdg_data" / "oncut" / "oncutf") == str(path)
+        # Config must be separate
+        cfg = AppPaths.get_config_dir()
+        assert str(tmp_path / "xdg_config" / "oncut" / "oncutf") == str(cfg)
+        # Cache must be separate
+        cache = AppPaths.get_cache_dir()
+        assert str(tmp_path / "xdg_cache" / "oncut" / "oncutf") == str(cache)
 
     # Cleanup
     AppPaths.reset()
@@ -42,11 +53,14 @@ def test_app_paths_windows(monkeypatch, tmp_path):
     AppPaths.reset()
 
     if os.name == "nt":
-        # On Windows, test LOCALAPPDATA behavior
+        # On Windows, data uses LOCALAPPDATA, config uses APPDATA
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "localappdata"))
+        monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))
         AppPaths.reset()
         path = AppPaths.get_user_data_dir()
         assert str(tmp_path / "localappdata" / "oncut" / "oncutf") == str(path)
+        cfg = AppPaths.get_config_dir()
+        assert str(tmp_path / "appdata" / "oncut" / "oncutf") == str(cfg)
     else:
         # On Unix, just verify function works
         path = AppPaths.get_user_data_dir()

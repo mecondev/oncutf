@@ -1,19 +1,28 @@
-"""Module: paths.py.
+r"""Module: paths.py.
 
 Author: Michael Economou
 Date: 2026-01-01
 
 Centralized path management for oncutf application.
 
-This module provides a unified interface for accessing all application paths:
-- User data directory (config, database, logs)
-- Cache directory (thumbnails, temp files)
-- Bundled tools directory (for PyInstaller)
+Follows the same three-directory XDG/platform convention as the C++ sibling
+project (oncut-lut-engine).  Each platform type has a canonical home for each
+class of data:
 
-Platform-specific behavior:
-- Windows: %LOCALAPPDATA%/oncut/oncutf/
-- Linux: ~/.local/share/oncut/oncutf/
-- macOS: ~/Library/Application Support/oncut/oncutf/
+  Linux (XDG Base Directory Specification):
+    Config  : $XDG_CONFIG_HOME/oncut/oncutf/   (default: ~/.config/oncut/oncutf/)
+    Data    : $XDG_DATA_HOME/oncut/oncutf/     (default: ~/.local/share/oncut/oncutf/)
+    Cache   : $XDG_CACHE_HOME/oncut/oncutf/    (default: ~/.cache/oncut/oncutf/)
+
+  macOS:
+    Config  : ~/Library/Application Support/oncut/oncutf/
+    Data    : ~/Library/Application Support/oncut/oncutf/
+    Cache   : ~/Library/Caches/oncut/oncutf/
+
+  Windows:
+    Config  : %APPDATA%\\oncut\\oncutf\\           (roaming -- synced)
+    Data    : %LOCALAPPDATA%\\oncut\\oncutf\\       (local)
+    Cache   : %LOCALAPPDATA%\\oncut\\oncutf\\cache\\ (local)
 
 Usage:
     from oncutf.utils.paths import AppPaths
@@ -21,6 +30,7 @@ Usage:
     config_path = AppPaths.get_config_path()
     db_path = AppPaths.get_database_path()
     logs_dir = AppPaths.get_logs_dir()
+    cache_dir = AppPaths.get_cache_dir()
 """
 
 import os
@@ -41,56 +51,83 @@ APP_NAME = "oncutf"
 class AppPaths:
     """Centralized path management for the application.
 
-    This class provides static methods for accessing all application paths
-    in a cross-platform manner. Paths are lazily created when first accessed.
+    Three separate root directories are used, matching XDG conventions:
 
-    Directory Structure:
-        <user_data_dir>/
-        ├── config.json          # Application configuration
-        ├── logs/                # Log files
-        │   └── oncutf_YYYY-MM-DD.log
-        ├── data/                # Persistent data
-        │   └── oncutf_data.db   # Main SQLite database
-        ├── cache/               # Temporary cache
-        │   └── thumbnails/      # Thumbnail cache
-        └── tools/               # User-installed tools (optional)
-            ├── exiftool/
-            └── ffmpeg/
+      <config_dir>/
+      └── config.json              # User preferences (roaming on Windows)
+
+      <data_dir>/
+      ├── data/
+      │   └── oncutf_data.db       # Main SQLite database
+      ├── logs/                    # Log files
+      └── tools/                   # User-installed tools (optional)
+
+      <cache_dir>/
+      ├── thumbnails/              # Thumbnail cache
+      └── disk/                    # DiskCache (advanced_cache_manager)
     """
 
+    _config_dir: Path | None = None
     _user_data_dir: Path | None = None
+    _cache_dir: Path | None = None
     _initialized: bool = False
+
+    # ------------------------------------------------------------------
+    # Platform resolution helpers
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _get_platform_config_dir(cls) -> Path:
+        system = platform.system()
+        if system == "Windows":
+            base = os.environ.get("APPDATA")
+            if not base:
+                base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Roaming")
+            return Path(base) / ORG_NAME / APP_NAME
+        if system == "Darwin":
+            return Path.home() / "Library" / "Application Support" / ORG_NAME / APP_NAME
+        xdg = os.environ.get("XDG_CONFIG_HOME")
+        if xdg:
+            return Path(xdg) / ORG_NAME / APP_NAME
+        return Path.home() / ".config" / ORG_NAME / APP_NAME
 
     @classmethod
     def _get_platform_data_dir(cls) -> Path:
-        """Get platform-specific user data directory.
-
-        Returns:
-            Path to user data directory based on OS.
-
-        """
         system = platform.system()
-
         if system == "Windows":
-            # Windows: Use LOCALAPPDATA for app data
             base = os.environ.get("LOCALAPPDATA")
             if not base:
                 base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local")
             return Path(base) / ORG_NAME / APP_NAME
-
         if system == "Darwin":
-            # macOS: Use Application Support
             return Path.home() / "Library" / "Application Support" / ORG_NAME / APP_NAME
-
-        # Linux and others: Use XDG_DATA_HOME or ~/.local/share
-        xdg_data = os.environ.get("XDG_DATA_HOME")
-        if xdg_data:
-            return Path(xdg_data) / ORG_NAME / APP_NAME
+        xdg = os.environ.get("XDG_DATA_HOME")
+        if xdg:
+            return Path(xdg) / ORG_NAME / APP_NAME
         return Path.home() / ".local" / "share" / ORG_NAME / APP_NAME
 
     @classmethod
+    def _get_platform_cache_dir(cls) -> Path:
+        system = platform.system()
+        if system == "Windows":
+            base = os.environ.get("LOCALAPPDATA")
+            if not base:
+                base = str(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local")
+            return Path(base) / ORG_NAME / APP_NAME / "cache"
+        if system == "Darwin":
+            return Path.home() / "Library" / "Caches" / ORG_NAME / APP_NAME
+        xdg = os.environ.get("XDG_CACHE_HOME")
+        if xdg:
+            return Path(xdg) / ORG_NAME / APP_NAME
+        return Path.home() / ".cache" / ORG_NAME / APP_NAME
+
+    # ------------------------------------------------------------------
+    # Legacy paths (used only for one-time migration)
+    # ------------------------------------------------------------------
+
+    @classmethod
     def _get_legacy_data_dir(cls) -> Path:
-        """Get legacy (pre-org-prefix) data directory path for one-time migration."""
+        """Legacy flat path (pre org-prefix) for one-time migration."""
         system = platform.system()
         if system == "Windows":
             base = os.environ.get("LOCALAPPDATA")
@@ -99,23 +136,47 @@ class AppPaths:
             return Path(base) / APP_NAME
         if system == "Darwin":
             return Path.home() / "Library" / "Application Support" / APP_NAME
-        xdg_data = os.environ.get("XDG_DATA_HOME")
-        if xdg_data:
-            return Path(xdg_data) / APP_NAME
+        xdg = os.environ.get("XDG_DATA_HOME")
+        if xdg:
+            return Path(xdg) / APP_NAME
         return Path.home() / ".local" / "share" / APP_NAME
 
     @classmethod
+    def _get_legacy_all_in_data_dir(cls) -> Path:
+        """Pre-XDG-split path where config and cache lived inside data dir."""
+        return cls._get_platform_data_dir()
+
+    # ------------------------------------------------------------------
+    # Public accessors
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def get_config_dir(cls) -> Path:
+        """Return the config root directory, creating it if necessary."""
+        if cls._config_dir is None:
+            cls._config_dir = cls._get_platform_config_dir()
+
+            # One-time migration: config.json was previously inside the data dir
+            legacy_cfg = cls._get_legacy_all_in_data_dir() / "config.json"
+            new_cfg = cls._config_dir / "config.json"
+            if legacy_cfg.exists() and not new_cfg.exists():
+                cls._config_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(str(legacy_cfg), str(new_cfg))
+                legacy_cfg.unlink()
+                logger.info(
+                    "[AppPaths] Migrated config: %s -> %s", legacy_cfg, new_cfg
+                )
+
+        cls._config_dir.mkdir(parents=True, exist_ok=True)
+        return cls._config_dir
+
+    @classmethod
     def get_user_data_dir(cls) -> Path:
-        """Get the user data directory, creating it if necessary.
-
-        Returns:
-            Path to user data directory.
-
-        """
+        """Return the data root directory, creating it if necessary."""
         if cls._user_data_dir is None:
             cls._user_data_dir = cls._get_platform_data_dir()
 
-            # One-time migration: move data from legacy flat path to org-prefixed path
+            # One-time migration: legacy flat path (pre org-prefix) -> org-prefixed
             legacy_dir = cls._get_legacy_data_dir()
             if (
                 legacy_dir != cls._user_data_dir
@@ -130,116 +191,89 @@ class AppPaths:
                     cls._user_data_dir,
                 )
 
-        # Ensure directory exists
         cls._user_data_dir.mkdir(parents=True, exist_ok=True)
 
         if not cls._initialized:
-            logger.info("[AppPaths] User data directory: %s", cls._user_data_dir)
+            logger.info("[AppPaths] Data directory  : %s", cls._user_data_dir)
+            logger.info("[AppPaths] Config directory: %s", cls._get_platform_config_dir())
+            logger.info("[AppPaths] Cache directory : %s", cls._get_platform_cache_dir())
             cls._initialized = True
 
         return cls._user_data_dir
 
     @classmethod
     def get_config_path(cls) -> Path:
-        """Get path to config.json file.
-
-        Returns:
-            Path to configuration file.
-
-        """
-        return cls.get_user_data_dir() / "config.json"
+        """Return path to config.json."""
+        return cls.get_config_dir() / "config.json"
 
     @classmethod
     def get_database_path(cls) -> Path:
-        """Get path to main SQLite database.
-
-        Returns:
-            Path to database file in data/ subdirectory.
-
-        """
+        """Return path to main SQLite database (inside data dir)."""
         data_dir = cls.get_user_data_dir() / "data"
         data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir / "oncutf_data.db"
 
     @classmethod
     def get_logs_dir(cls) -> Path:
-        """Get path to logs directory.
-
-        Returns:
-            Path to logs directory.
-
-        """
+        """Return path to logs directory (inside data dir)."""
         logs_dir = cls.get_user_data_dir() / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
         return logs_dir
 
     @classmethod
     def get_cache_dir(cls) -> Path:
-        """Get path to cache directory (thumbnails, temp files).
+        """Return the cache root directory, creating it if necessary.
 
-        Returns:
-            Path to cache directory.
-
+        On Linux this is $XDG_CACHE_HOME/oncut/oncutf/ (~/.cache/oncut/oncutf/).
+        Previously the cache lived inside the data dir; a one-time migration
+        moves it on first access.
         """
-        cache_dir = cls.get_user_data_dir() / "cache"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        return cache_dir
+        if cls._cache_dir is None:
+            cls._cache_dir = cls._get_platform_cache_dir()
+
+            # One-time migration: cache/ was previously a sub-dir of the data dir
+            legacy_cache = cls._get_legacy_all_in_data_dir() / "cache"
+            if legacy_cache.exists() and not cls._cache_dir.exists():
+                cls._cache_dir.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(legacy_cache), str(cls._cache_dir))
+                logger.info(
+                    "[AppPaths] Migrated cache: %s -> %s", legacy_cache, cls._cache_dir
+                )
+
+        cls._cache_dir.mkdir(parents=True, exist_ok=True)
+        return cls._cache_dir
 
     @classmethod
     def get_thumbnails_dir(cls) -> Path:
-        """Get path to thumbnails cache directory.
-
-        Returns:
-            Path to thumbnails directory.
-
-        """
+        """Return path to thumbnails directory (inside cache dir)."""
         thumbnails_dir = cls.get_cache_dir() / "thumbnails"
         thumbnails_dir.mkdir(parents=True, exist_ok=True)
         return thumbnails_dir
 
     @classmethod
     def get_user_tools_dir(cls) -> Path:
-        """Get path to user-installed tools directory.
-
-        This directory is for tools installed by the user (not bundled).
-
-        Returns:
-            Path to user tools directory.
-
-        """
+        """Return path to user-installed tools directory (inside data dir)."""
         tools_dir = cls.get_user_data_dir() / "tools"
         tools_dir.mkdir(parents=True, exist_ok=True)
         return tools_dir
 
     @classmethod
     def get_bundled_tools_dir(cls) -> Path:
-        """Get path to bundled tools directory.
+        """Return path to bundled tools directory.
 
         For PyInstaller frozen executables, returns the _MEIPASS directory.
         For development, returns the project's bin/ directory.
-
-        Returns:
-            Path to bundled tools directory.
-
         """
         if getattr(sys, "frozen", False):
-            # Running as compiled exe - use _MEIPASS for bundled resources
             base_path = Path(getattr(sys, "_MEIPASS", "."))
         else:
-            # Running from source - go up to project root
             # oncutf/utils/paths.py -> oncutf/utils/ -> oncutf/ -> project root
             base_path = Path(__file__).parent.parent.parent
-
         return base_path / "bin"
 
     @classmethod
     def get_platform_tools_subdir(cls) -> str:
-        """Get platform-specific tools subdirectory name.
-
-        Returns:
-            Subdirectory name: 'windows', 'macos', or 'linux'.
-
-        """
+        """Return platform-specific tools subdirectory name."""
         system = platform.system()
         if system == "Windows":
             return "windows"
@@ -249,15 +283,17 @@ class AppPaths:
 
     @classmethod
     def reset(cls) -> None:
-        """Reset cached paths (mainly for testing).
-
-        This clears the cached user data directory path.
-        """
+        """Reset all cached paths (used in tests)."""
+        cls._config_dir = None
         cls._user_data_dir = None
+        cls._cache_dir = None
         cls._initialized = False
 
 
+# ---------------------------------------------------------------------------
 # Convenience functions for backward compatibility
+# ---------------------------------------------------------------------------
+
 def get_user_data_dir() -> Path:
     """Get user data directory."""
     return AppPaths.get_user_data_dir()
