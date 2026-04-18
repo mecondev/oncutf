@@ -190,6 +190,10 @@ class ThumbnailViewportWidget(QWidget):
         # Drag-drop state
         self._loading_in_progress = False
 
+        # Guard flag: prevents sync_selection_from_rows from re-entering
+        # while _on_selection_changed is propagating to SelectionStore.
+        self._syncing_from_self = False
+
         # Spinner state for loading animation
         self._spinner_base_pixmap: QPixmap | None = None
         self._spinner_angle: float = 0.0
@@ -234,6 +238,11 @@ class ThumbnailViewportWidget(QWidget):
         self._list_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self._list_view.setMovement(QListView.Free)  # Allow drag rearrange
         self._list_view.setAcceptDrops(True)  # Enable drop acceptance
+
+        # Enable mouse tracking so the delegate receives State_MouseOver
+        # on plain mouse movement (without requiring a button press).
+        self._list_view.setMouseTracking(True)
+        self._list_view.viewport().setMouseTracking(True)
 
         # Apply styling from theme to match FileTable appearance
         theme = get_theme_manager()
@@ -724,6 +733,9 @@ class ThumbnailViewportWidget(QWidget):
         """Handle selection change in thumbnail view.
 
         Emits selection_changed signal for rename preview sync.
+        Sets a guard flag so that the roundtrip via SelectionStore ->
+        sync_selection_from_rows does not corrupt the QListView's
+        internal ExtendedSelection state (which would break Ctrl+click).
 
         Args:
             selected: Newly selected items
@@ -741,8 +753,16 @@ class ThumbnailViewportWidget(QWidget):
         # Update status label
         self._update_status_label()
 
-        # Emit signal for rename preview and other listeners
-        self.selection_changed.emit(selected_rows)
+        # Guard: tell sync_selection_from_rows to skip if the change came
+        # from the user interacting with this viewport (the roundtrip would
+        # break Ctrl+click / Shift+click in ExtendedSelection mode).
+        self._syncing_from_self = True
+        try:
+            # Emit signal for rename preview and other listeners
+            self.selection_changed.emit(selected_rows)
+        finally:
+            self._syncing_from_self = False
+
         logger.debug(
             "[ThumbnailViewport] Selection changed: %d items selected",
             len(selected_rows),
@@ -966,10 +986,19 @@ class ThumbnailViewportWidget(QWidget):
         Blocks the selection model's own signals to prevent circular propagation
         back to SelectionStore.
 
+        Skips the sync when the change originated from user interaction in
+        this viewport (``_syncing_from_self`` guard), because forcing a
+        ``clearSelection() + select()`` roundtrip during Qt's own mouse-event
+        processing corrupts ExtendedSelection state and breaks Ctrl+click.
+
         Args:
             rows: Set of row indices to mark as selected.
 
         """
+        # Guard: skip if the change came from our own _on_selection_changed
+        if getattr(self, "_syncing_from_self", False):
+            return
+
         selection_model = self._list_view.selectionModel()
         model = self._list_view.model()
         if not selection_model or not model:

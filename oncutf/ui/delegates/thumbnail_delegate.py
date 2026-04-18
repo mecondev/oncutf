@@ -26,15 +26,22 @@ from PyQt5.QtGui import (
     QFontMetrics,
     QLinearGradient,
     QPainter,
+    QPainterPath,
     QPen,
     QPixmap,
 )
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate
 
-from oncutf.config.file_types import FILETYPE_ICON_MAP, PREVIEWABLE_EXTENSIONS, get_filetype_icon
+from oncutf.config.file_types import (
+    FILETYPE_ICON_MAP,
+    PREVIEWABLE_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    get_filetype_icon,
+)
 from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR, QLABEL_PRIMARY_TEXT
 from oncutf.config.ui.thumbnail import (
+    BACKGROUND_COLOR_HOVER as _BG_HOVER,
     BACKGROUND_COLOR_SELECTED as _BG_SELECTED,
     BADGE_ICON_COLOR,
     BADGE_ICON_SIZE,
@@ -61,6 +68,10 @@ from oncutf.config.ui.thumbnail import (
     LOADING_TYPE_ICON_COLOR,
     LOADING_TYPE_ICON_OPACITY,
     LOG_BADGE_BG as _LOG_BG,
+    LOG_BADGE_COLOR_ACTIVE,
+    LOG_BADGE_COLOR_INACTIVE,
+    LOG_BADGE_OPACITY_ACTIVE,
+    LOG_BADGE_OPACITY_INACTIVE,
     LOG_BADGE_TEXT as _LOG_TEXT,
     NO_PREVIEW_BG_COLOR as _NP_BG,
     NO_PREVIEW_ICON_COLOR,
@@ -72,6 +83,7 @@ from oncutf.config.ui.thumbnail import (
     SKELETON_BG_COLOR as _SK_BG,
     SKELETON_SHAPE_COLOR as _SK_SHAPE,
     SKELETON_SHIMMER_ALPHA,
+    TEXT_COLOR_SELECTED,
     THUMBNAIL_FONT_SIZE,
     TYPE_ICON_SIZE,
     VIDEO_BADGE_BACKGROUND as _VB_BG,
@@ -124,6 +136,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
     FRAME_BG_OPACITY_NORMAL = FRAME_BG_OPACITY_NORMAL
     FRAME_BG_OPACITY_SELECTED = FRAME_BG_OPACITY_SELECTED
     BACKGROUND_COLOR_SELECTED = QColor(*_BG_SELECTED)
+    BACKGROUND_COLOR_HOVER = QColor(*_BG_HOVER)
+    TEXT_COLOR_SELECTED = TEXT_COLOR_SELECTED
     VIDEO_BADGE_BACKGROUND = QColor(*_VB_BG)
     VIDEO_BADGE_TEXT = QColor(*_VB_TEXT)
 
@@ -147,6 +161,10 @@ class ThumbnailDelegate(QStyledItemDelegate):
     # LOG badge
     LOG_BADGE_BG = QColor(*_LOG_BG)
     LOG_BADGE_TEXT = QColor(*_LOG_TEXT)
+    LOG_BADGE_COLOR_ACTIVE = LOG_BADGE_COLOR_ACTIVE
+    LOG_BADGE_COLOR_INACTIVE = LOG_BADGE_COLOR_INACTIVE
+    LOG_BADGE_OPACITY_ACTIVE = LOG_BADGE_OPACITY_ACTIVE
+    LOG_BADGE_OPACITY_INACTIVE = LOG_BADGE_OPACITY_INACTIVE
 
     # Loading type icon
     LOADING_TYPE_ICON_OPACITY = LOADING_TYPE_ICON_OPACITY
@@ -170,6 +188,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
     # -- File type data (from config.file_types) -----------------------------
     PREVIEWABLE_EXTENSIONS: ClassVar[frozenset[str]] = PREVIEWABLE_EXTENSIONS
+    VIDEO_EXTENSIONS: ClassVar[frozenset[str]] = VIDEO_EXTENSIONS
 
     # Filetype icon cache: (extension, size, color) -> QPixmap
     _filetype_icon_cache: ClassVar[dict[tuple[str, int, str], QPixmap]] = {}
@@ -410,16 +429,30 @@ class ThumbnailDelegate(QStyledItemDelegate):
         is_selected = option.state & QStyle.State_Selected
         is_hover = option.state & QStyle.State_MouseOver
 
-        # Draw selection background (behind everything)
-        if is_selected:
-            painter.fillRect(option.rect, self.BACKGROUND_COLOR_SELECTED)
-
         # Calculate layout rects
         frame_rect = self._calculate_frame_rect(option.rect)
         thumbnail_rect = self._calculate_thumbnail_rect(frame_rect)
         filename_rect = self._calculate_filename_rect(option.rect, frame_rect)
 
-        # Draw frame border with color tinting
+        # Cell-level background: a single rounded rect that spans from the
+        # top of the frame to the bottom of the filename area.  This
+        # eliminates any visible divider between the image area and the
+        # filename row and gives a subtle rounded-corner appearance.
+        if is_selected or is_hover:
+            bg_color = (
+                self.BACKGROUND_COLOR_SELECTED if is_selected else self.BACKGROUND_COLOR_HOVER
+            )
+            cell_bg_rect = QRectF(
+                frame_rect.left(),
+                frame_rect.top(),
+                frame_rect.width(),
+                filename_rect.bottom() - frame_rect.top(),
+            )
+            path = QPainterPath()
+            path.addRoundedRect(cell_bg_rect, 4.0, 4.0)
+            painter.fillPath(path, bg_color)
+
+        # Draw frame border
         self._draw_frame(painter, frame_rect, file_item, is_selected, is_hover)
 
         # --- Thumbnail area: state machine ---
@@ -482,7 +515,9 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         else:
             # No preview possible: permanent file-type silhouette
-            self._draw_no_preview_placeholder(painter, thumbnail_rect, file_item)
+            self._draw_no_preview_placeholder(
+                painter, skeleton_fill_rect, thumbnail_rect, file_item
+            )
             show_icons = True
 
         # Status icons and video badge only when thumbnail is (or nearly) final
@@ -490,9 +525,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
             self._draw_status_icons(painter, frame_rect, file_item, index)
             # Bottom-left: filetype badge (Ready + Failed, matching C++ lut-engine)
             self._draw_filetype_badge(painter, thumbnail_rect, extension)
-            # Bottom-right: LOG badge (future: detect LOG profile in video metadata)
-            has_log = getattr(file_item, "has_log", False)
-            self._draw_log_badge(painter, thumbnail_rect, has_log)
+            # Bottom-right: LOG badge -- only for video files (LOG profile is
+            # a per-clip property of footage; not relevant for stills/audio).
+            if extension in self.VIDEO_EXTENSIONS:
+                has_log = bool(getattr(file_item, "has_log", False))
+                self._draw_log_badge(painter, thumbnail_rect, has_log)
 
         duration = getattr(file_item, "duration", None)
         if show_icons and duration:
@@ -567,37 +604,35 @@ class ThumbnailDelegate(QStyledItemDelegate):
         is_selected: bool,
         is_hover: bool,
     ) -> None:
-        """Draw the thumbnail frame border with file color background.
+        """Draw the thumbnail frame border.
 
-        Border: Normal/hover/selected color
-        Background: File color if set, otherwise white
-        - Unselected: 40% opacity
-        - Selected:   70% opacity
+        Border color is constant in all states (idle/hover/selected/loading/
+        ready/failed) -- matches oncut-lut-engine behavior. The interior is
+        NOT filled here so the cell-level hover/selection background (painted
+        in paint() across the whole option.rect) stays visible through the
+        frame padding area. Only color-tagged files get an interior fill.
 
         Args:
             painter: QPainter
             frame_rect: Frame rectangle
-            file_item: File item with color tag
-            is_selected: Whether item is selected
-            is_hover: Whether item is hovered
+            file_item: File item (used for color tag)
+            is_selected: Unused (kept for signature stability)
+            is_hover: Unused (kept for signature stability)
 
         """
-        border_color = self.FRAME_COLOR_SELECTED if is_selected else self.FRAME_COLOR_NORMAL
-        if is_hover and not is_selected:
-            border_color = self.FRAME_COLOR_HOVER
+        del is_selected, is_hover  # background handled at cell level
 
-        background_color = QColor(self.FRAME_BG_COLOR_DEFAULT)
-        if getattr(file_item, "color", "none") != "none":
+        has_color_tag = getattr(file_item, "color", "none") != "none"
+        if has_color_tag:
             color_value = QColor(file_item.color)
             if color_value.isValid():
-                background_color = color_value
+                painter.setBrush(QBrush(color_value))
+            else:
+                painter.setBrush(Qt.NoBrush)
+        else:
+            painter.setBrush(Qt.NoBrush)
 
-        background_color.setAlphaF(
-            self.FRAME_BG_OPACITY_SELECTED if is_selected else self.FRAME_BG_OPACITY_NORMAL
-        )
-
-        painter.setPen(QPen(border_color, self.FRAME_BORDER_WIDTH))
-        painter.setBrush(QBrush(background_color))
+        painter.setPen(QPen(self.FRAME_COLOR_NORMAL, self.FRAME_BORDER_WIDTH))
         painter.drawRect(frame_rect)
 
     def _draw_thumbnail(
@@ -608,9 +643,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw the thumbnail image centered within the thumbnail rect.
 
+        A dark letterbox fill is drawn first so that aspect-ratio gaps
+        around non-square images show a consistent background instead of
+        the cell-level hover/selection color bleeding through.
+
         Uses a scaled pixmap cache to avoid expensive QPixmap.scaled()
         on every paint() call.
         """
+        # Letterbox fill (matches lut-engine #1a1a1a)
+        painter.fillRect(thumbnail_rect, self.FRAME_BG_COLOR_DEFAULT)
+
         target_size = (thumbnail_rect.width(), thumbnail_rect.height())
         cache_key = (thumbnail_pixmap.cacheKey(), target_size)
 
@@ -695,6 +737,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
     def _draw_no_preview_placeholder(
         self,
         painter: QPainter,
+        fill_rect: QRect,
         thumbnail_rect: QRect,
         file_item: "FileItem",
     ) -> None:
@@ -706,13 +749,14 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         Args:
             painter: QPainter
+            fill_rect: Full interior rect (frame minus border, includes padding)
             thumbnail_rect: Target rectangle inside the frame
             file_item: FileItem for extension lookup
 
         """
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(self.NO_PREVIEW_BG_COLOR))
-        painter.drawRect(thumbnail_rect)
+        painter.drawRect(fill_rect)
 
         icon_px = self._get_filetype_icon(file_item.extension.lower(), self.NO_PREVIEW_ICON_SIZE)
         if not icon_px.isNull():
@@ -731,19 +775,25 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw error state: dark bg with a muted-red warning triangle.
 
+        Uses ``metadata/warning.svg`` (Material Design warning glyph) tinted
+        with ``ERROR_ICON_COLOR`` -- matches oncut-lut-engine failed state.
+
         Args:
             painter: QPainter
             fill_rect: Full interior rect (including padding)
             thumbnail_rect: Inner thumbnail rect
-            extension: Lowercase file extension for filetype icon
+            extension: Lowercase file extension (kept for signature stability)
 
         """
+        del extension  # not used: a generic warning glyph is shown for all types
+
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(self.ERROR_BG_COLOR))
         painter.drawRect(fill_rect)
 
-        # Warning triangle icon (Material Design "warning" codepoint)
-        icon_px = self._get_filetype_icon(extension, self.ERROR_ICON_SIZE, self.ERROR_ICON_COLOR)
+        icon_px = self._get_named_svg_icon(
+            "metadata", "warning", self.ERROR_ICON_SIZE, self.ERROR_ICON_COLOR
+        )
         if not icon_px.isNull():
             ix = thumbnail_rect.left() + (thumbnail_rect.width() - icon_px.width()) // 2
             iy = thumbnail_rect.top() + (thumbnail_rect.height() - icon_px.height()) // 2
@@ -787,8 +837,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw LOG badge at bottom-right of thumbnail area.
 
-        Placeholder for future LOG profile detection. Renders a small "L"
-        indicator when the file is detected as having a LOG curve.
+        Always rendered for video files using ``preview/LOG.svg``:
+        - LOG detected (``has_log=True``):  green ``LOG_BADGE_COLOR_ACTIVE``
+        - Not detected (``has_log=False``): white, dimmed via opacity
+
+        Matches oncut-lut-engine LOG badge (no pill background).
 
         Args:
             painter: QPainter
@@ -796,27 +849,22 @@ class ThumbnailDelegate(QStyledItemDelegate):
             has_log: Whether LOG profile is detected for this file
 
         """
-        if not has_log:
+        if has_log:
+            color = self.LOG_BADGE_COLOR_ACTIVE
+            opacity = self.LOG_BADGE_OPACITY_ACTIVE
+        else:
+            color = self.LOG_BADGE_COLOR_INACTIVE
+            opacity = self.LOG_BADGE_OPACITY_INACTIVE
+
+        icon_px = self._get_named_svg_icon("preview", "LOG", self.BADGE_ICON_SIZE, color)
+        if icon_px.isNull():
             return
 
-        badge_size = self.BADGE_ICON_SIZE
-        bx = thumbnail_rect.right() - badge_size - self.BADGE_MARGIN
-        by = thumbnail_rect.bottom() - badge_size - self.BADGE_MARGIN
-        badge_rect = QRectF(bx, by, badge_size, badge_size)
+        bx = thumbnail_rect.right() - self.BADGE_ICON_SIZE - self.BADGE_MARGIN
+        by = thumbnail_rect.bottom() - self.BADGE_ICON_SIZE - self.BADGE_MARGIN
 
-        # Semi-transparent background pill
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(self.LOG_BADGE_BG))
-        painter.setOpacity(self.BADGE_OPACITY)
-        painter.drawRoundedRect(badge_rect, 3, 3)
-
-        # "L" text
-        font = QFont()
-        font.setPointSize(self.THUMBNAIL_FONT_SIZE)
-        font.setBold(True)
-        painter.setFont(font)
-        painter.setPen(self.LOG_BADGE_TEXT)
-        painter.drawText(badge_rect, Qt.AlignCenter, "L")
+        painter.setOpacity(opacity)
+        painter.drawPixmap(bx, by, icon_px)
         painter.setOpacity(1.0)
 
     @classmethod
@@ -844,6 +892,23 @@ class ThumbnailDelegate(QStyledItemDelegate):
             svg_path = icons_dir / "description.svg"
 
         pixmap = cls._render_svg_icon(svg_path, size, tint)
+        cls._filetype_icon_cache[cache_key] = pixmap
+        return pixmap
+
+    @classmethod
+    def _get_named_svg_icon(cls, subdir: str, name: str, size: int, color: str) -> QPixmap:
+        """Load any SVG icon under ``oncutf/resources/icons/<subdir>/<name>.svg``.
+
+        Used for non-filetype overlays (warning glyph, LOG badge, etc.).
+        Cached on (subdir, name, size, color).
+        """
+        cache_key = (f"{subdir}/{name}", size, color)
+        if cache_key in cls._filetype_icon_cache:
+            return cls._filetype_icon_cache[cache_key]
+
+        icons_dir = Path(__file__).parent.parent / "resources" / "icons" / subdir
+        svg_path = icons_dir / f"{name}.svg"
+        pixmap = cls._render_svg_icon(svg_path, size, color) if svg_path.exists() else QPixmap()
         cls._filetype_icon_cache[cache_key] = pixmap
         return pixmap
 
@@ -1022,11 +1087,15 @@ class ThumbnailDelegate(QStyledItemDelegate):
             file_missing: Whether the file is no longer found on disk
 
         """
-        # Red for missing, yellow for renamed-dirty, default table text color otherwise
+        # Red for missing, yellow for renamed-dirty; otherwise:
+        # - selected: dark navy for legibility on the light selection bg
+        # - normal:   default table text color
         if file_missing:
             text_color = QColor(MISSED_TEXT_COLOR)
         elif rename_dirty:
             text_color = QColor(MODIFIED_TEXT_COLOR)
+        elif is_selected:
+            text_color = QColor(self.TEXT_COLOR_SELECTED)
         else:
             text_color = QColor(QLABEL_PRIMARY_TEXT)
         painter.setPen(text_color)

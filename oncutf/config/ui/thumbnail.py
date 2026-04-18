@@ -14,10 +14,10 @@ numbers live here in the config layer.
 # Layout constants (pixels)
 # =====================================================================
 
-FRAME_BORDER_WIDTH = 3
-FRAME_PADDING = 8  # Space between frame border and thumbnail
-FILENAME_HEIGHT = 30  # Space below thumbnail for filename text
-FILENAME_MARGIN = 6  # Vertical margin above filename
+FRAME_BORDER_WIDTH = 1
+FRAME_PADDING = 4  # Space between frame border and thumbnail
+FILENAME_HEIGHT = 25  # Space below thumbnail for filename text
+FILENAME_MARGIN = 2  # Vertical gap between frame bottom and filename top
 
 # Metadata / hash indicator icons
 INDICATOR_ICON_SIZE = 16  # Metadata status icon (top-left)
@@ -39,13 +39,24 @@ BADGE_ICON_COLOR = "#ffffff"  # White overlay for badges
 # Colors -- frame & selection
 # =====================================================================
 
-FRAME_COLOR_NORMAL = (100, 100, 100)  # RGB
-FRAME_COLOR_HOVER = (100, 150, 255)  # RGB
-FRAME_COLOR_SELECTED = (50, 120, 255)  # RGB
-FRAME_BG_COLOR_DEFAULT = (100, 100, 100)  # RGB -- default frame fill (no color tag)
-FRAME_BG_OPACITY_NORMAL = 0.4  # Frame fill opacity when unselected
-FRAME_BG_OPACITY_SELECTED = 0.7  # Frame fill opacity when selected
-BACKGROUND_COLOR_SELECTED = (50, 120, 255, 40)  # RGBA
+# Single stable border color used in ALL states (idle, hover, selected,
+# loading, ready, failed). Visual feedback comes from the cell background
+# fill, not from changing the border color.
+FRAME_COLOR_NORMAL = (58, 59, 64)  # RGB -- #3a3b40
+FRAME_COLOR_HOVER = (58, 59, 64)  # RGB -- same as normal (no state change)
+FRAME_COLOR_SELECTED = (58, 59, 64)  # RGB -- same as normal (no state change)
+
+# Default frame interior fill when no color tag is set. Letterbox-dark
+# so the frame looks identical before and after the thumbnail loads.
+FRAME_BG_COLOR_DEFAULT = (26, 26, 26)  # RGB -- #1a1a1a (letterbox)
+FRAME_BG_OPACITY_NORMAL = 1.0  # Solid fill
+FRAME_BG_OPACITY_SELECTED = 1.0  # Solid fill (selection shows on cell bg, not frame)
+
+# Cell-level backgrounds (fill the whole option.rect including the
+# filename row, so hover/selection visually wrap around the filename).
+BACKGROUND_COLOR_HOVER = (10, 26, 42)  # RGBA -- #0a1a2a
+BACKGROUND_COLOR_SELECTED = (116, 140, 171)  # RGB -- #748cab
+TEXT_COLOR_SELECTED = "#0d1321"  # Dark navy for legibility on selected bg
 
 # =====================================================================
 # Colors -- video badge
@@ -97,13 +108,17 @@ BADGE_INACTIVE_OPACITY = 0.25
 
 # =====================================================================
 # LOG profile badge (bottom-right, video files only)
+# Matches oncut-lut-engine: SVG icon recolored, no pill background.
 # =====================================================================
 
-LOG_BADGE_COLOR_ACTIVE = "#4ade80"  # Green for detected LOG profile
-LOG_BADGE_COLOR_INACTIVE = "#6b7280"  # Gray for no LOG
-LOG_BADGE_FONT_SIZE = 7  # Tiny label font size
-LOG_BADGE_BG = (0, 0, 0, 140)  # RGBA -- semi-transparent pill behind "L"
-LOG_BADGE_TEXT = (255, 255, 255)  # RGB -- "L" text color
+LOG_BADGE_COLOR_ACTIVE = "#00fe00"  # Pure green (lut-engine log_active)
+LOG_BADGE_COLOR_INACTIVE = "#ffffff"  # White when LOG not detected
+LOG_BADGE_OPACITY_INACTIVE = 0.35  # Dimmed when no LOG profile present
+LOG_BADGE_OPACITY_ACTIVE = 0.90  # Prominent when LOG detected
+# Legacy fields kept for backward compatibility (no longer used by delegate)
+LOG_BADGE_FONT_SIZE = 7
+LOG_BADGE_BG = (0, 0, 0, 140)
+LOG_BADGE_TEXT = (255, 255, 255)
 
 # =====================================================================
 # Font sizes (pt)
