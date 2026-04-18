@@ -108,17 +108,13 @@ BADGE_INACTIVE_OPACITY = 0.25
 
 # =====================================================================
 # LOG profile badge (bottom-right, video files only)
-# Matches oncut-lut-engine: SVG icon recolored, no pill background.
+# SVG icon recolored, no pill background.
 # =====================================================================
 
-LOG_BADGE_COLOR_ACTIVE = "#00fe00"  # Pure green (lut-engine log_active)
+LOG_BADGE_COLOR_ACTIVE = "#00fe00"  # Pure green
 LOG_BADGE_COLOR_INACTIVE = "#ffffff"  # White when LOG not detected
 LOG_BADGE_OPACITY_INACTIVE = 0.35  # Dimmed when no LOG profile present
 LOG_BADGE_OPACITY_ACTIVE = 0.90  # Prominent when LOG detected
-# Legacy fields kept for backward compatibility (no longer used by delegate)
-LOG_BADGE_FONT_SIZE = 7
-LOG_BADGE_BG = (0, 0, 0, 140)
-LOG_BADGE_TEXT = (255, 255, 255)
 
 # =====================================================================
 # Font sizes (pt)
