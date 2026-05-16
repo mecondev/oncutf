@@ -163,9 +163,7 @@ class AppPaths:
                 cls._config_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(legacy_cfg), str(new_cfg))
                 legacy_cfg.unlink()
-                logger.info(
-                    "[AppPaths] Migrated config: %s -> %s", legacy_cfg, new_cfg
-                )
+                logger.info("[AppPaths] Migrated config: %s -> %s", legacy_cfg, new_cfg)
 
         cls._config_dir.mkdir(parents=True, exist_ok=True)
         return cls._config_dir
@@ -236,9 +234,7 @@ class AppPaths:
             if legacy_cache.exists() and not cls._cache_dir.exists():
                 cls._cache_dir.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(legacy_cache), str(cls._cache_dir))
-                logger.info(
-                    "[AppPaths] Migrated cache: %s -> %s", legacy_cache, cls._cache_dir
-                )
+                logger.info("[AppPaths] Migrated cache: %s -> %s", legacy_cache, cls._cache_dir)
 
         cls._cache_dir.mkdir(parents=True, exist_ok=True)
         return cls._cache_dir
@@ -293,6 +289,7 @@ class AppPaths:
 # ---------------------------------------------------------------------------
 # Convenience functions for backward compatibility
 # ---------------------------------------------------------------------------
+
 
 def get_user_data_dir() -> Path:
     """Get user data directory."""

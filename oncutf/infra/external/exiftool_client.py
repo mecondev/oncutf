@@ -1,8 +1,8 @@
-"""ExifTool client - canonical ExifTool interaction.
+"""ExifTool client - canonical Exopsis metadata interaction.
 
-This module consolidates all ExifTool interactions into a single location.
-It wraps the ExifToolWrapper and provides a clean interface for the rest
-of the application.
+This module consolidates all Exopsis-compatible metadata interactions into a
+single location. It wraps the ExifToolWrapper abstraction and provides a clean
+interface for the rest of the application.
 
 Replaces:
 - oncutf/utils/metadata/exiftool_adapter.py
@@ -26,10 +26,10 @@ logger = get_cached_logger(__name__)
 
 
 class ExifToolClient:
-    """Canonical ExifTool client for metadata operations.
+    """Canonical metadata client for Exopsis-compatible operations.
 
-    This is the SINGLE SOURCE OF TRUTH for ExifTool interactions.
-    All metadata extraction/writing should go through this class.
+    This is the SINGLE SOURCE OF TRUTH for metadata extraction and writing.
+    All metadata interactions should go through this class.
 
     Features:
     - Persistent process via ExifToolWrapper
@@ -100,7 +100,7 @@ class ExifToolClient:
 
         """
         if not self.is_available():
-            logger.warning("ExifTool not available, cannot extract metadata")
+            logger.warning("Exopsis not available, cannot extract metadata")
             return {}
 
         try:
@@ -123,7 +123,7 @@ class ExifToolClient:
 
         """
         if not self.is_available():
-            logger.warning("ExifTool not available, cannot extract batch metadata")
+            logger.warning("Exopsis not available, cannot extract batch metadata")
             return {}
 
         if not paths:
@@ -138,8 +138,7 @@ class ExifToolClient:
             # Use batch extraction
             results = wrapper.get_metadata_batch(path_strings, use_extended=self._use_extended)
 
-            # Convert back to Path keys
-            return {str(path): results.get(str(path), {}) for path in paths}
+            return {str(path): results[index] for index, path in enumerate(paths)}
 
         except Exception:
             logger.exception("Error in batch metadata extraction")
@@ -202,12 +201,9 @@ class ExifToolClient:
 
         try:
             wrapper = self._ensure_wrapper()
+            del backup
 
-            # Prepare metadata for ExifTool format
-            tags = {f"-{key}={value}" for key, value in metadata.items()}
-
-            # Call wrapper's write method
-            result = wrapper.write_metadata(str(path), list(tags), create_backup=backup)
+            result = wrapper.write_metadata(str(path), metadata)
 
             if result:
                 logger.debug("Successfully wrote metadata to %s", path)

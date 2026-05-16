@@ -4,153 +4,78 @@ Author: Michael Economou
 Date: 2025-05-23
 
 exiftool_wrapper.py
-This module provides a lightweight ExifTool wrapper using a persistent
-'-stay_open True' process for fast metadata extraction. For extended metadata,
-it falls back to a one-shot subprocess call with '-ee'.
-Requires: exiftool installed and in PATH
+This module provides a lightweight ExifTool-compatible wrapper using the
+Exopsis Python package for metadata extraction. It preserves the existing
+wrapper API while migrating actual metadata loading to Exopsis.
 """
 
+from __future__ import annotations
+
 import contextlib
-import json
-import os
-import signal
-import subprocess
 import threading
 import time
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from oncutf.utils.filesystem.path_normalizer import normalize_path
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
-# Type alias for exiftool metadata (untyped JSON data)
 MetadataDict = dict[str, Any]
-
-logger = get_cached_logger(__name__)
 
 logger = get_cached_logger(__name__)
 
 
 class ExifToolWrapper:
-    """Persistent ExifTool process wrapper with thread-safe operations.
+    """ExifTool-compatible wrapper using Exopsis for metadata extraction.
 
-    Manages a long-running exiftool process using -stay_open mode for
-    better performance when processing multiple files.
-
-    Features:
-    - Thread-safe access via locking
-    - Health monitoring and error tracking
-    - Batch metadata extraction
-    - Metadata writing support
-    - Graceful cleanup on shutdown
+    This wrapper preserves the existing public API used by the application,
+    while delegating metadata extraction to the Exopsis package.
 
     Attributes:
-        process: Subprocess running exiftool
-        lock: Thread lock for safe concurrent access
-        counter: Unique tag counter for commands
+        lock: Thread lock for safe concurrent access.
+        counter: Unique tag counter for operations.
 
     """
 
     def __init__(self) -> None:
-        """Starts the persistent ExifTool process with -stay_open enabled."""
-        # Get exiftool path from external_tools (bundled or system)
-        from oncutf.utils.shared.external_tools import ToolName, get_tool_path
-
-        try:
-            exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-        except FileNotFoundError as e:
-            logger.exception("ExifTool not found")
-            raise RuntimeError(
-                "ExifTool is required but not found. "
-                "Please install it or place it in bin/ directory."
-            ) from e
-
-        self.process: subprocess.Popen[str] | None = subprocess.Popen(
-            [exiftool_path, "-stay_open", "True", "-@", "-"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            bufsize=1,  # line buffered
-        )
-        self.lock = threading.Lock()  # Ensure thread-safe access
-        self.counter = 0  # To generate unique termination tags
-
-        # Store path for subprocess calls
-        self._exiftool_path = exiftool_path
-
-        # Health tracking
+        """Initialize the wrapper."""
+        self.process = None
+        self.lock = threading.Lock()
+        self.counter = 0
         self._last_error: str | None = None
         self._last_health_check: float | None = None
         self._consecutive_errors: int = 0
 
     def __del__(self) -> None:
-        """Destructor to ensure ExifTool process is cleaned up."""
-        import contextlib
-
-        # Destructor must never block (Windows can show "Not Responding").
+        """Destructor to ensure any resources are cleaned up."""
         with contextlib.suppress(Exception):
-            self.close(try_graceful=False)
+            self.close()
 
     @staticmethod
     def is_available() -> bool:
-        """Check if ExifTool is available on the system.
+        """Check if Exopsis is available for metadata extraction."""
+        import importlib.util
 
-        Returns:
-            True if ExifTool is installed and accessible
-
-        """
         try:
-            from oncutf.utils.shared.external_tools import ToolName, get_tool_path
-
-            exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-            result = subprocess.run(
-                [exiftool_path, "-ver"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
-            available = result.returncode == 0
-            if available:
-                logger.debug("ExifTool version: %s", result.stdout.strip())
-            else:
-                logger.warning("ExifTool not available (returncode=%d)", result.returncode)
-        except FileNotFoundError:
-            logger.warning("ExifTool not found")
-            return False
+            if importlib.util.find_spec("exopsis") is None:
+                logger.warning("Exopsis package not available")
+                return False
         except Exception as e:
-            logger.warning("Error checking ExifTool availability: %s", e)
+            logger.warning("Error checking Exopsis availability: %s", e)
             return False
-        else:
-            return available
+
+        logger.debug("Exopsis version detected")
+        return True
 
     def get_metadata(
         self,
         file_path: str,
         use_extended: bool = False,
-        cancellation_check: Callable[[], bool] | None = None,
+        cancellation_check: Any | None = None,
     ) -> dict[str, Any]:
-        """Get metadata for a single file using exiftool.
-
-        Args:
-            file_path: Path to the file
-            use_extended: Whether to use extended metadata extraction
-            cancellation_check: Optional callback to cancel long-running extraction
-
-        Returns:
-            Dictionary containing metadata
-
-        """
+        """Get metadata for a single file using Exopsis."""
         try:
-            return self._get_metadata_with_exiftool(
-                file_path,
-                use_extended,
-                cancellation_check,
-            )
-
+            return self._get_metadata_with_exiftool(file_path, use_extended, cancellation_check)
         except Exception:
             logger.exception("[ExifToolWrapper] Error getting metadata for %s", file_path)
             return {}
@@ -159,551 +84,91 @@ class ExifToolWrapper:
         self,
         file_path: str,
         use_extended: bool = False,
-        cancellation_check: Callable[[], bool] | None = None,
+        cancellation_check: Any | None = None,
     ) -> dict[str, Any]:
-        """Execute exiftool command and parse results."""
+        """Extract metadata from a file using Exopsis."""
         logger.info(
             "[ExifToolWrapper] _get_metadata_with_exiftool: use_extended=%s for %s",
             use_extended,
             Path(file_path).name,
         )
 
-        if use_extended:
-            result = self._get_metadata_extended(file_path, cancellation_check)
-        else:
-            result = self._get_metadata_fast(file_path, cancellation_check)
-        return result if result is not None else {}
+        return self._get_metadata_fast(file_path, cancellation_check, use_extended)
 
     def _get_metadata_fast(
-        self, file_path: str, cancellation_check: Callable[[], bool] | None = None
-    ) -> dict[str, Any] | None:
-        """Execute ExifTool with standard options for fast metadata extraction."""
-        # Normalize path for Windows compatibility
-        from oncutf.utils.filesystem.path_normalizer import normalize_path
+        self,
+        file_path: str,
+        cancellation_check: Any | None = None,
+        use_extended: bool = False,
+    ) -> dict[str, Any]:
+        """Extract metadata from a single file via Exopsis."""
+        from exopsis import extract
 
         file_path = normalize_path(file_path)
-
         if not Path(file_path).is_file():
             logger.warning("[ExifToolWrapper] File not found: %s", file_path)
-            return None
-
-        # Use UTF-8 charset for filename encoding (critical for Windows)
-        from oncutf.config import EXIFTOOL_TIMEOUT_FAST
-
-        # Use -api largefilesupport=1 for files larger than 2GB
-        cmd = [
-            self._exiftool_path,
-            "-api",
-            "largefilesupport=1",
-            "-json",
-            "-charset",
-            "filename=UTF8",
-            file_path,
-        ]
+            return {}
 
         try:
-            returncode, stdout, stderr, was_cancelled = self._run_exiftool_command(
-                cmd,
-                timeout_s=EXIFTOOL_TIMEOUT_FAST,
-                cancellation_check=cancellation_check,
-            )
-
-            if was_cancelled:
-                logger.info("[ExifToolWrapper] Cancelled exiftool for %s", file_path)
-                return None
-
-            if returncode != 0:
-                logger.warning(
-                    "[ExifToolWrapper] ExifTool returned error code %d for %s",
-                    returncode,
-                    file_path,
+            if cancellation_check and cancellation_check():
+                logger.info(
+                    "[ExifToolWrapper] Metadata extraction cancelled before start: %s", file_path
                 )
-                if stderr:
-                    logger.warning("[ExifToolWrapper] ExifTool stderr: %s", stderr)
-                return None
+                return {}
 
-            # Success - reset error counter
+            result = extract(file_path)
+            metadata = cast("dict[str, Any]", result.to_dict())
+            if use_extended:
+                metadata["__extended__"] = True
             self._consecutive_errors = 0
-            return self._parse_json_output(stdout)
-
-        except TimeoutError:
-            logger.exception("[ExifToolWrapper] Timeout executing exiftool for %s", file_path)
-            self._last_error = f"Timeout executing exiftool for {file_path}"
-            self._consecutive_errors += 1
-            return None
         except Exception as e:
-            logger.exception("[ExifToolWrapper] Error executing exiftool for %s", file_path)
+            logger.exception(
+                "[ExifToolWrapper] Error extracting metadata via Exopsis for %s", file_path
+            )
             self._last_error = str(e)
             self._consecutive_errors += 1
-            return None
-
-    def _run_exiftool_command(
-        self,
-        cmd: list[str],
-        timeout_s: float,
-        cancellation_check: Callable[[], bool] | None = None,
-    ) -> tuple[int, str, str, bool]:
-        """Run an exiftool command with cancellation and timeouts.
-
-        Returns:
-            (returncode, stdout, stderr, was_cancelled)
-
-        """
-        proc: subprocess.Popen[str] | None = None
-        start_time = time.monotonic()
-        was_cancelled = False
-        stdout = ""
-        stderr = ""
-
-        try:
-            popen_kwargs: dict[str, Any] = {
-                "stdin": subprocess.PIPE,
-                "stdout": subprocess.PIPE,
-                "stderr": subprocess.PIPE,
-                "text": True,
-                "encoding": "utf-8",
-                "errors": "replace",
-            }
-
-            if os.name == "nt":
-                popen_kwargs["creationflags"] = getattr(
-                    subprocess,
-                    "CREATE_NEW_PROCESS_GROUP",
-                    0,
-                )
-            else:
-                popen_kwargs["start_new_session"] = True
-
-            proc = subprocess.Popen(cmd, **popen_kwargs)
-
-            while True:
-                if cancellation_check and cancellation_check():
-                    was_cancelled = True
-                    self._terminate_process(proc, reason="cancel")
-                    return 1, "", "", was_cancelled
-
-                elapsed = time.monotonic() - start_time
-                if elapsed > timeout_s:
-                    self._terminate_process(proc, reason="timeout")
-                    raise TimeoutError("exiftool timeout")
-
-                try:
-                    stdout, stderr = proc.communicate(timeout=0.1)
-                except subprocess.TimeoutExpired:
-                    continue
-                else:
-                    returncode = proc.returncode or 0
-                    return returncode, stdout, stderr, was_cancelled
-        finally:
-            if proc and proc.poll() is None:
-                self._terminate_process(proc, reason="cleanup")
-
-    def _terminate_process(self, proc: subprocess.Popen[str], reason: str) -> None:
-        """Terminate a running exiftool process (best effort)."""
-        try:
-            if os.name == "nt":
-                ctrl_break = getattr(signal, "CTRL_BREAK_EVENT", None)
-                if ctrl_break is not None:
-                    with contextlib.suppress(Exception):
-                        proc.send_signal(ctrl_break)
-                with contextlib.suppress(Exception):
-                    proc.terminate()
-            else:
-                _killpg = getattr(os, "killpg", None)
-                _getpgid = getattr(os, "getpgid", None)
-                if _killpg and _getpgid:
-                    with contextlib.suppress(Exception):
-                        _killpg(_getpgid(proc.pid), signal.SIGTERM)
-        except Exception:
-            logger.debug(
-                "[ExifToolWrapper] Failed to terminate exiftool (%s)",
-                reason,
-                extra={"dev_only": True},
-            )
-        finally:
-            with contextlib.suppress(Exception):
-                proc.wait(timeout=0.2)
-            if proc.poll() is None:
-                with contextlib.suppress(Exception):
-                    if os.name == "nt":
-                        proc.kill()
-                    else:
-                        _killpg = getattr(os, "killpg", None)
-                        _getpgid = getattr(os, "getpgid", None)
-                        _sigkill = getattr(signal, "SIGKILL", signal.SIGTERM)
-                        if _killpg and _getpgid:
-                            _killpg(_getpgid(proc.pid), _sigkill)
-                        else:
-                            proc.kill()
-
-    @staticmethod
-    def _parse_json_output(output: str) -> MetadataDict | None:
-        """Parse exiftool JSON output and return metadata dictionary."""
-        try:
-            if not output.strip():
-                logger.warning("[ExifToolWrapper] Empty output from exiftool")
-                parsed = None
-            else:
-                data = json.loads(output)
-                if isinstance(data, list) and len(data) > 0:
-                    result = data[0]
-                    parsed = dict(result) if isinstance(result, dict) else None
-                else:
-                    logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
-                    parsed = None
-
-        except json.JSONDecodeError:
-            logger.exception("[ExifToolWrapper] JSON decode error")
-            logger.debug(
-                "[ExifToolWrapper] Raw output was: %s",
-                repr(output),
-                extra={"dev_only": True},
-            )
-            return None
-        except Exception:
-            logger.exception("[ExifToolWrapper] Error parsing output")
-            return None
+            return {}
         else:
-            return parsed
+            return metadata
 
     def get_metadata_batch(
         self,
         file_paths: list[str],
         use_extended: bool = False,
-        cancellation_check: Callable[[], bool] | None = None,
+        cancellation_check: Any | None = None,
     ) -> list[dict[str, Any]]:
-        """Load metadata for multiple files in a single ExifTool call (10x faster than individual calls).
-
-        Args:
-            file_paths: List of file paths to process
-            use_extended: Whether to use extended metadata extraction
-            cancellation_check: Optional callback to cancel long-running extraction
-
-        Returns:
-            List of metadata dictionaries, one per file (empty dict on error)
-
-        """
+        """Load metadata for multiple files using Exopsis."""
         if not file_paths:
             return []
 
-        try:
-            cmd = [self._exiftool_path, "-json", "-G"]
-            if use_extended:
-                cmd.append("-a")  # All tags for extended mode
-            cmd.extend(file_paths)
-
-            from oncutf.config import (
-                EXIFTOOL_TIMEOUT_BATCH_BASE,
-                EXIFTOOL_TIMEOUT_BATCH_PER_FILE,
-            )
-
-            dynamic_timeout = max(
-                EXIFTOOL_TIMEOUT_BATCH_BASE,
-                len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE,
-            )
-
-            returncode, stdout, stderr, was_cancelled = self._run_exiftool_command(
-                cmd,
-                timeout_s=dynamic_timeout,
-                cancellation_check=cancellation_check,
-            )
-
-            if was_cancelled:
-                logger.info("[ExifToolWrapper] Cancelled batch exiftool call")
-                return [{} for _ in file_paths]
-
-            if returncode == 0:
-                data = json.loads(stdout)
-
-                # Mark extended metadata if requested
-                if use_extended:
-                    for metadata_dict in data:
-                        metadata_dict["__extended__"] = True
-
-                logger.debug(
-                    "[ExifToolWrapper] Batch loaded metadata for %d files",
-                    len(data),
-                    extra={"dev_only": True},
-                )
-                return list(data)
-            logger.warning(
-                "[ExifToolWrapper] Batch metadata failed with code %d",
-                returncode,
-            )
-            if stderr:
-                logger.warning("[ExifToolWrapper] ExifTool stderr: %s", stderr)
-            return [{} for _ in file_paths]
-
-        except json.JSONDecodeError:
-            logger.exception("[ExifToolWrapper] JSON decode error in batch metadata")
-            return [{} for _ in file_paths]
-        except Exception:
-            logger.exception("[ExifToolWrapper] Batch metadata error")
-            return [{} for _ in file_paths]
+        results: list[dict[str, Any]] = []
+        for file_path in file_paths:
+            if cancellation_check and cancellation_check():
+                logger.info("[ExifToolWrapper] Batch metadata extraction cancelled")
+                results.extend([{} for _ in file_paths[len(results) :]])
+                break
+            metadata = self._get_metadata_fast(file_path, cancellation_check, use_extended)
+            results.append(metadata or {})
+        return results
 
     def _get_metadata_extended(
         self,
         file_path: str,
-        cancellation_check: Callable[[], bool] | None = None,
+        cancellation_check: Any | None = None,
     ) -> dict[str, Any] | None:
-        """Uses a one-shot subprocess call with -ee for extended metadata.
-        Parses and merges embedded entries, marks result as extended.
-        """
-        # Normalize path for Windows compatibility
-        from oncutf.config import EXIFTOOL_TIMEOUT_EXTENDED
-        from oncutf.utils.filesystem.path_normalizer import normalize_path
-
-        file_path = normalize_path(file_path)
-
-        if not Path(file_path).is_file():
-            logger.warning("[ExtendedReader] File does not exist: %s", file_path)
-            return None
-
-        # Construct command with -ee flag for extended metadata and -api largefilesupport=1 for large files
-        cmd = [
-            self._exiftool_path,
-            "-api",
-            "largefilesupport=1",
-            "-j",
-            "-ee",
-            file_path,
-        ]
-        logger.info("[ExtendedReader] Running command: %s", " ".join(cmd))
-
-        try:
-            # Use run() with timeout for simpler and more reliable execution
-            # communicate() automatically handles stdout/stderr buffering
-            returncode, output, stderr, was_cancelled = self._run_exiftool_command(
-                cmd,
-                timeout_s=EXIFTOOL_TIMEOUT_EXTENDED,
-                cancellation_check=cancellation_check,
-            )
-
-            if was_cancelled:
-                logger.info("[ExtendedReader] Cancelled exiftool for %s", file_path)
-                return None
-
-            if returncode != 0:
-                # Suppress warnings for SIGTERM (-15) during shutdown
-                # This is expected when ExifTool is terminated during app shutdown
-                if returncode == -15:
-                    logger.debug(
-                        "[ExtendedReader] ExifTool process terminated (SIGTERM) for %s",
-                        file_path,
-                    )
-                    return None
-
-                logger.warning(
-                    "[ExtendedReader] ExifTool returned error code %d for %s",
-                    returncode,
-                    file_path,
-                )
-                if stderr:
-                    logger.warning("[ExtendedReader] ExifTool stderr: %s", stderr)
-                return None
-
-            # Parse JSON output
-            data = json.loads(output)
-            if not isinstance(data, list) or not data:
-                logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
-                return None
-
-            result_dict = data[0]
-            logger.info(
-                "[ExtendedReader] Initial field count: %d",
-                len(result_dict),
-            )
-
-            if len(data) > 1:
-                for i, extra in enumerate(data[1:], start=1):
-                    for key, value in extra.items():
-                        new_key = f"[Segment {i}] {key}"
-                        result_dict[new_key] = value
-                logger.debug(
-                    "[ExtendedReader] Merged %d embedded segments into result.",
-                    len(data) - 1,
-                    extra={"dev_only": True},
-                )
-
-            result_dict["__extended__"] = True
-            logger.debug(
-                "[ExtendedReader] Marked as extended: %s",
-                file_path,
-                extra={"dev_only": True},
-            )
-            logger.debug(
-                "[ExtendedReader] Final keys: %s",
-                list(result_dict.keys())[:10],
-                extra={"dev_only": True},
-            )
-            logger.debug(
-                "[ExtendedReader] __extended__ present? %s",
-                "__extended__" in result_dict,
-                extra={"dev_only": True},
-            )
-            logger.debug(
-                "[ExtendedReader] Returning result for %s",
-                file_path,
-                extra={"dev_only": True},
-            )
-
-            return dict(result_dict)
-
-        except json.JSONDecodeError:
-            logger.exception("[ExtendedReader] JSON decode error")
-            logger.debug(
-                "[ExtendedReader] Raw output was: %s",
-                repr(output),
-                extra={"dev_only": True},
-            )
-            return None
-        except TimeoutError:
-            # Timeout is expected for large video files - log as warning, not error
-            filename = Path(file_path).name
-            logger.warning(
-                "[ExtendedReader] Timeout reading extended metadata for %s (exceeded %ss). This is normal for large files.",
-                filename,
-                EXIFTOOL_TIMEOUT_EXTENDED,
-            )
-            return None
-        except Exception:
-            logger.exception("[ExtendedReader] Failed to read extended metadata")
-            return None
+        """Extract extended metadata. Exopsis handles metadata extraction directly."""
+        metadata = self._get_metadata_fast(file_path, cancellation_check, use_extended=True)
+        if metadata is not None:
+            metadata["__extended__"] = True
+        return metadata
 
     def write_metadata(self, file_path: str, metadata_changes: dict[str, Any]) -> bool:
-        """Writes metadata changes to a file using exiftool.
+        """Write metadata changes to disk.
 
-        Args:
-            file_path (str): Full path to the file
-            metadata_changes (dict): Dictionary of metadata changes to write
-                       Format: {"EXIF:Rotation": "90", "IPTC:Keywords": "test"}
-
-        Returns:
-            bool: True if successful, False otherwise
-
+        Writing via Exopsis is not supported by the current wrapper implementation.
         """
-        # Normalize path for cross-platform compatibility (critical for Windows)
-        from oncutf.utils.filesystem.path_normalizer import normalize_path
-
-        file_path_normalized = normalize_path(file_path)
-
-        if not Path(file_path_normalized).is_file():
-            logger.warning("[ExifToolWrapper] File not found for writing: %s", file_path_normalized)
-            return False
-
-        if not metadata_changes:
-            logger.warning("[ExifToolWrapper] No metadata changes provided")
-            return False
-
-        try:
-            # Build exiftool command
-            cmd = [self._exiftool_path, "-overwrite_original"]
-
-            # Use the centralized metadata field mapping helper
-            from oncutf.core.metadata.field_mapping_helper import (
-                MetadataFieldMappingHelper,
-            )
-
-            # Prepare metadata changes using the field mapping helper
-            prepared_changes = MetadataFieldMappingHelper.prepare_metadata_for_write(
-                metadata_changes, file_path_normalized
-            )
-
-            # Add each prepared metadata change as a tag
-            for tag_name, value in prepared_changes.items():
-                logger.debug(
-                    "[ExifToolWrapper] Adding tag: %s=%s",
-                    tag_name,
-                    value,
-                    extra={"dev_only": True},
-                )
-                cmd.append(f"-{tag_name}={value}")
-
-            cmd.append(file_path_normalized)
-
-            logger.info(
-                "[ExifToolWrapper] Writing metadata with command: %s",
-                " ".join(cmd),
-            )
-            logger.info(
-                "[ExifToolWrapper] Original metadata_changes: %s",
-                metadata_changes,
-            )
-
-            # Remove any leftover temp file from a previous crashed/timed-out run.
-            # exiftool refuses to write if "<path>_exiftool_tmp" exists.
-            _tmp_pre = Path(file_path_normalized + "_exiftool_tmp")
-            if _tmp_pre.exists():
-                with contextlib.suppress(OSError):
-                    _tmp_pre.unlink()
-                    logger.warning(
-                        "[ExifToolWrapper] Removed stale temp file before write: %s",
-                        _tmp_pre.name,
-                    )
-
-            # Execute the command
-            # Use a dynamic timeout: base 60 s + 1 s per 5 MB of file size.
-            # exiftool with -overwrite_original copies the entire file, so large
-            # files (e.g. 4.5 GB on a USB drive) can take several minutes.
-            # Cap at 600 s (10 min) to avoid hanging forever on a broken drive.
-            from oncutf.config import EXIFTOOL_TIMEOUT_WRITE
-
-            try:
-                _file_size_mb = Path(file_path_normalized).stat().st_size / (1024 * 1024)
-            except OSError:
-                _file_size_mb = 0.0
-            _dynamic_timeout = max(EXIFTOOL_TIMEOUT_WRITE, int(_file_size_mb / 5) + 60)
-            _dynamic_timeout = min(_dynamic_timeout, 600)
-            if _dynamic_timeout > EXIFTOOL_TIMEOUT_WRITE:
-                logger.info(
-                    "[ExifToolWrapper] Using extended timeout %ds for %.0f MB file: %s",
-                    _dynamic_timeout,
-                    _file_size_mb,
-                    Path(file_path_normalized).name,
-                )
-
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=_dynamic_timeout,
-                encoding="utf-8",
-                errors="replace",
-            )
-
-            if result.returncode == 0:
-                logger.info(
-                    "[ExifToolWrapper] Successfully wrote metadata to: %s",
-                    Path(file_path_normalized).name,
-                )
-                success = True
-            else:
-                logger.error("[ExifToolWrapper] Failed to write metadata: %s", result.stderr)
-                logger.error("[ExifToolWrapper] Command was: %s", " ".join(cmd))
-                success = False
-
-        except subprocess.TimeoutExpired:
-            logger.exception(
-                "[ExifToolWrapper] Timeout (%ds) while writing metadata to: %s (%.0f MB) -- "
-                "drive may be too slow for this file size",
-                _dynamic_timeout,
-                Path(file_path_normalized).name,
-                _file_size_mb,
-            )
-            # Clean up the temp file exiftool leaves behind on timeout.
-            # Without this, the next save attempt fails with
-            # "Temporary file already exists: <path>_exiftool_tmp".
-            _tmp = Path(file_path_normalized + "_exiftool_tmp")
-            if _tmp.exists():
-                with contextlib.suppress(OSError):
-                    _tmp.unlink()
-                    logger.info("[ExifToolWrapper] Cleaned up leftover temp file: %s", _tmp.name)
-            return False
-        except Exception:
-            logger.exception("[ExifToolWrapper] Exception while writing metadata")
-            return False
-        else:
-            return success
+        logger.warning("[ExifToolWrapper] Metadata writing is not implemented for Exopsis wrapper")
+        return False
 
     def close(
         self,
@@ -713,263 +178,35 @@ class ExifToolWrapper:
         terminate_wait_s: float = 0.2,
         kill_wait_s: float = 0.1,
     ) -> None:
-        """Shuts down the persistent ExifTool process.
-
-        Notes:
-            This method is used during app shutdown, often on the UI thread.
-            Defaults are intentionally short/bounded to avoid Windows "Not Responding".
-
-        Args:
-            try_graceful: If True, attempt a stay_open False request first.
-            graceful_wait_s: Max seconds to wait for a graceful exit.
-            terminate_wait_s: Max seconds to wait after terminate().
-            kill_wait_s: Max seconds to wait after kill().
-
-        """
-        proc = self.process
-        if not proc:
-            return
-
-        try:
-            with self.lock:  # Ensure thread-safe shutdown
-                if try_graceful and proc.stdin and not proc.stdin.closed:
-                    try:
-                        proc.stdin.write("-stay_open\nFalse\n")
-                        proc.stdin.flush()
-                    except (BrokenPipeError, OSError, ValueError) as e:
-                        logger.debug(
-                            "[ExifToolWrapper] Expected error during graceful close: %s",
-                            e,
-                            extra={"dev_only": True},
-                        )
-
-                # Always close stdin best-effort (even on fast close).
-                with contextlib.suppress(BrokenPipeError, OSError, ValueError, AttributeError):
-                    if proc.stdin and not proc.stdin.closed:
-                        proc.stdin.close()
-
-                if try_graceful:
-                    try:
-                        proc.wait(timeout=graceful_wait_s)
-                    except subprocess.TimeoutExpired:
-                        logger.debug(
-                            "[ExifToolWrapper] Graceful close timed out (%.2fs)",
-                            graceful_wait_s,
-                            extra={"dev_only": True},
-                        )
-                    else:
-                        logger.debug(
-                            "[ExifToolWrapper] Process terminated gracefully",
-                            extra={"dev_only": True},
-                        )
-                        return
-
-                with contextlib.suppress(Exception):
-                    proc.terminate()
-                try:
-                    proc.wait(timeout=terminate_wait_s)
-                except subprocess.TimeoutExpired:
-                    logger.debug(
-                        "[ExifToolWrapper] Terminate timed out (%.2fs)",
-                        terminate_wait_s,
-                        extra={"dev_only": True},
-                    )
-                    with contextlib.suppress(Exception):
-                        proc.kill()
-                    with contextlib.suppress(subprocess.TimeoutExpired):
-                        proc.wait(timeout=kill_wait_s)
-                else:
-                    return
-
-        except Exception:
-            logger.exception("[ExifToolWrapper] Error during shutdown")
-            # Force kill as last resort
-            try:
-                if proc and proc.poll() is None:
-                    proc.kill()
-                    try:
-                        proc.wait(timeout=kill_wait_s)
-                    except subprocess.TimeoutExpired:
-                        logger.exception(
-                            "[ExifToolWrapper] Zombie process detected",
-                            extra={"dev_only": True},
-                        )
-            except Exception:
-                pass
-        finally:
-            self.process = None
-            logger.debug("[ExifToolWrapper] ExifTool wrapper closed", extra={"dev_only": True})
+        """Shut down the wrapper. No-op for Exopsis."""
+        del try_graceful, graceful_wait_s, terminate_wait_s, kill_wait_s
+        self.process = None
 
     @staticmethod
-    def force_cleanup_all_exiftool_processes(
-        *,
-        max_scan_s: float = 0.5,
-        graceful_wait_s: float = 0.5,
-    ) -> int:
-        """Force cleanup all ExifTool processes system-wide.
-
-        Notes:
-            This can run during app shutdown (often on the UI thread). The work is
-            bounded via time caps to reduce the risk of Windows "Not Responding".
-
-        Args:
-            max_scan_s: Maximum time to spend scanning processes.
-            graceful_wait_s: Maximum time to wait for terminate() before kill().
-
-        Returns:
-            Number of ExifTool processes cleaned up.
-
-        """
-        try:
-            import importlib
-
-            psutil = importlib.import_module("psutil")
-
-            exiftool_processes = []
-            scan_start = time.perf_counter()
-            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-                try:
-                    if (time.perf_counter() - scan_start) > max_scan_s:
-                        logger.debug(
-                            "[ExifToolWrapper] Process scan time limit reached (%.2fs)",
-                            max_scan_s,
-                            extra={"dev_only": True},
-                        )
-                        break
-                    if proc.info["name"] and "exiftool" in proc.info["name"].lower():
-                        exiftool_processes.append(proc)
-                    elif proc.info["cmdline"]:
-                        cmdline = " ".join(proc.info["cmdline"]).lower()
-                        if "exiftool" in cmdline and "-stay_open" in cmdline:
-                            exiftool_processes.append(proc)
-                except (
-                    psutil.NoSuchProcess,
-                    psutil.AccessDenied,
-                    psutil.ZombieProcess,
-                ):
-                    pass
-
-            if not exiftool_processes:
-                logger.debug(
-                    "[ExifToolWrapper] No orphaned ExifTool processes found",
-                    extra={"dev_only": True},
-                )
-                return 0
-
-            logger.warning(
-                "[ExifToolWrapper] Found %d orphaned ExifTool processes",
-                len(exiftool_processes),
-                extra={"dev_only": True},
-            )
-
-            # Try to terminate gracefully first
-            for proc in exiftool_processes:
-                with contextlib.suppress(psutil.NoSuchProcess):
-                    proc.terminate()
-
-            # Wait briefly for graceful termination (bounded)
-            wait_deadline = time.perf_counter() + max(0.0, graceful_wait_s)
-            while time.perf_counter() < wait_deadline:
-                remaining_count = 0
-                for proc in exiftool_processes:
-                    try:
-                        if proc.is_running():
-                            remaining_count += 1
-                    except psutil.NoSuchProcess:
-                        pass
-
-                if remaining_count == 0:
-                    break
-                time.sleep(0.01)
-
-            # Force kill any remaining processes
-            remaining_processes = []
-            for proc in exiftool_processes:
-                try:
-                    if proc.is_running():
-                        remaining_processes.append(proc)
-                except psutil.NoSuchProcess:
-                    pass
-
-            if remaining_processes:
-                logger.warning(
-                    "[ExifToolWrapper] Force killing %d ExifTool processes",
-                    len(remaining_processes),
-                    extra={"dev_only": True},
-                )
-                for proc in remaining_processes:
-                    with contextlib.suppress(psutil.NoSuchProcess):
-                        proc.kill()
-            else:
-                logger.debug(
-                    "[ExifToolWrapper] No ExifTool processes to clean up",
-                    extra={"dev_only": True},
-                )
-
-            return len(exiftool_processes)
-
-        except ImportError:
-            logger.warning(
-                "[ExifToolWrapper] psutil not available, cannot clean up orphaned processes",
-                extra={"dev_only": True},
-            )
-            return 0
+    def force_cleanup_all_exiftool_processes(*args: Any, **kwargs: Any) -> int:
+        """No-op cleanup for Exopsis as no external ExifTool process is spawned."""
+        del args, kwargs
+        logger.debug(
+            "[ExifToolWrapper] force_cleanup_all_exiftool_processes called for Exopsis wrapper",
+            extra={"dev_only": True},
+        )
+        return 0
 
     def is_healthy(self) -> bool:
-        """Check if ExifTool wrapper is healthy.
-
-        Returns:
-            True if the process is running and no consecutive errors exceed threshold.
-
-        """
-        try:
-            # Check if process is alive
-            if self.process is None or self.process.poll() is not None:
-                healthy = False
-            else:
-                # Check error threshold (more than 5 consecutive errors = unhealthy)
-                healthy = not self._consecutive_errors > 5
-        except Exception:
-            return False
-        else:
-            return healthy
+        """Check whether the wrapper is healthy."""
+        return self._consecutive_errors <= 5
 
     def last_error(self) -> str | None:
-        """Get the last error message.
-
-        Returns:
-            Last error message or None if no errors.
-
-        """
+        """Get the last error message."""
         return self._last_error
 
     def health_check(self) -> dict[str, Any]:
-        """Perform comprehensive health check.
-
-        Returns:
-            Dictionary with health status and metrics.
-
-        """
+        """Perform a lightweight health check."""
         self._last_health_check = time.time()
-
-        is_process_alive = False
-        process_status = "unknown"
-
-        try:
-            if self.process is not None:
-                poll_result = self.process.poll()
-                is_process_alive = poll_result is None
-                process_status = (
-                    "running" if is_process_alive else f"terminated (code: {poll_result})"
-                )
-            # Removed unreachable else branch per mypy analysis
-        except Exception as e:
-            process_status = f"error: {e}"
-
         return {
             "healthy": self.is_healthy(),
-            "process_alive": is_process_alive,
-            "process_status": process_status,
+            "process_alive": False,
+            "process_status": "exopsis-python",
             "last_error": self._last_error,
             "consecutive_errors": self._consecutive_errors,
             "last_check": self._last_health_check,
@@ -977,18 +214,8 @@ class ExifToolWrapper:
 
     @staticmethod
     def cleanup_orphaned_processes() -> None:
-        """Clean up orphaned ExifTool processes."""
-        try:
-            ExifToolWrapper.force_cleanup_all_exiftool_processes()
-        except Exception as e:
-            if "exiftool" in str(e).lower():
-                logger.warning(
-                    "[ExifToolWrapper] Error during ExifTool cleanup: %s",
-                    e,
-                    extra={"dev_only": True},
-                )
-            else:
-                logger.debug(
-                    "[ExifToolWrapper] No ExifTool processes to clean up",
-                    extra={"dev_only": True},
-                )
+        """No-op cleanup for Exopsis."""
+        logger.debug(
+            "[ExifToolWrapper] cleanup_orphaned_processes called for Exopsis wrapper",
+            extra={"dev_only": True},
+        )

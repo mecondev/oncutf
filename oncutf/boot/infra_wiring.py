@@ -67,6 +67,7 @@ def detect_external_tools() -> None:
     For video thumbnail capability, BOTH ffmpeg and ffprobe must be present
     (bundled or system).  ffmpeg_available is set True only when both are found.
     """
+    import importlib.util
     import shutil
     from pathlib import Path
 
@@ -77,7 +78,7 @@ def detect_external_tools() -> None:
         is_tool_available,
     )
 
-    exiftool = is_tool_available(ToolName.EXIFTOOL)
+    exiftool = importlib.util.find_spec("exopsis") is not None
 
     ffmpeg_ok = is_tool_available(ToolName.FFMPEG)
     ffprobe_ok = False
@@ -97,7 +98,7 @@ def detect_external_tools() -> None:
     FeatureAvailability.update_availability(exiftool=exiftool, ffmpeg=ffmpeg)
 
     logger.info(
-        "[boot] External tools: exiftool=%s, ffmpeg=%s (ffprobe=%s)",
+        "[boot] External tools: exopsis=%s, ffmpeg=%s (ffprobe=%s)",
         "available" if exiftool else "not found",
         "available" if ffmpeg else "not found",
         "available" if ffprobe_ok else "not found",

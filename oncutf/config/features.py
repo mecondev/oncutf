@@ -25,7 +25,7 @@ class FeatureAvailability:
 
     @classmethod
     def metadata_features_enabled(cls) -> bool:
-        """Whether metadata/EXIF features are enabled (requires ExifTool)."""
+        """Whether metadata/EXIF features are enabled (requires Exopsis)."""
         return cls.exiftool_available
 
     @classmethod

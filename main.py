@@ -32,7 +32,8 @@ _parser = argparse.ArgumentParser(
     add_help=True,
 )
 _parser.add_argument(
-    "-V", "--version",
+    "-V",
+    "--version",
     action="store_true",
     help="print version and exit",
 )
@@ -48,7 +49,8 @@ _parser.add_argument(
     help="skip the splash screen on startup",
 )
 _parser.add_argument(
-    "-c", "--clean",
+    "-c",
+    "--clean",
     action="store_true",
     help="delete database and config.json on startup (fresh start)",
 )
@@ -70,6 +72,7 @@ if _cli_args.clean:
     # database_manager and startup_orchestrator import DEBUG_FRESH_START lazily
     # (inside method bodies), so this mutation takes effect in time.
     import oncutf.config.app as _app_cfg
+
     _app_cfg.DEBUG_FRESH_START = True
 
 # ---------------------------------------------------------------------------

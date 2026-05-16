@@ -6,7 +6,7 @@ Date: 2025-11-22
 Parallel metadata loading using thread pool for faster batch operations.
 
 Features:
-- Parallel ExifTool execution using ThreadPoolExecutor
+- Parallel metadata extraction using ThreadPoolExecutor
 - Progressive UI updates as metadata arrives
 - Cancellation support
 - Automatic batch size optimization
@@ -53,7 +53,7 @@ class ParallelMetadataLoader:
 
         """
         if max_workers is None:
-            # ExifTool is I/O-bound, so we can use more workers than CPU count
+            # Metadata extraction is I/O-bound, so we can use more workers than CPU count
             import multiprocessing
 
             cpu_count = multiprocessing.cpu_count()
@@ -67,7 +67,7 @@ class ParallelMetadataLoader:
         except RuntimeError:
             self.exiftool_available = False
             logger.warning(
-                "[ParallelMetadataLoader] ExifTool not available. Metadata loading disabled."
+                "[ParallelMetadataLoader] metadata extraction engine not available. Metadata loading disabled."
             )
         self._cancelled = False
         # NOTE: Process management lives entirely in the persistent

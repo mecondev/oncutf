@@ -11,7 +11,7 @@ Responsibilities:
 - Set metadata values (update cache)
 - Save metadata for selected files
 - Save all modified metadata
-- Write metadata to disk using ExifTool
+- Write metadata to disk using the configured metadata writer
 - Progress tracking and UI updates for save operations
 
 Uses UIUpdatePort for UI decoupling (Phase 5).
@@ -44,7 +44,7 @@ class MetadataWriter:
     - Set metadata values (update cache)
     - Save metadata for selected files
     - Save all modified metadata
-    - Write metadata to disk using ExifTool
+    - Write metadata to disk using the configured metadata writer
     - Progress tracking and UI updates
     """
 

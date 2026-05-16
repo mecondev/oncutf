@@ -208,11 +208,11 @@ class MetadataLoader:
 
         if not FeatureAvailability.exiftool_available:
             logger.warning(
-                "[MetadataLoader] ExifTool not available, skipping metadata load for %d file(s)",
+                "[MetadataLoader] Exopsis not available, skipping metadata load for %d file(s)",
                 len(items),
             )
             self._ui_bridge.set_metadata_status(
-                "ExifTool is not available. Install exiftool to enable metadata loading.",
+                "Exopsis is not available. Install the exopsis package to enable metadata loading.",
                 operation_type="warning",
             )
             return
