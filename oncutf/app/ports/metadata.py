@@ -18,7 +18,7 @@ class MetadataProvider(Protocol):
     """Protocol for metadata extraction services.
 
     Implementations:
-    - ExifToolClient (infra/external/exiftool_client.py)
+    - ExopsisClient (infra/external/exopsis_client.py)
     - FFmpegClient (future: infra/external/ffmpeg_client.py)
     """
 

@@ -41,7 +41,7 @@ class MetadataServiceProtocol(Protocol):
     """Protocol for metadata extraction services.
 
     Implementations provide metadata loading from files using various backends
-    (e.g., ExifTool, PIL, built-in Python libraries).
+    (e.g., Exopsis, PIL, built-in Python libraries).
     """
 
     def load_metadata(self, path: Path) -> dict[str, Any]:

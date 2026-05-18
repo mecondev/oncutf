@@ -13,33 +13,8 @@ bin/
 
 ## Required Tools
 
-### ExifTool
-
-**Purpose:** EXIF/metadata reading and writing for image/video files
-
-**Download Links:**
-
-- **Windows:** [exiftool.org](https://exiftool.org/) - Download `exiftool-12.xx.zip`, extract `exiftool(-k).exe` and rename to `exiftool.exe`
-- **macOS:** [exiftool.org](https://exiftool.org/) - Download `ExifTool-XX.dmg` or use `brew install exiftool`, then copy binary
-- **Linux:** Download `Image-ExifTool-XX.tar.gz` from [exiftool.org](https://exiftool.org/), extract and copy both `exiftool` and `lib/` into `bin/linux/`.
-  The Perl script uses `lib/` from the same directory, so both must be present.
-
-  Quick install script:
-
-  ```bash
-  LATEST=$(curl -s https://exiftool.org/ | grep -oP 'Image-ExifTool-[\d.]+\.tar\.gz' | head -1)
-  curl -s "https://exiftool.org/$LATEST" -o /tmp/exiftool.tar.gz
-  tar -xzf /tmp/exiftool.tar.gz -C /tmp/
-  cp /tmp/Image-ExifTool-*/exiftool bin/linux/
-  cp -r /tmp/Image-ExifTool-*/lib bin/linux/
-  chmod +x bin/linux/exiftool
-  ```
-
-**File Names:**
-
-- Windows: `exiftool.exe`
-- macOS: `exiftool` (universal binary for Intel + Apple Silicon)
-- Linux: `exiftool` + `lib/` subdirectory
+> **Note:** Metadata extraction is handled by the **exopsis** Python package
+> (no binary needed — bundled automatically by PyInstaller with the application).
 
 ### FFmpeg + FFprobe (required for video thumbnails)
 
@@ -78,8 +53,8 @@ Place binaries in the appropriate platform directories to test bundled tool dete
 
 ```bash
 # Example for Windows development
-cp exiftool.exe bin/windows/
 cp ffmpeg.exe bin/windows/
+cp ffprobe.exe bin/windows/
 ```
 
 ### For PyInstaller Packaging
@@ -95,8 +70,8 @@ The application uses `oncutf/utils/external_tools.py` to detect and use tools:
 
 1. **Check bundled binaries first** (in `bin/<platform>/`)
 2. **Fallback to system PATH** if bundled binaries not found
-3. **Graceful degradation** if neither available:
-   - Metadata features disabled if ExifTool missing
+3. **Graceful degradation** if not available:
+   - Metadata features disabled if exopsis package is missing
    - Video features disabled if FFmpeg missing
    - User notified via UI about missing capabilities
 
@@ -110,34 +85,33 @@ The application uses `oncutf/utils/external_tools.py` to detect and use tools:
 ### macOS
 
 - Use **universal binaries** (Intel + Apple Silicon) when possible
-- Create universal binaries with `lipo`: `lipo -create exiftool-intel exiftool-arm64 -output exiftool`
-- Code-sign binaries for macOS distribution: `codesign -s "Developer ID" exiftool`
+- Create universal binaries with `lipo`: `lipo -create ffmpeg-intel ffmpeg-arm64 -output ffmpeg`
+- Code-sign binaries for macOS distribution: `codesign -s "Developer ID" ffmpeg`
 
 ### Linux
 
 - Use x86_64 binaries
-- Ensure binaries have execute permissions: `chmod +x exiftool ffmpeg`
+- Ensure binaries have execute permissions: `chmod +x ffmpeg ffprobe`
 - Consider AppImage packaging as alternative to PyInstaller
 
 ## Size Considerations
 
 Typical binary sizes (compressed):
 
-- ExifTool: ~1-3 MB (Perl script + runtime)
 - FFmpeg: ~50-100 MB (full build with codecs)
 
-**Recommendation:** Only bundle ExifTool by default. FFmpeg can be optional or user-downloadable.
+**Recommendation:** FFmpeg can be optional or user-downloadable to keep installer size small.
+Metadata extraction (exopsis) adds no binary weight — it is a Python package.
 
 ## License Compliance
 
 When distributing bundled binaries:
 
-- **ExifTool:** GPL / Artistic License - requires attribution
 - **FFmpeg:** LGPL / GPL (depending on build) - check build configuration
+- **exopsis:** See package license (Python dependency, no binary distribution required)
 
 Include license files in distribution package:
 
-- `bin/LICENSE-exiftool.txt`
 - `bin/LICENSE-ffmpeg.txt`
 
 ## Testing Bundled Tools
@@ -145,10 +119,12 @@ Include license files in distribution package:
 Test tool detection:
 
 ```bash
-
 # Run from project root
-python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.EXIFTOOL))"
+python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.FFMPEG))"
 python -c "from oncutf.utils.shared.external_tools import *; print(is_tool_available(ToolName.FFMPEG))"
+
+# Test exopsis availability
+python -c "from exopsis import extract; print('exopsis OK')"
 ```
 
 ## Maintenance

@@ -111,10 +111,6 @@ class TreeRenderHandler:
                 modified_keys=set(),  # Service will populate from staging manager
             )
 
-            # Pass __extended__ flag to display state for service to handle
-            if metadata.get("__extended__"):
-                display_state.is_extended_metadata = True
-
             # Set rebuild lock BEFORE model operations
             self._rebuild_in_progress = True
             logger.debug(

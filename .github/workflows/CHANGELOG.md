@@ -12,16 +12,16 @@ Major CI/CD improvements: cleaner workflows, smart matrix, and uv experiment set
 
 **Improvements:**
 
-1. ✅ **Built-in pip caching** — Removed `actions/cache@v3`, using `cache: "pip"` in `setup-python@v5`
-2. ✅ **Action version upgrades** — `setup-python@v4` → `@v5`
-3. ✅ **Security** — Added `permissions: contents: read`
-4. ✅ **Concurrency control** — `cancel-in-progress: true` to kill stale runs
-5. ✅ **Smart matrix** — Full matrix on PR, lighter on push
-   - PR: 3 OS × 2 Python = 6 jobs
-   - Push: 2 OS × 1 Python = 2 jobs
-6. ✅ **Job-level env** — `QT_QPA_PLATFORM: offscreen` at job level
-7. ✅ **Robust Windows exiftool** — Better error handling + recursive search
-8. ✅ **Cleaner YAML** — Reduced duplication, ~15-20 lines removed
+1. [+] **Built-in pip caching** -- Removed `actions/cache@v3`, using `cache: "pip"` in `setup-python@v5`
+2. [+] **Action version upgrades** -- `setup-python@v4` -> `@v5`
+3. [+] **Security** -- Added `permissions: contents: read`
+4. [+] **Concurrency control** -- `cancel-in-progress: true` to kill stale runs
+5. [+] **Smart matrix** -- Full matrix on PR, lighter on push
+   - PR: 3 OS x 2 Python = 6 jobs
+   - Push: 2 OS x 1 Python = 2 jobs
+6. [+] **Job-level env** -- `QT_QPA_PLATFORM: offscreen` at job level
+7. [+] **Robust Windows exiftool** -- Better error handling + recursive search
+8. [+] **Cleaner YAML** -- Reduced duplication, ~15-20 lines removed
 
 **Before:**
 
@@ -137,7 +137,7 @@ None. All changes are backward-compatible.
 ### Metrics to Track
 
 | Metric | Baseline (pip) | Target (uv) | How to Measure |
-| -------- | ---------------- | ------------- | ---------------- |
+| ------ | -------------- | ----------- | -------------- |
 | PR runtime | ~4-5 min | ~3.5-4 min | Actions tab |
 | Push runtime | ~4-5 min | ~3.5-4 min | Actions tab |
 | Dependency install | ~60s | ~35s | Workflow logs |

@@ -561,8 +561,7 @@ class MetadataTreeService:
         """
         extended_keys = set(display_state.extended_keys)
 
-        # If metadata was loaded in extended mode, detect extended-only keys
-        if display_state.is_extended_metadata or metadata.get("__extended__"):
+        if display_state.is_extended_metadata:
             # Use heuristic based on key patterns
             for key in metadata:
                 key_lower = key.lower()

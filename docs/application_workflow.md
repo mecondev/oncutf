@@ -85,7 +85,7 @@ DEBUG_RESET_CONFIG = True    # Deletes config.json on startup
 #### Core Tables
 
 1. __`file_paths`__ - Central file registry
-2. __`file_metadata`__ - Raw metadata from ExifTool
+2. __`file_metadata`__ - Raw metadata from Exopsis
 3. __`file_hashes`__ - File checksums (CRC32, etc.)
 4. __`file_rename_history`__ - Rename operations history
 
@@ -105,7 +105,7 @@ The application automatically creates 7 categories with 37 fields:
 4. __Video Properties__ (5 fields): Duration, Frame Rate, Codec, etc.
 5. __Audio Properties__ (4 fields): Channels, Sample Rate, etc.
 6. __Location & GPS__ (4 fields): Latitude, Longitude, etc.
-7. __Technical Details__ (3 fields): ExifTool Version, Permissions, etc.
+7. __Technical Details__ (3 fields): Exopsis Version, Permissions, etc.
 
 ## 3. File Import System
 
@@ -213,8 +213,8 @@ def load_metadata_for_items(items, use_extended=False, source="unknown"):
 class MetadataWorker(QObject):
     def run(self):
         for file_path in self.file_paths:
-            # Load metadata with ExifTool
-            metadata = self.exiftool_wrapper.get_metadata(file_path)
+            # Load metadata via Exopsis
+            metadata = self.wrapper.get_metadata(file_path)
 
             # Store in database
             self.db_manager.store_metadata(file_path, metadata)
@@ -231,7 +231,7 @@ class MetadataWorker(QObject):
 #### A. Raw Metadata Storage
 
 ```python
-# Store original ExifTool output
+# Store original Exopsis output
 db_manager.store_metadata(file_path, raw_metadata, is_extended=True)
 ```
 

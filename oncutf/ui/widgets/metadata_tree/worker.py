@@ -33,12 +33,12 @@ class MetadataWorker(QObject):
     """Worker class for threaded metadata extraction with batch optimization.
     Emits progress and result signals and supports graceful cancellation.
 
-    NOTE: This worker requires an ExifToolClient to be injected via set_reader().
-    The UI layer should NOT instantiate ExifToolClient directly - this should be
+    NOTE: This worker requires an ExopsisClient to be injected via set_reader().
+    The UI layer should NOT instantiate ExopsisClient directly - this should be
     done by the MetadataController.
 
     Attributes:
-        reader: The ExifTool client instance (injected).
+        reader: The metadata client instance (injected).
         metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
@@ -65,7 +65,7 @@ class MetadataWorker(QObject):
         """Initialize the metadata worker with files and extended metadata flag.
 
         Args:
-            reader: ExifTool client (should be injected by controller)
+            reader: Metadata client (should be injected by controller)
             metadata_cache: Metadata cache
             files: List of FileItem objects (new style)
             use_extended: Whether to use extended metadata extraction
@@ -102,16 +102,16 @@ class MetadataWorker(QObject):
         logger.debug("[Worker] __init__ called", extra={"dev_only": True})
 
     def set_reader(self, reader: Any) -> None:
-        """Set the ExifTool client (dependency injection).
+        """Set the metadata client (dependency injection).
 
         This should be called by the controller before running the worker.
 
         Args:
-            reader: ExifToolClient instance
+            reader: ExopsisClient instance
 
         """
         self.reader = reader
-        logger.debug("[Worker] ExifTool client injected", extra={"dev_only": True})
+        logger.debug("[Worker] Metadata client injected", extra={"dev_only": True})
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size of all files to process."""
@@ -151,7 +151,7 @@ class MetadataWorker(QObject):
         # Ensure we have a reader (must be injected by controller)
         if not self.reader:
             logger.error(
-                "[Worker] No ExifTool client provided! Worker cannot run without injected client."
+                "[Worker] No metadata client provided! Worker cannot run without injected client."
             )
             self.finished.emit()
             return
@@ -194,57 +194,7 @@ class MetadataWorker(QObject):
                 try:
                     metadata = self.reader.extract_metadata(Path(path))
 
-                    # Get previous entry using file_status_helpers
-                    from oncutf.utils.filesystem.file_status_helpers import (
-                        get_metadata_cache_entry,
-                    )
-
-                    previous_extended = False
-                    try:
-                        previous_entry = get_metadata_cache_entry(path)
-                        previous_extended = previous_entry.is_extended if previous_entry else False
-                    except Exception as e:
-                        logger.debug(
-                            "[Worker] Cache entry error: %s",
-                            e,
-                            extra={"dev_only": True},
-                        )
-
-                    # Check if metadata has the extended flag directly
-                    metadata_has_extended = (
-                        isinstance(metadata, dict) and metadata.get("__extended__") is True
-                    )
-
-                    # Determine final extended status from all sources
-                    is_extended_flag = (
-                        previous_extended or self.use_extended or metadata_has_extended
-                    )
-
-                    logger.debug(
-                        "[Worker] Extended metadata flags for %s:",
-                        path,
-                        extra={"dev_only": True},
-                    )
-                    logger.debug(
-                        "[Worker] - Previous entry extended: %s",
-                        previous_extended,
-                        extra={"dev_only": True},
-                    )
-                    logger.debug(
-                        "[Worker] - use_extended parameter: %s",
-                        self.use_extended,
-                        extra={"dev_only": True},
-                    )
-                    logger.debug(
-                        "[Worker] - metadata has __extended__ flag: %s",
-                        metadata_has_extended,
-                        extra={"dev_only": True},
-                    )
-                    logger.debug(
-                        "[Worker] - final extended status: %s",
-                        is_extended_flag,
-                        extra={"dev_only": True},
-                    )
+                    is_extended_flag = False
 
                     # Store metadata using batch operations if available
                     if self._enable_batching and self._batch_manager:

@@ -643,8 +643,8 @@ def initialize_default_metadata_schema(
             ("GPS:GPSMapDatum", "Map Datum", "location", "text", True, True, None, 3),
             # Technical
             (
-                "ExifTool:ExifToolVersion",
-                "ExifTool Version",
+                "Exopsis:ExopsisVersion",
+                "Exopsis Version",
                 "technical",
                 "text",
                 False,

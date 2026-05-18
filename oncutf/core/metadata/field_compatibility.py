@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 logger = get_cached_logger(__name__)
 
 
-# Field support mapping based on exiftool output
+# Field support mapping based on exopsis metadata output
 FIELD_SUPPORT_MAP: dict[str, list[str]] = {
     "Title": ["EXIF:ImageDescription", "XMP:Title", "IPTC:Headline", "XMP:Description"],
     "Artist": ["EXIF:Artist", "XMP:Creator", "IPTC:By-line", "XMP:Author"],
@@ -192,7 +192,7 @@ class FieldCompatibilityChecker:
 
         Args:
             file_item: FileItem object
-            metadata: Metadata dictionary from exiftool
+            metadata: Metadata dictionary from Exopsis
 
         Returns:
             Set of supported field names

@@ -60,13 +60,14 @@ def register_infra_factories() -> None:
 def detect_external_tools() -> None:
     """Detect availability of external tools and populate FeatureAvailability.
 
-    Must run once at boot, before any service that uses exiftool or ffmpeg.
+    Must run once at boot, before any service that uses Exopsis or ffmpeg.
     All downstream components read from FeatureAvailability instead of
     doing their own filesystem checks.
 
     For video thumbnail capability, BOTH ffmpeg and ffprobe must be present
     (bundled or system).  ffmpeg_available is set True only when both are found.
     """
+    import importlib.util
     import shutil
     from pathlib import Path
 
@@ -77,7 +78,7 @@ def detect_external_tools() -> None:
         is_tool_available,
     )
 
-    exiftool = is_tool_available(ToolName.EXIFTOOL)
+    exopsis = importlib.util.find_spec("exopsis") is not None
 
     ffmpeg_ok = is_tool_available(ToolName.FFMPEG)
     ffprobe_ok = False
@@ -94,11 +95,11 @@ def detect_external_tools() -> None:
             ffprobe_ok = shutil.which("ffprobe") is not None
 
     ffmpeg = ffmpeg_ok and ffprobe_ok
-    FeatureAvailability.update_availability(exiftool=exiftool, ffmpeg=ffmpeg)
+    FeatureAvailability.update_availability(exopsis=exopsis, ffmpeg=ffmpeg)
 
     logger.info(
-        "[boot] External tools: exiftool=%s, ffmpeg=%s (ffprobe=%s)",
-        "available" if exiftool else "not found",
+        "[boot] External tools: exopsis=%s, ffmpeg=%s (ffprobe=%s)",
+        "available" if exopsis else "not found",
         "available" if ffmpeg else "not found",
         "available" if ffprobe_ok else "not found",
     )
@@ -112,11 +113,11 @@ def wire_service_registry() -> None:
     """
     from oncutf.app.ports.service_registry import configure_default_services
     from oncutf.infra.cache.cached_hash_service import CachedHashService
-    from oncutf.infra.external.exiftool_client import ExifToolClient
+    from oncutf.infra.external.exopsis_client import ExopsisClient
     from oncutf.infra.filesystem.filesystem_service import FilesystemService
 
     configure_default_services(
-        metadata_service_factory=ExifToolClient,
+        metadata_service_factory=ExopsisClient,
         hash_service_factory=CachedHashService,
         filesystem_service_factory=FilesystemService,
     )
@@ -162,28 +163,18 @@ def get_metadata_cache_instance() -> object:
     return get_persistent_metadata_cache()
 
 
-def get_exiftool_wrapper() -> type:
-    """Get the ExifTool wrapper class.
+def get_metadata_wrapper() -> type:
+    """Return the metadata wrapper class (not an instance)."""
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-    Returns:
-        ExifToolWrapper class (not instance)
-
-    """
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
-
-    return ExifToolWrapper
+    return ExopsisWrapper
 
 
-def create_exiftool_wrapper() -> object:
-    """Create a new ExifTool wrapper instance.
+def create_metadata_wrapper() -> object:
+    """Create and return a new metadata wrapper instance."""
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-    Returns:
-        New ExifToolWrapper instance
-
-    """
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
-
-    return ExifToolWrapper()
+    return ExopsisWrapper()
 
 
 def get_batch_manager_instance(parent: object = None) -> object:

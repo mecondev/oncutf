@@ -11,7 +11,7 @@ Responsibilities:
 - Set metadata values (update cache)
 - Save metadata for selected files
 - Save all modified metadata
-- Write metadata to disk using ExifTool
+- Write metadata to disk using the configured metadata writer
 - Progress tracking and UI updates for save operations
 
 Uses UIUpdatePort for UI decoupling (Phase 5).
@@ -32,7 +32,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from oncutf.app.ports.ui_update import UIUpdatePort
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
 logger = get_cached_logger(__name__)
 
@@ -44,7 +44,7 @@ class MetadataWriter:
     - Set metadata values (update cache)
     - Save metadata for selected files
     - Save all modified metadata
-    - Write metadata to disk using ExifTool
+    - Write metadata to disk using the configured metadata writer
     - Progress tracking and UI updates
     """
 
@@ -61,7 +61,7 @@ class MetadataWriter:
 
         """
         self.parent_window = parent_window
-        self._exiftool_wrapper: ExifToolWrapper | None = None
+        self._wrapper: ExopsisWrapper | None = None
         self._save_cancelled = False
         self._ui_update = ui_update
 
@@ -78,13 +78,13 @@ class MetadataWriter:
         return self._ui_update
 
     @property
-    def exiftool_wrapper(self) -> ExifToolWrapper:
-        """Lazy-initialized ExifTool wrapper."""
-        if self._exiftool_wrapper is None:
-            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    def wrapper(self) -> ExopsisWrapper:
+        """Lazy-initialized metadata wrapper."""
+        if self._wrapper is None:
+            from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-            self._exiftool_wrapper = ExifToolWrapper()
-        return self._exiftool_wrapper
+            self._wrapper = ExopsisWrapper()
+        return self._wrapper
 
     def request_save_cancel(self) -> None:
         """Request cancellation of current save operation."""
@@ -275,7 +275,7 @@ class MetadataWriter:
         all_modifications: dict[str, Any],
         is_exit_save: bool = False,
     ) -> None:
-        """Save metadata files using ExifTool.
+        """Save metadata files using the metadata wrapper.
 
         Args:
             files_to_save: List of FileItem objects to save
@@ -390,7 +390,7 @@ class MetadataWriter:
                         continue
 
                     try:
-                        success = self.exiftool_wrapper.write_metadata(file_path, modifications)
+                        success = self.wrapper.write_metadata(file_path, modifications)
 
                         if success:
                             success_count += 1

@@ -602,9 +602,9 @@ class DragDropBehavior:
             True if drop was successful
 
         """
-        if not FeatureAvailability.exiftool_available:
+        if not FeatureAvailability.exopsis_available:
             logger.debug(
-                "[DragDropBehavior] Metadata tree drop skipped: ExifTool not available",
+                "[DragDropBehavior] Metadata tree drop skipped: Exopsis not available",
                 extra={"dev_only": True},
             )
             return False

@@ -23,7 +23,7 @@ MetadataCache = MetadataCacheMap  # Alias for backward compatibility
 
 
 class ExifMetadata(TypedDict, total=False):
-    """TypedDict for common EXIF metadata fields from ExifTool.
+    """TypedDict for common EXIF metadata fields from Exopsis.
 
     All fields are optional (total=False) as not all files have all metadata.
     This provides IDE autocomplete for commonly accessed fields.
@@ -84,7 +84,6 @@ class ExifMetadata(TypedDict, total=False):
     Rating: int
 
     # Internal flags (added by oncutf)
-    __extended__: bool
     __modified__: bool
 
 

@@ -42,14 +42,13 @@ class TestMetadataSimplificationService:
         file_item.metadata = {
             "Audio Format Audio Rec Port Audio Codec": "AAC",
             "Video Format Info Codec": "H264",
-            "__extended__": True,
         }
 
         service = MetadataSimplificationService()
         simplified = service.get_simplified_metadata(file_item)
 
         assert simplified is not None
-        assert len(simplified) == 2  # Excluding internal flags
+        assert len(simplified) == 2
         assert (
             "Audio Codec" in simplified or "Audio Format Audio Rec Port Audio Codec" in simplified
         )

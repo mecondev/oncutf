@@ -125,8 +125,8 @@ class TestLoadMetadataForItems:
         callback.assert_not_called()
 
 
-class TestExifToolWrapperProperty:
-    """Tests for exiftool_wrapper property."""
+class TestMetadataWrapperProperty:
+    """Tests for wrapper property (backed by ExopsisWrapper)."""
 
     def test_uses_getter_function(self) -> None:
         """Should use the getter function if provided."""
@@ -135,24 +135,23 @@ class TestExifToolWrapperProperty:
         mock_wrapper = MagicMock()
         getter = MagicMock(return_value=mock_wrapper)
 
-        loader = MetadataLoader(exiftool_getter=getter)
+        loader = MetadataLoader(wrapper_getter=getter)
 
-        result = loader.exiftool_wrapper
+        result = loader.wrapper
 
         getter.assert_called_once()
         assert result is mock_wrapper
 
     def test_creates_wrapper_if_no_getter(self) -> None:
-        """Should create new wrapper if no getter provided."""
+        """Should create new ExopsisWrapper if no getter provided."""
         from oncutf.core.metadata.metadata_loader import MetadataLoader
-        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-        loader = MetadataLoader(exiftool_getter=None)
+        loader = MetadataLoader(wrapper_getter=None)
 
-        result = loader.exiftool_wrapper
+        result = loader.wrapper
 
-        # Should return an ExifToolWrapper instance
-        assert isinstance(result, ExifToolWrapper)
+        assert isinstance(result, ExopsisWrapper)
 
 
 class TestParallelLoaderProperty:

@@ -7,7 +7,7 @@ Updated: 2026-01-03
 This package contains all metadata-related functionality:
 - MetadataCacheService: Cache operations for metadata and hashes
 - CompanionMetadataHandler: Companion file (XMP, sidecar) metadata handling
-- MetadataWriter: Metadata writing via ExifTool
+- MetadataWriter: Metadata writing via Exopsis wrapper
 - MetadataShortcutHandler: Keyboard shortcut handling for metadata operations
 - MetadataProgressHandler: Progress dialog management for metadata/hash operations
 - MetadataLoader: Orchestration of metadata loading operations (single/batch/streaming)

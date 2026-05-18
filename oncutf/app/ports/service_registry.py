@@ -9,11 +9,11 @@ Services can be registered by their protocol type and retrieved later.
 Usage:
     from oncutf.app.ports.service_registry import ServiceRegistry, get_service_registry
     from oncutf.domain.ports import MetadataServiceProtocol
-    from oncutf.infra.external.exiftool_client import ExifToolClient
+    from oncutf.infra.external.exopsis_client import ExopsisClient
 
     # Register a service
     registry = get_service_registry()
-    registry.register(MetadataServiceProtocol, ExifToolClient())
+    registry.register(MetadataServiceProtocol, ExopsisClient())
 
     # Retrieve a service
     metadata_service = registry.get(MetadataServiceProtocol)

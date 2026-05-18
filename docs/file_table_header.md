@@ -89,7 +89,7 @@ def _create_drag_overlay(self, width: int, title: str):
 ```bash
 ruff check .    # clean
 mypy .          # Success: no issues found
-pytest          # project test suite (requires exiftool)
+pytest          # project test suite (requires exopsis)
 ```
 
 ---

@@ -34,22 +34,19 @@ class MetadataHandlers:
             files: List of FileItem objects to analyze
 
         Returns:
-            dict: Analysis results with enable/disable logic for metadata menu items
+            dict: Analysis results with enable/disable logic for the metadata menu item
 
         """
         if not files:
             return {
-                "enable_fast_selected": False,
-                "enable_extended_selected": False,
-                "fast_tooltip": "No files selected",
-                "extended_tooltip": "No files selected",
+                "enable_load": False,
+                "load_tooltip": "No files selected",
             }
 
         start_time = time.time()
 
-        files_no_metadata: list[FileItem] = []
-        files_fast_metadata: list[FileItem] = []
-        files_extended_metadata: list[FileItem] = []
+        files_with_metadata: list[FileItem] = []
+        files_without_metadata: list[FileItem] = []
 
         try:
             metadata_cache = getattr(self.parent_window, "metadata_cache", None)
@@ -60,103 +57,55 @@ class MetadataHandlers:
 
                 for file_item in files:
                     cache_entry = batch_entries.get(file_item.full_path)
-
                     if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
-                        if hasattr(cache_entry, "is_extended") and cache_entry.is_extended:
-                            files_extended_metadata.append(file_item)
-                        else:
-                            files_fast_metadata.append(file_item)
+                        files_with_metadata.append(file_item)
                     else:
-                        files_no_metadata.append(file_item)
+                        files_without_metadata.append(file_item)
+
             elif metadata_cache:
                 for file_item in files:
                     cache_entry = metadata_cache.get_entry(file_item.full_path)
-
                     if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
-                        if hasattr(cache_entry, "is_extended") and cache_entry.is_extended:
-                            files_extended_metadata.append(file_item)
-                        else:
-                            files_fast_metadata.append(file_item)
+                        files_with_metadata.append(file_item)
                     else:
-                        files_no_metadata.append(file_item)
+                        files_without_metadata.append(file_item)
             else:
-                files_no_metadata.extend(files)
+                files_without_metadata.extend(files)
 
             elapsed_time = time.time() - start_time
             logger.debug(
                 "[EventHandler] Batch metadata check completed in %.3fs: "
-                "%d no metadata, %d fast, %d extended",
+                "%d with metadata, %d without",
                 elapsed_time,
-                len(files_no_metadata),
-                len(files_fast_metadata),
-                len(files_extended_metadata),
+                len(files_with_metadata),
+                len(files_without_metadata),
             )
 
         except Exception as e:
             logger.warning("[EventHandler] Metadata state analysis failed: %s", e)
-            files_no_metadata = list(files)
-            files_fast_metadata = []
-            files_extended_metadata = []
+            files_without_metadata = list(files)
+            files_with_metadata = []
 
         total = len(files)
-        no_metadata_count = len(files_no_metadata)
-        fast_metadata_count = len(files_fast_metadata)
-        extended_metadata_count = len(files_extended_metadata)
+        with_count = len(files_with_metadata)
+        without_count = len(files_without_metadata)
 
-        enable_fast_selected = (
-            no_metadata_count > 0 or fast_metadata_count > 0
-        ) and extended_metadata_count == 0
+        enable_load = without_count > 0
 
-        enable_extended_selected = (
-            no_metadata_count > 0 or fast_metadata_count > 0 or extended_metadata_count > 0
-        )
-
-        # Fast metadata tooltip
-        if extended_metadata_count > 0:
-            fast_tooltip = (
-                f"Cannot load fast metadata: {extended_metadata_count} file(s) "
-                "already have extended metadata"
-            )
-            enable_fast_selected = False
-        elif no_metadata_count == total:
-            fast_tooltip = f"Load fast metadata for {total} file(s)"
-        elif no_metadata_count == 0 and fast_metadata_count == total:
-            fast_tooltip = f"All {total} file(s) already have fast metadata"
-            enable_fast_selected = False
+        if without_count == 0:
+            load_tooltip = f"All {total} file(s) already have metadata"
+        elif with_count == 0:
+            load_tooltip = f"Load metadata for {total} file(s)"
         else:
-            need_fast = no_metadata_count
-            fast_tooltip = f"Load fast metadata for {need_fast} of {total} file(s) that need it"
-
-        # Extended metadata tooltip
-        if extended_metadata_count == total:
-            extended_tooltip = f"All {total} file(s) already have extended metadata"
-            enable_extended_selected = False
-        elif extended_metadata_count == 0:
-            if fast_metadata_count > 0:
-                extended_tooltip = (
-                    f"Upgrade {fast_metadata_count} file(s) to extended metadata "
-                    f"and load for {no_metadata_count} file(s)"
-                )
-            else:
-                extended_tooltip = f"Load extended metadata for {total} file(s)"
-        else:
-            need_extended = total - extended_metadata_count
-            extended_tooltip = (
-                f"Load/upgrade extended metadata for {need_extended} of {total} file(s)"
-            )
+            load_tooltip = f"Load metadata for {without_count} of {total} file(s) that need it"
 
         return {
-            "enable_fast_selected": enable_fast_selected,
-            "enable_extended_selected": enable_extended_selected,
-            "fast_label": "Load Fast Metadata",
-            "extended_label": "Load Extended Metadata",
-            "fast_tooltip": fast_tooltip,
-            "extended_tooltip": extended_tooltip,
+            "enable_load": enable_load,
+            "load_tooltip": load_tooltip,
             "stats": {
                 "total": total,
-                "no_metadata": no_metadata_count,
-                "fast_metadata": fast_metadata_count,
-                "extended_metadata": extended_metadata_count,
+                "with_metadata": with_count,
+                "without_metadata": without_count,
             },
         }
 

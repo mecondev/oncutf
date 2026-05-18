@@ -46,7 +46,7 @@ class FileItem:
         self.size = 0  # Will be updated later if needed
         self.metadata: dict[str, Any] = {}  # Will store file metadata
         self.metadata_status = (
-            "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
+            "none"  # Track metadata loading status: "none", "loaded", "modified"
         )
         self.checked = False  # Selection state for UI
         self.hash_value: str | None = None  # SHA256 hash for file integrity
@@ -109,30 +109,14 @@ class FileItem:
             True if metadata dict exists and is non-empty
 
         """
+        result = bool(self.metadata)
         logger.debug(
-            "[DEBUG] Checking has_metadata for %s | metadata: %s",
-            self.filename,
-            self.metadata,
-            extra={"dev_only": True},
-        )
-        result = isinstance(self.metadata, dict) and bool(self.metadata)
-        logger.debug(
-            "[DEBUG] has_metadata result for %s: %s",
+            "[DEBUG] has_metadata for %s: %s",
             self.filename,
             result,
             extra={"dev_only": True},
         )
         return result
-
-    @property
-    def metadata_extended(self) -> bool:
-        """Check if extended (EXIF) metadata has been loaded.
-
-        Returns:
-            True if metadata dict contains __extended__ flag set to True
-
-        """
-        return isinstance(self.metadata, dict) and self.metadata.get("__extended__") is True
 
     def _detect_size(self) -> int:
         """Attempts to determine the file size in bytes from full_path.

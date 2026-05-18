@@ -244,7 +244,6 @@ class UtilityManager:
         skip_metadata = not ctrl
         use_extended = ctrl and shift
 
-        # [DEBUG] Modifiers: Ctrl=%s, Shift=%s", skip_metadata, use_extended
         return skip_metadata, use_extended
 
     def close_event(self, event) -> None:

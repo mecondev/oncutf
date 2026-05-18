@@ -18,7 +18,7 @@ Use bracketed checkboxes to track progress. Keep items short and verifiable.
 
 ## Phase 2: Infrastructure Cleanup
 
-- [ ] Consolidate ExifTool and FFmpeg access into infra clients.
+- [ ] Consolidate exopsis and FFmpeg access into infra clients.
 - [ ] Unify metadata and hash caches behind a single interface.
 - [ ] Move persistent cache logic to infra.
 - [ ] Ensure infra modules contain all external I/O.

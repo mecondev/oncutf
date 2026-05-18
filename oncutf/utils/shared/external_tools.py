@@ -5,7 +5,7 @@ Date: 2025-12-23
 
 External tool detection and path resolution for cross-platform support.
 
-This module provides utilities for locating external executables (exiftool, ffmpeg)
+This module provides utilities for locating external executables (ffmpeg)
 with support for:
 - PyInstaller frozen executables (_MEIPASS)
 - Platform-specific binaries (Windows/macOS/Linux)
@@ -14,9 +14,6 @@ with support for:
 
 Usage:
     from oncutf.utils.shared.external_tools import get_tool_path, ToolName
-
-    # Get exiftool path (raises FileNotFoundError if not found)
-    exiftool = get_tool_path(ToolName.EXIFTOOL)
 
     # Check if tool is available
     if is_tool_available(ToolName.FFMPEG):
@@ -36,7 +33,6 @@ logger = get_cached_logger(__name__)
 class ToolName(StrEnum):
     """Supported external tools."""
 
-    EXIFTOOL = "exiftool"
     FFMPEG = "ffmpeg"
 
 
@@ -44,18 +40,18 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
     """Get path to bundled external tool, handling platform-specific binaries.
 
     This function searches for tools in the bin/ directory structure:
-    - bin/windows/exiftool.exe
-    - bin/macos/exiftool (or exiftool-arm64)
-    - bin/linux/exiftool
+    - bin/windows/ffmpeg.exe
+    - bin/macos/ffmpeg
+    - bin/linux/ffmpeg
 
     Args:
-        tool_name: Tool to locate (ToolName.EXIFTOOL or ToolName.FFMPEG)
+        tool_name: Tool to locate (ToolName.FFMPEG)
 
     Returns:
         Path to tool executable or None if not found
 
     Examples:
-        >>> path = get_bundled_tool_path(ToolName.EXIFTOOL)
+        >>> path = get_bundled_tool_path(ToolName.FFMPEG)
         >>> if path:
         ...     print(f"Found at: {path}")
 
@@ -122,9 +118,9 @@ def get_system_tool_path(tool_name: ToolName) -> str | None:
         Path string to the tool or None if not found
 
     Examples:
-        >>> path = get_system_tool_path(ToolName.EXIFTOOL)
+        >>> path = get_system_tool_path(ToolName.FFMPEG)
         >>> if path:
-        ...     print(f"System exiftool: {path}")
+        ...     print(f"System ffmpeg: {path}")
 
     """
     try:
@@ -154,7 +150,7 @@ def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
     3. Raise FileNotFoundError if not found
 
     Args:
-        tool_name: Tool to locate (ToolName.EXIFTOOL or ToolName.FFMPEG)
+        tool_name: Tool to locate (ToolName.FFMPEG)
         prefer_bundled: Prefer bundled over system version (default: True)
 
     Returns:
@@ -165,10 +161,10 @@ def get_tool_path(tool_name: ToolName, prefer_bundled: bool = True) -> str:
 
     Examples:
         >>> try:
-        ...     exiftool = get_tool_path(ToolName.EXIFTOOL)
-        ...     print(f"Using: {exiftool}")
+        ...     ffmpeg = get_tool_path(ToolName.FFMPEG)
+        ...     print(f"Using: {ffmpeg}")
         ... except FileNotFoundError:
-        ...     print("ExifTool not available")
+        ...     print("FFmpeg not available")
 
     """
     # Try bundled first if preferred
@@ -207,10 +203,10 @@ def is_tool_available(tool_name: ToolName, prefer_bundled: bool = True) -> bool:
         True if tool is available, False otherwise
 
     Examples:
-        >>> if is_tool_available(ToolName.EXIFTOOL):
-        ...     print("ExifTool is ready")
+        >>> if is_tool_available(ToolName.FFMPEG):
+        ...     print("FFmpeg is ready")
         ... else:
-        ...     print("ExifTool not installed")
+        ...     print("FFmpeg not installed")
 
     """
     try:
@@ -224,7 +220,6 @@ def is_tool_available(tool_name: ToolName, prefer_bundled: bool = True) -> bool:
 def _get_download_url(tool_name: ToolName) -> str:
     """Get download URL for a tool."""
     urls = {
-        ToolName.EXIFTOOL: "https://exiftool.org/",
         ToolName.FFMPEG: "https://ffmpeg.org/download.html",
     }
     return urls.get(tool_name, "")
@@ -240,17 +235,16 @@ def get_tool_version(tool_name: ToolName) -> str | None:
         Version string or None if tool not available
 
     Examples:
-        >>> version = get_tool_version(ToolName.EXIFTOOL)
+        >>> version = get_tool_version(ToolName.FFMPEG)
         >>> if version:
-        ...     print(f"ExifTool version: {version}")
+        ...     print(f"FFmpeg version: {version}")
 
     """
     try:
         tool_path = get_tool_path(tool_name)
 
-        # Run tool with -ver flag (works for both exiftool and ffmpeg)
         result = subprocess.run(
-            [tool_path, "-ver" if tool_name == ToolName.EXIFTOOL else "-version"],
+            [tool_path, "-version"],
             capture_output=True,
             text=True,
             timeout=5,

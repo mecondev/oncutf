@@ -56,10 +56,8 @@ class MetadataEntry:
         self._clean_internal_markers()
 
     def _clean_internal_markers(self) -> None:
-        """Remove internal markers like __extended__, __modified__ from data."""
-        markers = ["__extended__", "__modified__"]
-        for marker in markers:
-            self.data.pop(marker, None)
+        """Remove internal markers like __modified__ from data."""
+        self.data.pop("__modified__", None)
 
     @classmethod
     def create_fast(cls, metadata: dict[str, Any]) -> "MetadataEntry":
@@ -270,8 +268,7 @@ class MetadataEntry:
         """
         clean_data = self.data.copy()
 
-        # Remove all internal markers
-        clean_data.pop("__extended__", None)
+        # Remove internal markers
         clean_data.pop("__modified__", None)
 
         return clean_data

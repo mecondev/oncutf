@@ -4,24 +4,32 @@ Bundled Tools Integration - Technical Documentation
 Author: Michael Economou
 Date: 2026-01-16
 
-Documentation for bundled exiftool/ffmpeg integration with PyInstaller support.
+Documentation for bundled binary (ffmpeg) and Python package (exopsis) integration
+with PyInstaller support.
 -->
 
 # Bundled Tools Integration
 
 ## Overview
 
-Η εφαρμογή χρησιμοποιεί **bundled binaries** για exiftool και ffmpeg αντί να βασίζεται στο system PATH. Αυτό επιτρέπει:
+The application uses **bundled binaries** for ffmpeg and the **exopsis Python package** for metadata extraction. This enables:
 
-- **Standalone distribution**: Η εφαρμογή λειτουργεί χωρίς εξαρτήσεις
-- **Cross-platform consistency**: Ελεγχόμενες εκδόσεις εργαλείων
-- **PyInstaller compatibility**: Αυτόματο bundling σε installers
+- **Standalone distribution**: The application runs without system PATH dependencies
+- **Cross-platform consistency**: Controlled tool versions across environments
+- **PyInstaller compatibility**: Automatic bundling in packaged installers
 
 ---
 
 ## Architecture
 
 ### Tool Resolution Priority
+
+**Metadata (exopsis):**
+
+- Python package, resolved by the import system
+- PyInstaller bundles it automatically with the rest of the application
+
+**FFmpeg:**
 
 1. Bundled binaries (bin/<platform>/)
    ↓ (if not found)
@@ -35,71 +43,55 @@ Documentation for bundled exiftool/ffmpeg integration with PyInstaller support.
 oncutf/
 ├── bin/
 │   ├── linux/
-│   │   ├── exiftool
-│   │   └── ffmpeg
+│   │   └── ffmpeg          # + ffprobe
 │   ├── macos/
-│   │   ├── exiftool        # Universal binary
-│   │   └── ffmpeg
+│   │   └── ffmpeg          # Universal binary
 │   └── windows/
-│       ├── exiftool.exe
-│       └── ffmpeg.exe
+│       └── ffmpeg.exe      # + ffprobe.exe
 │
 ├── oncutf/
 │   └── utils/
 │       └── shared/
-│           └── external_tools.py  # Tool detection & path resolution
+│           └── external_tools.py  # Tool detection & path resolution (FFmpeg)
 │
 └── oncutf/
     ├── core/
     │   └── thumbnail/
     │       └── providers.py       # VideoThumbnailProvider (uses ffmpeg)
-    └── utils/
-        └── shared/
-            └── exiftool_wrapper.py  # ExifToolWrapper (uses exiftool)
+    └── infra/
+        └── external/
+            └── exopsis_wrapper.py   # ExopsisWrapper (delegates to exopsis)
 ```
 
 ---
 
 ## Integration Points
 
-### 1. ExifToolWrapper (Metadata Extraction)
+### 1. ExopsisWrapper (Metadata Extraction via Exopsis)
 
-**File:** `oncutf/utils/shared/exiftool_wrapper.py`
+**File:** `oncutf/infra/external/exopsis_wrapper.py`
 
-**Changes:**
+The `ExopsisWrapper` class delegates entirely to the **exopsis** Python package
+in-process — no subprocess or binary path management needed.
 
 ```python
-def __init__(self) -> None:
-    # OLD: Hardcoded "exiftool"
-    # self.process = subprocess.Popen(["exiftool", ...])
+from exopsis import ExtractOptions, extract
 
-    # NEW: Use bundled tool
-    from oncutf.utils.shared.external_tools import ToolName, get_tool_path
-
-    exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-    self.process = subprocess.Popen([exiftool_path, ...])
-    self._exiftool_path = exiftool_path  # Store for subprocess.run calls
+def _extract_metadata(self, file_path: str, use_extended: bool = False) -> dict | None:
+    options = ExtractOptions(frame_sample="all" if use_extended else "first")
+    result = extract(file_path, options=options)
+    return result
 ```
 
-**All subprocess calls updated:**
-
-- `_get_metadata_fast()` → uses `self._exiftool_path`
-- `_get_metadata_extended()` → uses `self._exiftool_path`
-- `get_metadata_batch()` → uses `self._exiftool_path`
-- `write_metadata()` → uses `self._exiftool_path`
+`exopsis.extract()` runs in-process; PyInstaller bundles the package automatically.
 
 ### 2. VideoThumbnailProvider (Thumbnail Generation)
 
 **File:** `oncutf/core/thumbnail/providers.py`
 
-**Changes:**
-
 ```python
 def __init__(self, max_size: int = 256, ffmpeg_path: str | None = None):
-    # OLD: Hardcoded "ffmpeg"
-    # self.ffmpeg_path = "ffmpeg"
-
-    # NEW: Auto-detect bundled ffmpeg
+    # Auto-detect bundled ffmpeg
     if ffmpeg_path is None:
         from oncutf.utils.shared.external_tools import ToolName, get_tool_path
 
@@ -120,7 +112,7 @@ def __init__(self, max_size: int = 256, ffmpeg_path: str | None = None):
 
 **File:** `oncutf/utils/shared/external_tools.py`
 
-#### Core Functions
+Used exclusively for **FFmpeg** binary detection (exopsis needs no path resolution).
 
 ```python
 from oncutf.utils.shared.external_tools import (
@@ -132,19 +124,13 @@ from oncutf.utils.shared.external_tools import (
     get_tool_version,
 )
 
-# Get tool path (bundled or system)
-exiftool = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-# Returns: "/path/to/oncutf/bin/linux/exiftool" (bundled)
-#      or: "/usr/bin/exiftool" (system PATH)
-# Raises: FileNotFoundError if not found
-
 # Check availability without raising exception
 if is_tool_available(ToolName.FFMPEG):
     ffmpeg = get_tool_path(ToolName.FFMPEG)
 
 # Get version
-version = get_tool_version(ToolName.EXIFTOOL)
-# Returns: "12.70" or None
+version = get_tool_version(ToolName.FFMPEG)
+# Returns: "7.1.1" or None
 ```
 
 #### Platform Detection
@@ -154,9 +140,9 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
     """Locate bundled binary based on platform.
 
     Maps:
-    - Windows → bin/windows/exiftool.exe
-    - macOS → bin/macos/exiftool (universal or arm64/x86_64)
-    - Linux → bin/linux/exiftool
+    - Windows → bin/windows/ffmpeg.exe
+    - macOS → bin/macos/ffmpeg (universal or arm64/x86_64)
+    - Linux → bin/linux/ffmpeg
 
     Returns Path or None if not found.
     """
@@ -169,11 +155,13 @@ def get_bundled_tool_path(tool_name: ToolName) -> Path | None:
 ### Development Mode
 
 ```bash
-# No binaries in bin/ → uses system PATH
+# No binaries in bin/ → uses system PATH for ffmpeg
+# Exopsis is always available as a Python package
 python main.py
 
-# Binaries in bin/linux/ → uses bundled
-cp /usr/bin/exiftool bin/linux/
+# FFmpeg binaries in bin/linux/ → uses bundled
+cp /usr/bin/ffmpeg bin/linux/
+cp /usr/bin/ffprobe bin/linux/
 python main.py
 ```
 
@@ -182,10 +170,11 @@ python main.py
 **File:** `oncutf.spec` (PyInstaller spec file)
 
 ```python
-# Add bundled binaries to distribution
+# Add bundled FFmpeg binaries to distribution
+# (exopsis is bundled automatically as a Python package)
 datas = [
-    ('bin/linux/exiftool', 'bin/linux'),
     ('bin/linux/ffmpeg', 'bin/linux'),
+    ('bin/linux/ffprobe', 'bin/linux'),
 ]
 
 a = Analysis(
@@ -199,7 +188,8 @@ a = Analysis(
 
 - PyInstaller extracts binaries to `sys._MEIPASS/bin/linux/`
 - `AppPaths.get_bundled_tools_dir()` returns `_MEIPASS/bin`
-- `get_tool_path()` finds bundled binaries automatically
+- `get_tool_path()` finds bundled FFmpeg automatically
+- Exopsis is available as a regular Python import (no special handling)
 
 ---
 
@@ -238,14 +228,14 @@ class AppPaths:
 ### Graceful Degradation
 
 ```python
-# ExifToolWrapper raises RuntimeError if exiftool not found
+# ExopsisWrapper raises RuntimeError if exopsis is not installed
 try:
-    wrapper = ExifToolWrapper()
+    wrapper = ExopsisWrapper()
 except RuntimeError as e:
-    logger.error("ExifTool not available: %s", e)
+    logger.error("Exopsis not available: %s", e)
     # Disable metadata features
     from oncutf.config.features import FeatureAvailability
-    FeatureAvailability.update_availability(exiftool=False)
+    FeatureAvailability.update_availability(exopsis=False)
 
 # VideoThumbnailProvider logs warning but continues
 provider = VideoThumbnailProvider()  # ffmpeg_path auto-detected
@@ -270,35 +260,30 @@ raise FileNotFoundError(
 
 ```python
 def test_bundled_tool_detection():
-    """Test that bundled tools are detected before system PATH."""
-    # Place mock binary in bin/linux/
-    bundled_path = AppPaths.get_bundled_tools_dir() / "linux" / "exiftool"
+    """Test that bundled FFmpeg is detected before system PATH."""
+    bundled_path = AppPaths.get_bundled_tools_dir() / "linux" / "ffmpeg"
     bundled_path.parent.mkdir(parents=True, exist_ok=True)
-    bundled_path.write_text("#!/bin/bash\necho 12.70")
+    bundled_path.write_text("#!/bin/bash\necho 7.1.1")
     bundled_path.chmod(0o755)
 
-    # Verify bundled tool is found
-    path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-    assert "bin/linux/exiftool" in str(path)
+    path = get_tool_path(ToolName.FFMPEG, prefer_bundled=True)
+    assert "bin/linux/ffmpeg" in str(path)
 ```
 
 ### Manual Testing
 
 ```bash
-# Test bundled tool detection
+# Test FFmpeg bundled tool detection
 python -c "
 from oncutf.utils.shared.external_tools import *
-print('ExifTool:', get_tool_path(ToolName.EXIFTOOL))
 print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 "
 
-# Expected output (development with bundled binaries):
-# ExifTool: /path/to/oncutf/bin/linux/exiftool
-# FFmpeg: /path/to/oncutf/bin/linux/ffmpeg
+# Test exopsis availability
+python -c "from exopsis import extract; print('exopsis OK')"
 
-# Expected output (development without bundled binaries):
-# ExifTool: /usr/bin/exiftool
-# FFmpeg: /usr/bin/ffmpeg
+# Expected output (development with bundled FFmpeg):
+# FFmpeg: /path/to/oncutf/bin/linux/ffmpeg
 ```
 
 ---
@@ -307,19 +292,18 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ### For Linux Installer
 
-- [ ] Download exiftool from <https://exiftool.org/>
-- [ ] Download ffmpeg from <https://ffmpeg.org/download.html>
+- [ ] Download ffmpeg + ffprobe static builds from <https://johnvansickle.com/ffmpeg/>
 - [ ] Copy to `bin/linux/`
-- [ ] Make executable: `chmod +x bin/linux/{exiftool,ffmpeg}`
-- [ ] Test: `python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.EXIFTOOL))"`
-- [ ] Update `oncutf.spec` datas list
+- [ ] Make executable: `chmod +x bin/linux/{ffmpeg,ffprobe}`
+- [ ] Ensure exopsis is in `requirements.txt` / `pyproject.toml` (auto-bundled by PyInstaller)
+- [ ] Test: `python -c "from oncutf.utils.shared.external_tools import *; print(get_tool_path(ToolName.FFMPEG))"`
+- [ ] Update `oncutf.spec` datas list (ffmpeg only)
 - [ ] Build with PyInstaller: `pyinstaller oncutf.spec`
 - [ ] Test frozen executable: `./dist/oncutf/oncutf`
 
 ### For Windows Installer
 
-- [ ] Download `exiftool.exe` from <https://exiftool.org/>
-- [ ] Download `ffmpeg.exe` static build
+- [ ] Download `ffmpeg.exe` + `ffprobe.exe` static build
 - [ ] Copy to `bin/windows/`
 - [ ] Update `oncutf.spec` datas list
 - [ ] Build with PyInstaller
@@ -327,9 +311,9 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ### For macOS Installer
 
-- [ ] Download universal binaries or use `lipo` to combine Intel + ARM
+- [ ] Download universal FFmpeg + FFprobe binaries or use `lipo` to combine Intel + ARM
 - [ ] Copy to `bin/macos/`
-- [ ] Code-sign binaries: `codesign -s "Developer ID" bin/macos/exiftool`
+- [ ] Code-sign binaries: `codesign -s "Developer ID" bin/macos/ffmpeg`
 - [ ] Update `oncutf.spec` datas list
 - [ ] Build with PyInstaller
 - [ ] Test frozen executable
@@ -338,11 +322,11 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ## License Compliance
 
-### ExifTool
+### Exopsis
 
-- **License:** GPL / Artistic License
-- **Requirement:** Include `bin/LICENSE-exiftool.txt`
-- **Attribution:** Required in About dialog
+- **License:** See exopsis package license
+- **Requirement:** Include in `requirements.txt`; PyInstaller bundles automatically
+- **Attribution:** No binary distribution required
 
 ### FFmpeg
 
@@ -353,70 +337,20 @@ print('FFmpeg:', get_tool_path(ToolName.FFMPEG))
 
 ---
 
-## Migration Notes
-
-### Before (Hardcoded Paths)
-
-```python
-# ExifToolWrapper
-self.process = subprocess.Popen(["exiftool", ...])
-
-# VideoThumbnailProvider
-def __init__(self, ffmpeg_path: str = "ffmpeg"):
-    self.ffmpeg_path = ffmpeg_path
-```
-
-**Problems:**
-
-- Relied on system PATH
-- No bundled binary support
-- Failed on systems without exiftool/ffmpeg installed
-
-### After (Bundled Tools)
-
-```python
-# ExifToolWrapper
-exiftool_path = get_tool_path(ToolName.EXIFTOOL, prefer_bundled=True)
-self.process = subprocess.Popen([exiftool_path, ...])
-self._exiftool_path = exiftool_path
-
-# VideoThumbnailProvider
-def __init__(self, ffmpeg_path: str | None = None):
-    if ffmpeg_path is None:
-        self.ffmpeg_path = get_tool_path(ToolName.FFMPEG, prefer_bundled=True)
-    else:
-        self.ffmpeg_path = ffmpeg_path
-```
-
-**Benefits:**
-
-- ✅ Bundled binaries preferred
-- ✅ System PATH fallback
-- ✅ PyInstaller compatible
-- ✅ Graceful error handling
-
----
-
 ## Future Work
 
 ### Planned Enhancements
 
-1. **Automatic Binary Download**
-   - Download missing binaries on first run
-   - Cache in user data directory
+1. **FFmpeg Version Management**
+   - Check for updates on startup
    - Verify checksums for security
 
-2. **Version Management**
-   - Check for updates on startup
-   - Auto-upgrade binaries
-   - Rollback on errors
-
-3. **Platform-Specific Optimization**
+2. **Platform-Specific Optimization**
    - GPU acceleration for ffmpeg (CUDA/Metal)
    - ARM64 optimized builds for Apple Silicon
    - Static linking for smaller binaries
 
-4. **Testing Infrastructure**
+3. **Testing Infrastructure**
    - Mock binaries for CI/CD
    - Docker images with bundled tools
    - Automated installer testing
@@ -437,4 +371,4 @@ def __init__(self, ffmpeg_path: str | None = None):
 
 **Author:** Michael Economou
 **Date:** 2026-01-16
-**Status:** Implemented (Phase 2)
+**Status:** Implemented

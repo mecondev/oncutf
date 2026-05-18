@@ -1,17 +1,17 @@
-"""External tool clients - ExifTool, FFmpeg, etc.
+"""External tool clients - Exopsis wrapper, FFmpeg, etc.
 
 Author: Michael Economou
 Date: 2026-01-22
 """
 
-from oncutf.infra.external.exiftool_client import (
-    ExifToolClient,
-    get_exiftool_client,
-    set_exiftool_client,
+from oncutf.infra.external.exopsis_client import (
+    ExopsisClient,
+    get_exopsis_client,
+    set_exopsis_client,
 )
 
 __all__ = [
-    "ExifToolClient",
-    "get_exiftool_client",
-    "set_exiftool_client",
+    "ExopsisClient",
+    "get_exopsis_client",
+    "set_exopsis_client",
 ]

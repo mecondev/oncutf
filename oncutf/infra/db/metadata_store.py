@@ -183,9 +183,6 @@ class MetadataStore:
 
                 metadata: dict[str, Any] = json.loads(row["metadata_json"])
 
-                # Add metadata flags
-                if row["metadata_type"] == "extended":
-                    metadata["__extended__"] = True
                 if row["is_modified"]:
                     metadata["__modified__"] = True
 
@@ -253,9 +250,6 @@ class MetadataStore:
                 file_path = path_ids[row["path_id"]]
                 metadata = json.loads(row["metadata_json"])
 
-                # Add metadata flags
-                if row["metadata_type"] == "extended":
-                    metadata["__extended__"] = True
                 if row["is_modified"]:
                     metadata["__modified__"] = True
 

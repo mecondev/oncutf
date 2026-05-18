@@ -20,13 +20,13 @@ class FeatureAvailability:
     Updated automatically by oncutf.utils.shared.external_tools module during initialization.
     """
 
-    exiftool_available: bool = False
+    exopsis_available: bool = False
     ffmpeg_available: bool = False
 
     @classmethod
     def metadata_features_enabled(cls) -> bool:
-        """Whether metadata/EXIF features are enabled (requires ExifTool)."""
-        return cls.exiftool_available
+        """Whether metadata/EXIF features are enabled (requires Exopsis)."""
+        return cls.exopsis_available
 
     @classmethod
     def video_features_enabled(cls) -> bool:
@@ -34,21 +34,21 @@ class FeatureAvailability:
         return cls.ffmpeg_available
 
     @classmethod
-    def update_availability(cls, exiftool: bool = False, ffmpeg: bool = False) -> None:
+    def update_availability(cls, exopsis: bool = False, ffmpeg: bool = False) -> None:
         """Update tool availability flags."""
-        cls.exiftool_available = exiftool
+        cls.exopsis_available = exopsis
         cls.ffmpeg_available = ffmpeg
 
 
 # =====================================
-# EXIFTOOL TIMEOUT SETTINGS
+# METADATA EXTRACTION TIMEOUT SETTINGS
 # =====================================
 
-EXIFTOOL_TIMEOUT_FAST = 60
-EXIFTOOL_TIMEOUT_EXTENDED = 240
-EXIFTOOL_TIMEOUT_WRITE = 60  # Large MP4s on slow/USB drives can take >10 s
-EXIFTOOL_TIMEOUT_BATCH_BASE = 60
-EXIFTOOL_TIMEOUT_BATCH_PER_FILE = 0.5
+METADATA_TIMEOUT_FAST = 60
+METADATA_TIMEOUT_EXTENDED = 240
+METADATA_TIMEOUT_WRITE = 60  # Large MP4s on slow/USB drives can take >10 s
+METADATA_TIMEOUT_BATCH_BASE = 60
+METADATA_TIMEOUT_BATCH_PER_FILE = 0.5
 
 # =====================================
 # HASH CALCULATION PERFORMANCE

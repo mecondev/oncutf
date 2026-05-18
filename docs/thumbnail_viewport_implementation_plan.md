@@ -71,7 +71,7 @@ Implement a second viewport (alongside the existing table view) that displays fi
 
 **Bonus: Bundled Tools Integration [COMPLETE]**
 
-- ExifToolWrapper: Uses bundled exiftool (bin/<platform>/)
+- ExopsisWrapper: Delegates to exopsis Python package (no binary needed)
 - VideoThumbnailProvider: Auto-detects bundled ffmpeg
 - PyInstaller-ready architecture
 - Standalone distribution support
@@ -316,11 +316,10 @@ Model Updated + Sync to FileTable
 
 **Extra work completed for installer preparation:**
 
-- **ExifToolWrapper:** Updated to use bundled exiftool
-  - File: `oncutf/utils/shared/exiftool_wrapper.py`
-  - Uses `external_tools.get_tool_path(ToolName.EXIFTOOL)`
-  - All subprocess calls updated (Popen + run)
-  - Stores path in `self._exiftool_path`
+- **ExopsisWrapper:** Migrated to exopsis Python package
+  - File: `oncutf/infra/external/exopsis_wrapper.py`
+  - Uses `from exopsis import ExtractOptions, extract` (in-process, no subprocess)
+  - Always `frame_sample='first'` — stops at first frame for both fast and extended modes
 
 - **VideoThumbnailProvider:** Auto-detects bundled ffmpeg
   - File: `oncutf/core/thumbnail/providers.py`

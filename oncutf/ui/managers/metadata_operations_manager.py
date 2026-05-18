@@ -460,7 +460,7 @@ class MetadataOperationsManager:
             if not cache_entry or not hasattr(cache_entry, "data"):
                 return None
 
-            # Priority order (exiftool's preference: XMP > IPTC > EXIF)
+            # Priority order: XMP > IPTC > EXIF (metadata standard preference)
             field_priorities = {
                 "Title": [
                     "XMP:Title",

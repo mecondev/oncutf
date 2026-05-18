@@ -22,7 +22,7 @@ def force_cleanup_ffmpeg_processes(
 ) -> None:
     """Force cleanup all FFmpeg processes system-wide.
 
-    Similar to ExifToolWrapper.force_cleanup_all_exiftool_processes().
+    Similar to ExopsisWrapper.force_cleanup().
     This runs during app shutdown to prevent orphan ffmpeg processes.
 
     Args:

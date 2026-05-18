@@ -264,60 +264,35 @@ class ContextMenuHandlers:
         menu.addSeparator()
 
         # === METADATA OPERATIONS (Selection-only) ===
-        exiftool_ok = FeatureAvailability.exiftool_available
-        action_load_fast = create_action_with_shortcut(
-            get_menu_icon("draft"), "Load Fast Metadata", "Ctrl+M"
-        )
-        action_load_extended = create_action_with_shortcut(
-            get_menu_icon("note_add"), "Load Extended Metadata", "Ctrl+Shift+M"
+        exopsis_ok = FeatureAvailability.exopsis_available
+        action_load_metadata = create_action_with_shortcut(
+            get_menu_icon("draft"), "Load Metadata", "Ctrl+M"
         )
 
-        menu.addAction(action_load_fast)
-        menu.addAction(action_load_extended)
+        menu.addAction(action_load_metadata)
 
-        if not exiftool_ok:
-            # ExifTool not found: disable all metadata actions
-            _no_exiftool = "ExifTool not available - install exiftool to use metadata features"
-            action_load_fast.setEnabled(False)
-            action_load_extended.setEnabled(False)
-            TooltipHelper.setup_action_tooltip(
-                action_load_fast, _no_exiftool, TooltipType.WARNING, menu
+        if not exopsis_ok:
+            _no_exopsis = (
+                "Exopsis not available - install the exopsis package to use metadata features"
             )
+            action_load_metadata.setEnabled(False)
             TooltipHelper.setup_action_tooltip(
-                action_load_extended, _no_exiftool, TooltipType.WARNING, menu
+                action_load_metadata, _no_exopsis, TooltipType.WARNING, menu
             )
         else:
-            # Smart enable/disable logic based on analysis
-            action_load_fast.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
-            action_load_extended.setEnabled(
-                has_selection and selected_analysis["enable_extended_selected"]
-            )
+            action_load_metadata.setEnabled(has_selection and selected_analysis["enable_load"])
 
-            # Set smart tooltips with selection context
             if has_selection:
                 sel_count = len(selected_files)
-                load_fast_tip = selected_analysis["fast_tooltip"]
+                load_tip = selected_analysis["load_tooltip"]
                 if sel_count < total_files:
-                    load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+                    load_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
                 TooltipHelper.setup_action_tooltip(
-                    action_load_fast, load_fast_tip, TooltipType.INFO, menu
-                )
-
-                load_ext_tip = selected_analysis["extended_tooltip"]
-                if sel_count < total_files:
-                    load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
-                TooltipHelper.setup_action_tooltip(
-                    action_load_extended, load_ext_tip, TooltipType.INFO, menu
+                    action_load_metadata, load_tip, TooltipType.INFO, menu
                 )
             else:
                 TooltipHelper.setup_action_tooltip(
-                    action_load_fast,
-                    "Select files first (Ctrl+A to select all)",
-                    TooltipType.WARNING,
-                    menu,
-                )
-                TooltipHelper.setup_action_tooltip(
-                    action_load_extended,
+                    action_load_metadata,
                     "Select files first (Ctrl+A to select all)",
                     TooltipType.WARNING,
                     menu,
@@ -441,12 +416,12 @@ class ContextMenuHandlers:
         if hasattr(self.parent_window, "metadata_tree_view"):
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
 
-        action_save_all_modified.setEnabled(exiftool_ok and has_modifications)
+        action_save_all_modified.setEnabled(exopsis_ok and has_modifications)
 
-        if not exiftool_ok:
+        if not exopsis_ok:
             TooltipHelper.setup_action_tooltip(
                 action_save_all_modified,
-                "ExifTool not available - cannot save metadata",
+                "Exopsis not available - cannot save metadata",
                 TooltipType.WARNING,
                 menu,
             )
@@ -492,12 +467,12 @@ class ContextMenuHandlers:
                         has_rotation_to_reset = True
                         break
 
-        action_set_rotation.setEnabled(exiftool_ok and has_selection and has_rotation_to_reset)
+        action_set_rotation.setEnabled(exopsis_ok and has_selection and has_rotation_to_reset)
 
-        if not exiftool_ok:
+        if not exopsis_ok:
             TooltipHelper.setup_action_tooltip(
                 action_set_rotation,
-                "ExifTool not available - cannot write metadata",
+                "Exopsis not available - cannot write metadata",
                 TooltipType.WARNING,
                 menu,
             )
@@ -596,21 +571,21 @@ class ContextMenuHandlers:
         menu.addAction(action_export_sel)
         menu.addAction(action_export_all)
 
-        # Enable/disable export actions based on metadata availability and exiftool
-        action_export_sel.setEnabled(exiftool_ok and has_selection)
-        action_export_all.setEnabled(exiftool_ok and total_files > 0)
+        # Enable/disable export actions based on Exopsis availability
+        action_export_sel.setEnabled(exopsis_ok and has_selection)
+        action_export_all.setEnabled(exopsis_ok and total_files > 0)
 
         # Smart tooltips
-        if not exiftool_ok:
+        if not exopsis_ok:
             TooltipHelper.setup_action_tooltip(
                 action_export_sel,
-                "ExifTool is not available",
+                "Exopsis is not available",
                 TooltipType.WARNING,
                 menu,
             )
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
-                "ExifTool is not available",
+                "Exopsis is not available",
                 TooltipType.WARNING,
                 menu,
             )
@@ -630,14 +605,14 @@ class ContextMenuHandlers:
                 menu,
             )
 
-        if total_files > 0 and exiftool_ok:
+        if total_files > 0 and exopsis_ok:
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
                 f"Export metadata for all {total_files} files in folder",
                 TooltipType.INFO,
                 menu,
             )
-        elif exiftool_ok:
+        elif exopsis_ok:
             TooltipHelper.setup_action_tooltip(
                 action_export_all,
                 "No files have metadata to export",
@@ -665,14 +640,9 @@ class ContextMenuHandlers:
         self.parent_window.file_list_view.context_focused_row = None
 
         # === Handlers ===
-        if action == action_load_fast:
+        if action == action_load_metadata:
             self.parent_window.load_metadata_for_items(
-                selected_files, use_extended=False, source="context_menu"
-            )
-
-        elif action == action_load_extended:
-            self.parent_window.load_metadata_for_items(
-                selected_files, use_extended=True, source="context_menu"
+                selected_files, source="context_menu"
             )
 
         elif action == action_invert:
