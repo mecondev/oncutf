@@ -157,7 +157,7 @@ class CompanionMetadataHandler:
 
         Args:
             file_item: The main file being processed
-            base_metadata: Base metadata from ExifTool
+            base_metadata: Base metadata from Exopsis
             all_files: All files being processed (for folder context)
 
         Returns:

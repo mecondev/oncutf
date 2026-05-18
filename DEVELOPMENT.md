@@ -3,7 +3,6 @@
 ## Prerequisites
 
 - Python 3.9+
-- ExifTool installed and available in PATH
 - Git
 
 ## Quick Start
@@ -98,7 +97,7 @@ pytest tests/ -m "not slow"  # Skip slow tests
 pytest tests/ -m "unit"      # Only unit tests
 pytest tests/ -m "integration"  # Only integration tests
 pytest tests/ -m "gui"       # Only GUI tests
-pytest tests/ -m "exiftool"  # Only tests requiring exiftool
+pytest tests/ -m "metadata"  # Only tests requiring metadata extraction
 ```
 
 ### Building
@@ -155,7 +154,7 @@ This project uses:
 - **Integration tests** (`@pytest.mark.integration`) - Test component interactions
 - **GUI tests** (`@pytest.mark.gui`) - Test PyQt5 UI components
 - **Slow tests** (`@pytest.mark.slow`) - Tests that take longer to run
-- **ExifTool tests** (`@pytest.mark.exiftool`) - Tests requiring ExifTool
+- **Metadata tests** (`@pytest.mark.metadata`) - Tests requiring metadata extraction (exopsis)
 
 ### Running Tests
 
@@ -294,17 +293,10 @@ Types:
 
 ### Common Issues
 
-**ExifTool not found:**
+**Metadata extraction not available (exopsis missing):**
 
 ```bash
-# Install ExifTool
-# Ubuntu/Debian
-sudo apt-get install exiftool
-
-# macOS
-brew install exiftool
-
-# Windows: Download from https://exiftool.org/
+pip install exopsis
 ```
 
 **PyQt5 installation issues:**

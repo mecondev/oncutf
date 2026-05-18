@@ -72,7 +72,7 @@ The system initializes with the following default categories:
 
 7. **Technical Details** (`technical`)
    - Technical metadata and processing information
-   - Fields: ExifTool Version, File Permissions
+   - Fields: Exopsis Version, File Permissions
 
 ## Core Components
 

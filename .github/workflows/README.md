@@ -17,7 +17,7 @@ This directory contains two test workflow variants for oncutf:
   - **Pushes:** Lighter matrix (ubuntu + windows, Python 3.12 only = 2 jobs)
 - Concurrency control (cancels stale runs)
 - Explicit permissions (contents: read)
-- Cross-platform exiftool installation with fallback
+- Cross-platform Qt system library installation
 
 **When to use:**
 
@@ -160,7 +160,7 @@ All workflows run (in order):
 
 1. **Lint (Ruff)** — Code style, imports, basic checks
 2. **Typecheck (mypy)** — Static type analysis (3-tier strict config)
-3. **Tests (pytest)** — Full test suite with Qt + exiftool
+3. **Tests (pytest)** — Full test suite with Qt + exopsis
 
 **Failure policy:** `fail-fast: false` — all matrix jobs run even if one fails.
 
@@ -204,7 +204,7 @@ Future considerations:
 
 ### Cross-platform failures
 
-- Check exiftool installation logs
+- Check exopsis/Qt dependency installation logs
 - Verify Qt platform plugin setup (QT_QPA_PLATFORM)
 - Test locally with same OS/Python combination
 

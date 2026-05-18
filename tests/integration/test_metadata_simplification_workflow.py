@@ -33,7 +33,6 @@ class TestMetadataSimplificationWorkflow:
             "QuickTime:Duration": "120.5",
             "QuickTime:VideoFrameRate": "30",
             "File:FileSize": "1024000",
-            "__extended__": False,
         }
 
         # Get simplified metadata
@@ -234,11 +233,10 @@ class TestMetadataSimplificationWorkflow:
         assert keys == []
 
     def test_internal_flags_excluded(self):
-        """Test that __extended__ and __companion__ flags are excluded."""
+        """Test that __companion__ flag is excluded."""
         file_item = FileItem("/test/file.jpg", "jpg", datetime.now())
         file_item.metadata = {
             "EXIF:Model": "Canon",
-            "__extended__": True,
             "__companion__": False,
         }
 
@@ -247,7 +245,6 @@ class TestMetadataSimplificationWorkflow:
 
         # Internal flags should not appear in simplified view
         all_keys = [k for k, _ in simplified.items_simplified()]
-        assert "__extended__" not in all_keys
         assert "__companion__" not in all_keys
 
         # But actual metadata should be there

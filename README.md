@@ -66,39 +66,9 @@
 ## Requirements
 
 - **Python 3.12+**
-- **[ExifTool](https://exiftool.org/)** - Must be installed and available in system PATH
+- **[exopsis](https://pypi.org/project/exopsis/)** - Python metadata extraction package (installed via pip)
 - **PyQt5** - GUI framework
-
-### Installing ExifTool
-
-**Windows:**
-
-1. Download from [ExifTool website](https://exiftool.org/)
-2. Extract to a folder (e.g., `C:\exiftool`)
-3. Add the folder to your system PATH
-
-**Linux (Ubuntu/Debian):**
-
-```bash
-sudo apt-get install exiftool
-```
-
-**macOS:**
-
-```bash
-brew install exiftool
-```
-
-**Manual Installation:**
-
-1. Download from [ExifTool website](https://exiftool.org/)
-2. Extract and add to PATH
-
-**Verify Installation:**
-
-```bash
-exiftool -ver
-```
+- **FFmpeg / FFprobe** - Required for video thumbnail generation (optional)
 
 ---
 
@@ -341,7 +311,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 ### Performance Optimizations
 
 - **Advanced Cache System**: Multi-tier caching (memory + disk + database) for 500x speedup
-- **Persistent ExifTool Process**: Uses `-stay_open` mode for fast metadata extraction
+- **Fast Metadata Extraction**: First-frame sampling (Exopsis) for instant Sony XAVC and video metadata
 - **Intelligent Caching**: Smart cache invalidation with 90%+ hit rates
 - **Threaded Operations**: Non-blocking metadata loading with progress feedback
 - **Batch Operations**: Efficient processing of multiple files (10x speedup)
@@ -364,7 +334,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 
 ### Robust Error Handling
 
-- **Graceful Degradation**: Continues operation even when ExifTool encounters issues
+- **Graceful Degradation**: Continues operation even when metadata extraction encounters issues
 - **User-Friendly Messages**: Clear error reporting without technical jargon
 - **Recovery Mechanisms**: Automatic cleanup and state restoration after failures
 - **Qt Object Lifecycle Management**: Enhanced tooltip system with proper cleanup and error recovery
@@ -373,7 +343,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 
 ## Project & Creator
 
-**oncutf** is created by [Michael Economou](https://oncut.gr) as a personal tool to support creative video and photo workflows. The project emphasizes reliability, performance, and user experience over feature bloat.
+**oncutf** is a professional tool developed by [Michael Economou](https://oncut.gr) to support creative video and photo workflows. The project emphasizes reliability, performance, and user experience.
 
 ### Links
 
@@ -382,7 +352,7 @@ See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical deb
 - **Facebook**: [Oncut](https://facebook.com/oncut.gr)
 - **GitHub**: [mecondev/oncutf](https://github.com/mecondev/oncutf)
 
-> This is a hobbyist project. Not affiliated with or endorsed by ExifTool or PyQt5.
+> Not affiliated with or endorsed by PyQt5.
 
 ---
 
@@ -397,17 +367,18 @@ respective licenses. The oncutf project does **not** modify these tools.
 
 | Tool | License | Source |
 | ---- | ------- | ------ |
-| **ExifTool** by Phil Harvey | Artistic License 2.0 / GPL | [exiftool.org](https://exiftool.org/) |
 | **FFmpeg** / **FFprobe** | GPL v3 | [ffmpeg.org](https://ffmpeg.org/) |
 
-License texts for bundled tools: [`bin/LICENSE-exiftool-artistic.txt`](bin/LICENSE-exiftool-artistic.txt),
-[`bin/LICENSE-ffmpeg-gplv3.txt`](bin/LICENSE-ffmpeg-gplv3.txt)
+License texts for bundled tools: [`bin/LICENSE-ffmpeg-gplv3.txt`](bin/LICENSE-ffmpeg-gplv3.txt)
+
+> **Note:** Metadata extraction uses the **exopsis** Python package (not a bundled binary).
+> See [exopsis on PyPI](https://pypi.org/project/exopsis/) for its license.
 
 ---
 
 ## Acknowledgments
 
-- **[ExifTool](https://exiftool.org/)** by Phil Harvey - The backbone of metadata extraction
+- **[exopsis](https://pypi.org/project/exopsis/)** - Metadata extraction backend
 - **[FFmpeg](https://ffmpeg.org/)** - Video frame extraction for thumbnail generation
 - **PyQt5** by Riverbank Computing - Robust GUI framework
 - **The open-source community** - For inspiration and best practices

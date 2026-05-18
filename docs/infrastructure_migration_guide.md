@@ -1,55 +1,34 @@
-# Migration Guide - Using New Infrastructure Layer
+# Infrastructure Layer - Usage Guide
 
 **Author:** Michael Economou
 **Date:** 2026-01-22
-**Status:** Active
 
 ## Overview
 
-This guide shows how to migrate from old patterns to the new layered architecture.
+Reference for using the layered architecture patterns.
 
 ## Quick Reference
 
-### ExifTool Operations
-
-**OLD (DEPRECATED):**
+### Metadata Operations
 
 ```python
-from oncutf.services.exiftool_service import ExifToolService
+from oncutf.infra.external import get_exopsis_client
 
-service = ExifToolService()
-metadata = service.load_metadata(Path("image.jpg"))
-```
-
-**NEW (RECOMMENDED):**
-
-```python
-from oncutf.infra.external import get_exiftool_client
-
-client = get_exiftool_client()
+client = get_exopsis_client()
 metadata = client.extract_metadata(Path("image.jpg"))
 ```
 
 **For batch operations:**
 
 ```python
-from oncutf.infra.external import get_exiftool_client
+from oncutf.infra.external import get_exopsis_client
 
-client = get_exiftool_client()
+client = get_exopsis_client()
 paths = [Path("img1.jpg"), Path("img2.jpg")]
 results = client.extract_batch(paths)  # Dict[str, Dict[str, Any]]
 ```
 
 ### Metadata Caching
-
-**OLD (scattered):**
-
-```python
-# Various cache implementations across codebase
-self._metadata_cache[key] = value
-```
-
-**NEW (canonical):**
 
 ```python
 from oncutf.infra.cache import get_metadata_cache
@@ -59,67 +38,24 @@ cache.set(Path("image.jpg"), metadata)
 metadata = cache.get(Path("image.jpg"))
 ```
 
-**Features:**
-
-- TTL-based expiration (default 5 minutes)
-- File modification time tracking
-- Thread-safe operations
-- Automatic cleanup
+Features: TTL expiration (default 5 min), mtime tracking, thread-safe, auto-cleanup.
 
 ### File Database Operations
 
-**OLD (models→core cycle):**
-
-```python
-# In FileItem class
-from oncutf.core.database.database_manager import get_database_manager
-
-db = get_database_manager()
-folder_id = db.get_folder_id(self.folder_path)
-```
-
-**NEW (repository pattern):**
-
 ```python
 from oncutf.infra.db import get_file_repository
 
 repo = get_file_repository()
-folder_id = repo.get_folder_id(file_item.folder_path)
-```
-
-**Operations:**
-
-```python
-from oncutf.infra.db import get_file_repository
-
-repo = get_file_repository()
-
-# Get folder ID
 folder_id = repo.get_folder_id("/path/to/folder")
-
-# Ensure folder exists (creates if needed)
 folder_id = repo.ensure_folder_exists("/path/to/folder")
-
-# Hash operations
 hash_value = repo.get_file_hash("/path/to/file.jpg")
-success = repo.store_file_hash("/path/to/file.jpg", "abc123...")
+repo.store_file_hash("/path/to/file.jpg", "abc123...")
 ```
 
-### User Dialogs (Breaking core→ui cycles)
-
-**OLD (direct UI import in core):**
+### User Dialogs
 
 ```python
-# In core module
-from oncutf.ui.dialogs.custom_message_dialog import CustomMessageDialog
-
-CustomMessageDialog.critical(parent, "Error", "Something went wrong")
-```
-
-**NEW (port-based):**
-
-```python
-# In core/app module - depend on protocol
+# core/app module — depend on protocol
 from oncutf.app.ports import UserDialogPort
 
 class SomeManager:
@@ -130,23 +66,13 @@ class SomeManager:
         if self._dialog:
             self._dialog.show_error("Error", "Something went wrong")
 
-# In UI layer - wire up adapter
+# UI layer — wire up Qt adapter
 from oncutf.ui.adapters.qt_user_interaction import QtUserDialogAdapter
 
-dialog_adapter = QtUserDialogAdapter(parent=self)
-manager = SomeManager(dialog_port=dialog_adapter)
+manager = SomeManager(dialog_port=QtUserDialogAdapter(parent=self))
 ```
 
 ### Status Messages
-
-**OLD:**
-
-```python
-if self.parent_window and hasattr(self.parent_window, "status_bar"):
-    self.parent_window.status_bar.showMessage("Processing...", 5000)
-```
-
-**NEW (general pattern):**
 
 ```python
 from oncutf.app.ports import StatusReporter
@@ -160,19 +86,7 @@ class SomeManager:
             self._status.show_status("Processing...", 5000)
 ```
 
-**NEW (metadata -- concrete example using MetadataUIBridge):**
-
-```python
-# In core/ -- define protocol
-from oncutf.core.metadata.metadata_ui_bridge import MetadataUIBridge
-
-class MetadataLoader:
-    def __init__(self, *, ui_bridge: MetadataUIBridge | None = None):
-        self._ui_bridge = ui_bridge or NullMetadataUIBridge()
-
-    def some_method(self):
-        self._ui_bridge.set_metadata_status("Processing...", auto_reset=True)
-```
+For metadata status use `MetadataUIBridge` (`core/metadata/metadata_ui_bridge.py`).
 
 ## Module Locations
 
@@ -180,7 +94,7 @@ class MetadataLoader:
 
 | Component | Location | Purpose |
 | --------- | -------- | -------- |
-| ExifToolClient | `infra/external/exiftool_client.py` | Canonical ExifTool operations |
+| ExopsisClient | `infra/external/exopsis_client.py` | Metadata extraction (delegates to exopsis) |
 | MetadataCache | `infra/cache/metadata_cache.py` | Metadata caching with TTL |
 | FileRepository | `infra/db/file_repository.py` | File database operations |
 
@@ -219,24 +133,16 @@ mock_dialog.show_error.assert_called_once()
 ### Integration Tests
 
 ```python
-from oncutf.infra.external import ExifToolClient
+from oncutf.infra.external import ExopsisClient
 from pathlib import Path
 
-def test_exiftool_extraction():
-    client = ExifToolClient()
+def test_metadata_extraction():
+    client = ExopsisClient()
     assert client.is_available()
 
     metadata = client.extract_metadata(Path("test.jpg"))
     assert isinstance(metadata, dict)
 ```
-
-## Deprecation Timeline
-
-| Module | Status | Removal Target |
-| ------ | ------ | -------------- |
-| `services/exiftool_service.py` | Deprecated | v2.0 |
-| `utils/metadata/exiftool_adapter.py` | To be deprecated | v2.0 |
-| Direct `core→ui` imports | Forbidden (new code) | Ongoing |
 
 ## Benefits
 
@@ -258,17 +164,7 @@ def test_exiftool_extraction():
 - Support multiple UI frameworks
 - Independent evolution of layers
 
-## Migration Strategy
+## Further Reading
 
-1. **New code:** Use new patterns from day one
-2. **Bug fixes:** Migrate small sections as needed
-3. **Refactoring:** Systematic migration of modules
-4. **Deprecation:** Mark old patterns, remove after 2 releases
-
-## Questions?
-
-Check:
-
-- [phase_a_implementation_guide.md](phase_a_implementation_guide.md) - Implementation details
-- [migration_stance.md](migration_stance.md) - Architecture rules
-- [import_cycles_analysis_260122.md](reports/import_cycles_analysis_260122.md) - Identified issues
+- [docs/architecture.md](architecture.md) — 4-tier design
+- [docs/application_workflow.md](application_workflow.md) — init/shutdown flow

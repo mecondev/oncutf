@@ -1,13 +1,7 @@
-"""ExifTool client - canonical Exopsis metadata interaction.
+"""Canonical metadata client backed by Exopsis.
 
-This module consolidates all Exopsis-compatible metadata interactions into a
-single location. It wraps the ExifToolWrapper abstraction and provides a clean
-interface for the rest of the application.
-
-Replaces:
-- oncutf/utils/metadata/exiftool_adapter.py
-- oncutf/services/exiftool_service.py (partially)
-- Direct ExifToolWrapper usage
+Consolidates all metadata interactions into a single location by wrapping
+ExopsisWrapper and exposing a clean interface to the rest of the application.
 
 Author: Michael Economou
 Date: 2026-01-22
@@ -25,31 +19,23 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class ExifToolClient:
-    """Canonical metadata client for Exopsis-compatible operations.
+class ExopsisClient:
+    """Canonical metadata client backed by Exopsis.
 
-    This is the SINGLE SOURCE OF TRUTH for metadata extraction and writing.
-    All metadata interactions should go through this class.
-
-    Features:
-    - Persistent process via ExifToolWrapper
-    - Thread-safe operations
-    - Batch metadata extraction
-    - Metadata writing
-    - Health monitoring
+    Single entry point for all metadata extraction and writing in the app.
 
     Usage:
-        client = ExifToolClient()
+        client = ExopsisClient()
         if client.is_available():
             metadata = client.extract_metadata(Path("image.jpg"))
     """
 
     def __init__(self, use_extended: bool = False) -> None:
-        """Initialize ExifTool client.
+        """Initialize the metadata client.
 
         Args:
-            use_extended: Use extended metadata extraction (-ee flag).
-                         Slower but extracts embedded metadata.
+            use_extended: Request extended field set. Frame sampling is always
+                         first-frame regardless of this flag.
 
         """
         self._use_extended = use_extended
@@ -57,34 +43,34 @@ class ExifToolClient:
         self._available: bool | None = None
 
     def _ensure_wrapper(self) -> Any:
-        """Lazy initialization of ExifToolWrapper."""
+        """Lazy-initialize and return the metadata wrapper."""
         if self._wrapper is None:
             try:
-                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-                self._wrapper = ExifToolWrapper()
-                logger.debug("ExifToolWrapper initialized")
+                self._wrapper = ExopsisWrapper()
+                logger.debug("Metadata wrapper initialized")
             except Exception as e:
-                logger.exception("Failed to initialize ExifToolWrapper")
-                raise RuntimeError("ExifTool not available") from e
+                logger.exception("Failed to initialize metadata wrapper")
+                raise RuntimeError("Metadata wrapper not available") from e
         return self._wrapper
 
     def is_available(self) -> bool:
-        """Check if ExifTool is available on the system.
+        """Check if Exopsis is available for metadata extraction.
 
         Returns:
-            True if ExifTool is installed and accessible
+            True if Exopsis is installed and accessible
 
         """
         if self._available is not None:
             return self._available
 
         try:
-            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+            from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-            self._available = ExifToolWrapper.is_available()
+            self._available = ExopsisWrapper.is_available()
         except Exception as e:
-            logger.warning("Error checking ExifTool availability: %s", e)
+            logger.warning("Error checking Exopsis availability: %s", e)
             self._available = False
 
         return self._available
@@ -196,7 +182,7 @@ class ExifToolClient:
 
         """
         if not self.is_available():
-            logger.warning("ExifTool not available, cannot write metadata")
+            logger.warning("Exopsis not available, cannot write metadata")
             return False
 
         try:
@@ -217,40 +203,31 @@ class ExifToolClient:
             return False
 
     def close(self) -> None:
-        """Close the ExifTool wrapper and clean up resources."""
+        """Close the metadata wrapper and clean up resources."""
         if self._wrapper is not None:
             try:
                 self._wrapper.close()
-                logger.debug("ExifToolWrapper closed")
+                logger.debug("Metadata wrapper closed")
             except Exception as e:
-                logger.warning("Error closing ExifToolWrapper: %s", e)
+                logger.warning("Error closing metadata wrapper: %s", e)
             finally:
                 self._wrapper = None
 
 
 # Global instance (singleton pattern)
-_exiftool_client: ExifToolClient | None = None
+_exopsis_client: ExopsisClient | None = None
 
 
-def get_exiftool_client() -> ExifToolClient:
-    """Get the global ExifTool client instance.
-
-    Returns:
-        Singleton ExifToolClient instance
-
-    """
-    global _exiftool_client
-    if _exiftool_client is None:
-        _exiftool_client = ExifToolClient()
-    return _exiftool_client
+def get_exopsis_client() -> ExopsisClient:
+    """Get the global Exopsis client instance."""
+    global _exopsis_client
+    if _exopsis_client is None:
+        _exopsis_client = ExopsisClient()
+    return _exopsis_client
 
 
-def set_exiftool_client(client: ExifToolClient) -> None:
-    """Set a custom ExifTool client (useful for testing).
+def set_exopsis_client(client: ExopsisClient) -> None:
+    """Set a custom Exopsis client (useful for testing)."""
+    global _exopsis_client
+    _exopsis_client = client
 
-    Args:
-        client: Custom ExifToolClient instance
-
-    """
-    global _exiftool_client
-    _exiftool_client = client

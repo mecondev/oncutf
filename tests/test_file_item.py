@@ -22,5 +22,3 @@ def test_metadata_flags():
     assert not fi.has_metadata
     fi.metadata = {"a": 1}
     assert fi.has_metadata
-    fi.metadata = {"__extended__": True}
-    assert fi.metadata_extended

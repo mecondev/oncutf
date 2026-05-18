@@ -41,14 +41,12 @@ class TestMetadataEntryCreation:
         """Test that internal markers are cleaned on init."""
         data = {
             "Title": "Test",
-            "__extended__": True,
             "__modified__": True,
             "Artist": "John",
         }
 
         entry = MetadataEntry(data=data)
 
-        assert "__extended__" not in entry.data
         assert "__modified__" not in entry.data
         assert "Title" in entry.data
         assert "Artist" in entry.data
@@ -245,7 +243,6 @@ class TestMetadataEntrySerialization:
         """Test to_database_dict cleans internal markers."""
         data = {
             "Title": "Test",
-            "__extended__": True,
             "__modified__": True,
             "Artist": "John",
         }
@@ -253,7 +250,6 @@ class TestMetadataEntrySerialization:
         entry = MetadataEntry(data=data)
         db_dict = entry.to_database_dict()
 
-        assert "__extended__" not in db_dict
         assert "__modified__" not in db_dict
         assert "Title" in db_dict
         assert "Artist" in db_dict

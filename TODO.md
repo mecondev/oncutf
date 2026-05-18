@@ -423,7 +423,7 @@ Consolidated list of all TODO items extracted from codebase.
 #### Performance Optimizations
 
 - **Startup Optimization:** 31% faster application startup (1426ms → 989ms)
-  - Lazy-loaded ExifToolWrapper in UnifiedMetadataManager (12% improvement)
+  - Lazy-loaded ExopsisWrapper in UnifiedMetadataManager (12% improvement)
   - Lazy-loaded CompanionFilesHelper in UnifiedMetadataManager (21% improvement)
   - Exceeded target of <1000ms startup time
 - **Memory Optimization:** Bounded memory caches to prevent unbounded growth

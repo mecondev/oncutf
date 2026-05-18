@@ -84,7 +84,6 @@ class MetadataSimplificationService:
         original_metadata = file_item.metadata.copy()
 
         # Remove internal flags
-        original_metadata.pop("__extended__", None)
         original_metadata.pop("__companion__", None)
 
         return SimplifiedMetadata(original_metadata=original_metadata, simplifier=self._simplifier)
@@ -117,7 +116,6 @@ class MetadataSimplificationService:
             self._ensure_initialized()
 
         original_metadata = file_item.metadata.copy()
-        original_metadata.pop("__extended__", None)
         original_metadata.pop("__companion__", None)
 
         # Try semantic alias resolution
@@ -150,7 +148,6 @@ class MetadataSimplificationService:
             return []
 
         original_metadata = file_item.metadata.copy()
-        original_metadata.pop("__extended__", None)
         original_metadata.pop("__companion__", None)
 
         simplified = SimplifiedMetadata(
@@ -232,7 +229,6 @@ class MetadataSimplificationService:
             return {"common": [], "specific": []}
 
         original_metadata = file_item.metadata.copy()
-        original_metadata.pop("__extended__", None)
         original_metadata.pop("__companion__", None)
 
         available_keys = list(original_metadata.keys())

@@ -198,6 +198,98 @@ def create_item(text: str, alignment: Any = None, icon_name: str | None = None) 
     return item
 
 
+def _format_list_value(value: list[Any]) -> str:
+    """Format list values for display in the metadata tree."""
+    if not value:
+        return ""
+    if all(isinstance(item, dict) for item in value):
+        return ""
+    return str(value[0])
+
+
+def _append_metadata_row(
+    parent_item: QStandardItem,
+    key: str,
+    value: Any,
+    group_name: str,
+    modified_keys: set[str],
+    extended_keys: set[str],
+) -> None:
+    """Append metadata rows recursively for nested dictionaries and lists."""
+    if isinstance(value, dict):
+        group_item = create_item(format_key(key))
+        group_item.setEditable(False)
+        dummy_value_item = create_item("")
+
+        for child_key, child_value in sorted(value.items(), key=lambda item: item[0].lower()):
+            _append_metadata_row(
+                group_item,
+                child_key,
+                child_value,
+                group_name,
+                modified_keys,
+                extended_keys,
+            )
+
+        parent_item.appendRow([group_item, dummy_value_item])
+        return
+
+    if isinstance(value, list):
+        if all(isinstance(item, dict) for item in value):
+            group_item = create_item(format_key(key))
+            group_item.setEditable(False)
+            dummy_value_item = create_item("")
+
+            for index, item_value in enumerate(value):
+                _append_metadata_row(
+                    group_item,
+                    f"{key}[{index}]",
+                    item_value,
+                    group_name,
+                    modified_keys,
+                    extended_keys,
+                )
+
+            parent_item.appendRow([group_item, dummy_value_item])
+            return
+
+        value = _format_list_value(value)
+
+    key_item = create_item(format_key(key))
+    value_item = create_item(str(value))
+
+    key_path = f"{group_name}/{key}"
+    direct_match = key_path in modified_keys or key in modified_keys
+    suffix_match = any(mk.endswith(f"/{key}") or mk == key for mk in modified_keys)
+    is_modified = direct_match or suffix_match
+    is_extended = key in extended_keys
+
+    if is_modified:
+        modified_font = QFont()
+        modified_font.setBold(True)
+        key_item.setFont(modified_font)
+
+        modified_color = QColor(METADATA_ICON_COLORS["modified"])
+        key_item.setForeground(modified_color)
+
+        key_item.setToolTip("Modified value" + (" (extended metadata)" if is_extended else ""))
+        value_item.setToolTip("Modified value" + (" (extended metadata)" if is_extended else ""))
+    elif is_extended:
+        extended_font = QFont()
+        extended_font.setItalic(True)
+        key_item.setFont(extended_font)
+        value_item.setFont(extended_font)
+
+        key_item.setText(f"[Ext] {format_key(key)}")
+        key_item.setToolTip("Available only in extended metadata mode")
+        value_item.setToolTip("Available only in extended metadata mode")
+
+        extended_color = QColor(100, 150, 255)
+        key_item.setForeground(extended_color)
+
+    parent_item.appendRow([key_item, value_item])
+
+
 def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
     """Get the set of fields to hide based on the display level.
 
@@ -208,8 +300,8 @@ def get_hidden_fields_for_level(level: str = "essential") -> set[str]:
         Set of field names to hide
 
     """
-    # Always hide ExifToolVersion regardless of level
-    always_hidden = {"ExifToolVersion"}
+    # Always hide ExopsisVersion regardless of level
+    always_hidden = {"ExopsisVersion"}
 
     if level == "all":
         return always_hidden
@@ -534,61 +626,14 @@ def build_metadata_tree_model(
         dummy_value_item.setSelectable(False)
 
         for key, value in items:
-            key_item = create_item(format_key(key))
-            value_item = create_item(str(value))
-
-            # Apply styling based on key type
-            # We receive modified_keys from the staging manager, typically in the form
-            # "Group/Key" (for example, "EXIF/Rotation"). Our tree groups keys using
-            # classify_key(key) which may produce different group names ("File Info",
-            # "Camera Settings", etc.). To make the visual styling robust, we treat a
-            # key as modified if ANY of the following is true:
-            #   1) The exact group/key combination we use in the tree exists in modified_keys
-            #   2) The raw key name exists in modified_keys
-            #   3) Any modified key path ends with "/<key>" (e.g. "EXIF/Rotation")
-
-            key_path = f"{group_name}/{key}"
-
-            direct_match = key_path in modified_keys or key in modified_keys
-            suffix_match = any(mk.endswith(f"/{key}") or mk == key for mk in modified_keys)
-
-            is_modified = direct_match or suffix_match
-            is_extended = key in extended_keys
-
-            if is_modified:
-                # Modified metadata styling - yellow text + bold (no [Mod] prefix)
-                modified_font = QFont()
-                modified_font.setBold(True)
-                key_item.setFont(modified_font)
-
-                # Yellow color for modified keys from config
-                modified_color = QColor(METADATA_ICON_COLORS["modified"])
-                key_item.setForeground(modified_color)
-
-                # Don't add prefix for modified keys, just style them
-                key_item.setToolTip(
-                    "Modified value" + (" (extended metadata)" if is_extended else "")
-                )
-                value_item.setToolTip(
-                    "Modified value" + (" (extended metadata)" if is_extended else "")
-                )
-            elif is_extended:
-                # Extended metadata styling - subtle blue tint
-                extended_font = QFont()
-                extended_font.setItalic(True)
-                key_item.setFont(extended_font)
-                value_item.setFont(extended_font)
-
-                # Add extended indicator to key name
-                key_item.setText(f"[Ext] {format_key(key)}")
-                key_item.setToolTip("Available only in extended metadata mode")
-                value_item.setToolTip("Available only in extended metadata mode")
-
-                # Set text color to indicate extended metadata
-                extended_color = QColor(100, 150, 255)  # Light blue
-                key_item.setForeground(extended_color)
-
-            group_item.appendRow([key_item, value_item])
+            _append_metadata_row(
+                group_item,
+                key,
+                value,
+                group_name,
+                modified_keys,
+                extended_keys,
+            )
 
         root_item.appendRow([group_item, dummy_value_item])
 

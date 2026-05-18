@@ -9,7 +9,7 @@ Provides centralized, ordered shutdown coordination for all concurrent component
 in oncutf. Ensures safe, graceful termination with health checks and timeout handling.
 
 Features:
-- Ordered shutdown phases (timers → async → threads → database → exiftool)
+- Ordered shutdown phases (timers → async → threads → database → metadata wrapper)
 - Health checks before shutdown
 - Timeout handling per phase
 - Progress callbacks for UI updates
@@ -36,7 +36,7 @@ class ShutdownPhase(Enum):
     THREAD_POOL = "thread_pool"
     THUMBNAILS = "thumbnails"  # Must shutdown before database
     DATABASE = "database"
-    EXIFTOOL = "exiftool"
+    METADATA_WRAPPER = "metadata_wrapper"
     FINALIZE = "finalize"
 
 
@@ -77,7 +77,7 @@ class ShutdownCoordinator(Observable):
         ShutdownPhase.THREAD_POOL: 2.0,
         ShutdownPhase.THUMBNAILS: 2.0,  # Increased from 1.0s (can take 1.3s+ on busy systems)
         ShutdownPhase.DATABASE: 1.0,
-        ShutdownPhase.EXIFTOOL: 0.5,
+        ShutdownPhase.METADATA_WRAPPER: 0.5,
         ShutdownPhase.FINALIZE: 0.5,
     }
     # Total worst-case: 6.0 seconds
@@ -104,7 +104,7 @@ class ShutdownCoordinator(Observable):
         self._thumbnail_manager: Any | None = None
         self._thread_pool_manager: Any | None = None
         self._database_manager: Any | None = None
-        self._exiftool_wrapper: Any | None = None
+        self._metadata_wrapper: Any | None = None
 
         # Async shutdown state
         self._async_phases: list[tuple[ShutdownPhase, Callable[[], tuple[bool, str | None]]]] = []
@@ -146,10 +146,10 @@ class ShutdownCoordinator(Observable):
         logger.debug("[ShutdownCoordinator] Database manager registered")
         logger.debug("[ShutdownCoordinator] Database manager registered")
 
-    def register_exiftool_wrapper(self, exiftool_wrapper: Any) -> None:
-        """Register ExifTool wrapper for shutdown."""
-        self._exiftool_wrapper = exiftool_wrapper
-        logger.debug("[ShutdownCoordinator] ExifTool wrapper registered")
+    def register_metadata_wrapper(self, metadata_wrapper: Any) -> None:
+        """Register metadata wrapper for shutdown."""
+        self._metadata_wrapper = metadata_wrapper
+        logger.debug("[ShutdownCoordinator] Metadata wrapper registered")
 
     def set_phase_timeout(self, phase: ShutdownPhase, timeout: float) -> None:
         """Set custom timeout for a specific phase.
@@ -198,7 +198,7 @@ class ShutdownCoordinator(Observable):
             (ShutdownPhase.TIMERS, self._shutdown_timers),
             (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
             (ShutdownPhase.DATABASE, self._shutdown_database),
-            (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
+            (ShutdownPhase.METADATA_WRAPPER, self._shutdown_metadata_wrapper),
             (ShutdownPhase.FINALIZE, self._shutdown_finalize),
         ]
 
@@ -298,7 +298,7 @@ class ShutdownCoordinator(Observable):
             (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
             (ShutdownPhase.THUMBNAILS, self._shutdown_thumbnails),
             (ShutdownPhase.DATABASE, self._shutdown_database),
-            (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
+            (ShutdownPhase.METADATA_WRAPPER, self._shutdown_metadata_wrapper),
             (ShutdownPhase.FINALIZE, self._shutdown_finalize),
         ]
         self._async_index = 0
@@ -468,11 +468,11 @@ class ShutdownCoordinator(Observable):
                     return cast("dict[str, Any] | None", self._thread_pool_manager.health_check())
 
             elif (
-                phase == ShutdownPhase.EXIFTOOL
-                and self._exiftool_wrapper
-                and hasattr(self._exiftool_wrapper, "health_check")
+                phase == ShutdownPhase.METADATA_WRAPPER
+                and self._metadata_wrapper
+                and hasattr(self._metadata_wrapper, "health_check")
             ):
-                return cast("dict[str, Any] | None", self._exiftool_wrapper.health_check())
+                return cast("dict[str, Any] | None", self._metadata_wrapper.health_check())
 
         except Exception as e:
             logger.warning("[ShutdownCoordinator] Error getting health for %s: %s", phase.value, e)
@@ -551,7 +551,7 @@ class ShutdownCoordinator(Observable):
             else:
                 logger.warning("[ShutdownCoordinator] Thumbnail manager has no shutdown() method")
 
-            # Force cleanup all FFmpeg processes (like ExifTool)
+            # Force cleanup all FFmpeg processes
             # This is critical to prevent zombie ffmpeg processes
             from oncutf.utils.process_cleanup import force_cleanup_ffmpeg_processes
 
@@ -606,21 +606,21 @@ class ShutdownCoordinator(Observable):
         else:
             return True, None
 
-    def _shutdown_exiftool(self) -> tuple[bool, str | None]:
-        """Shutdown ExifTool wrapper with aggressive cleanup for Windows."""
+    def _shutdown_metadata_wrapper(self) -> tuple[bool, str | None]:
+        """Shut down the metadata wrapper."""
         import contextlib
         import threading
 
-        if not self._exiftool_wrapper:
-            # Still do force cleanup even if no wrapper registered
+        if not self._metadata_wrapper:
+            # Still attempt cleanup even if no wrapper was registered
             try:
-                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
                 threading.Thread(
-                    target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                    target=ExopsisWrapper.force_cleanup,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
-                    name="ExifToolForceCleanup",
+                    name="MetadataWrapperCleanup",
                 ).start()
             except Exception:
                 pass
@@ -628,14 +628,14 @@ class ShutdownCoordinator(Observable):
 
         try:
             # Stop/close the wrapper first (close is the common API).
-            if hasattr(self._exiftool_wrapper, "stop"):
+            if hasattr(self._metadata_wrapper, "stop"):
                 with contextlib.suppress(Exception):
-                    self._exiftool_wrapper.stop()
-            if hasattr(self._exiftool_wrapper, "close"):
+                    self._metadata_wrapper.stop()
+            if hasattr(self._metadata_wrapper, "close"):
                 # Keep this bounded to avoid UI freezes during app close.
                 with contextlib.suppress(Exception):
                     try:
-                        self._exiftool_wrapper.close(
+                        self._metadata_wrapper.close(
                             try_graceful=False,
                             graceful_wait_s=0.0,
                             terminate_wait_s=0.2,
@@ -643,35 +643,31 @@ class ShutdownCoordinator(Observable):
                         )
                     except TypeError:
                         # Backward compatibility if signature doesn't accept kwargs
-                        self._exiftool_wrapper.close()
+                        self._metadata_wrapper.close()
 
-            # Force cleanup all ExifTool processes
-            # This is critical on Windows to prevent zombie processes
-            from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+            # No-op for Exopsis (in-process), but kept for future wrapper backends.
+            from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-            # IMPORTANT: Do this in background; psutil.process_iter() can occasionally
-            # block on Windows and would freeze the UI thread during close.
             threading.Thread(
-                target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                target=ExopsisWrapper.force_cleanup,
                 kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                 daemon=True,
-                name="ExifToolForceCleanup",
+                name="MetadataWrapperCleanup",
             ).start()
         except Exception as e:
-            logger.exception("ExifTool shutdown failed")
-            # Even on error, try force cleanup one more time
+            logger.exception("Metadata wrapper shutdown failed")
             try:
-                from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+                from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
                 threading.Thread(
-                    target=ExifToolWrapper.force_cleanup_all_exiftool_processes,
+                    target=ExopsisWrapper.force_cleanup,
                     kwargs={"max_scan_s": 0.15, "graceful_wait_s": 0.05},
                     daemon=True,
-                    name="ExifToolForceCleanup",
+                    name="MetadataWrapperCleanup",
                 ).start()
             except Exception:
                 pass
-            return False, f"ExifTool shutdown failed: {e}"
+            return False, f"Metadata wrapper shutdown failed: {e}"
         else:
             return True, None
 

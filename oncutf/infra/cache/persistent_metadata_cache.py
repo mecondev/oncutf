@@ -140,7 +140,6 @@ class PersistentMetadataCache:
         try:
             # Clean metadata for database storage (remove internal flags)
             clean_metadata = metadata.copy()
-            clean_metadata.pop("__extended__", None)
             clean_metadata.pop("__modified__", None)
 
             self._db_manager.store_metadata(
@@ -211,10 +210,9 @@ class PersistentMetadataCache:
             metadata = self._db_manager.get_metadata(norm_path)
             if metadata:
                 # Create entry and cache it with LRU eviction
-                is_extended = metadata.pop("__extended__", False)
                 is_modified = metadata.pop("__modified__", False)
 
-                entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
+                entry = MetadataEntry(metadata, is_extended=False, modified=is_modified)
                 self._memory_cache[norm_path] = entry
 
                 # Enforce cache size limit
@@ -270,11 +268,10 @@ class PersistentMetadataCache:
                     metadata = batch_metadata.get(path)
                     if metadata:
                         # Create entry and cache it with LRU eviction
-                        is_extended = metadata.pop("__extended__", False)
                         is_modified = metadata.pop("__modified__", False)
 
                         entry = MetadataEntry(
-                            metadata, is_extended=is_extended, modified=is_modified
+                            metadata, is_extended=False, modified=is_modified
                         )
                         self._memory_cache[path] = entry
 

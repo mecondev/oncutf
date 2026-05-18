@@ -132,7 +132,7 @@ selection_model.select(index, 0x0002)  # QItemSelectionModel.Select
 ```bash
 pip install -e .[dev]    # Install with dev dependencies
 python main.py           # Run application
-pytest                   # Run tests (requires exiftool in PATH)
+pytest                   # Run tests
 ruff check .             # Lint (no auto-fix)
 ruff check . --fix       # Lint with auto-fix (only when explicitly asked)
 mypy .                   # Type check (3-tier: strict for controllers/core, pragmatic for ui)
@@ -215,8 +215,7 @@ Final output must always pass the full baseline commands.
 
 - Prefer adding/adjusting tests when behavior changes.
 - Tests must remain deterministic and not depend on local machine state.
-- If a test requires external tools (exiftool), use appropriate markers.
-- **Test markers:** `unit`, `integration`, `gui`, `exiftool`, `slow`, `manual`, `local_only`.
+- **Test markers:** `unit`, `integration`, `gui`, `slow`, `manual`, `local_only`.
 
 ---
 

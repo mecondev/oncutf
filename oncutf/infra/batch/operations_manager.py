@@ -319,7 +319,6 @@ class BatchOperationsManager:
         cache = self.parent_window.metadata_cache
         success_count = 0
 
-        # Group operations by extended flag for better batching
         extended_ops: list[BatchOperation] = []
         regular_ops: list[BatchOperation] = []
 

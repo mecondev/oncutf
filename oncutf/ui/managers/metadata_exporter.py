@@ -285,9 +285,7 @@ class MetadataExporter:
                 file_data["metadata_type"] = "No metadata available"
                 return file_data
 
-            # Determine metadata type
-            is_extended = metadata.get("__extended__", False)
-            file_data["metadata_type"] = "Extended" if is_extended else "Fast"
+            file_data["metadata_type"] = "Standard"
 
             # Group metadata
             grouped_metadata = self._group_metadata(metadata)
@@ -359,33 +357,7 @@ class MetadataExporter:
             }
         )
 
-        # Detect extended keys
-        extended_keys = set()
-        if metadata.get("__extended__"):
-            for key in metadata:
-                if key.startswith("__"):
-                    continue
-                key_lower = key.lower()
-                # Heuristic detection for extended-only keys
-                if any(
-                    pattern in key_lower
-                    for pattern in [
-                        "accelerometer",
-                        "gyro",
-                        "pitch",
-                        "roll",
-                        "yaw",
-                        "segment",
-                        "embedded",
-                        "extended",
-                        "iso",
-                        "aperture",
-                        "fnumber",
-                        "exposure",
-                        "shutter",
-                    ]
-                ):
-                    extended_keys.add(key)
+        extended_keys: set[str] = set()
 
         # Group metadata
         for key, value in metadata.items():

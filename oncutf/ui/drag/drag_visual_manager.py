@@ -608,9 +608,9 @@ class DragVisualManager:
                 if widget_class in ("FileListView", "ThumbnailViewportWidget"):
                     return True
 
-            # FileListView can only drop on MetadataTreeView (requires exiftool)
+            # FileListView can only drop on MetadataTreeView (requires Exopsis)
             elif drag_source == "file_table" and widget_class == "MetadataTreeView":
-                return FeatureAvailability.exiftool_available
+                return FeatureAvailability.exopsis_available
 
             # Move to parent widget
             current_widget = current_widget.parent()

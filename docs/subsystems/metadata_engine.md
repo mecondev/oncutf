@@ -9,7 +9,7 @@
 The Metadata Engine is responsible for **EXIF/XMP metadata extraction, caching, and display**. It implements a **two-tier caching architecture** with:
 
 ```text
-File → ExifTool → Cache (Memory + SQLite) → UI Display
+File → Exopsis → Cache (Memory + SQLite) → UI Display
 ```
 
 Key capabilities:
@@ -45,7 +45,7 @@ Key capabilities:
 
 The Metadata Engine **owns**:
 
-- EXIF/XMP metadata extraction (via exiftool)
+- EXIF/XMP metadata extraction (via Exopsis)
 - Metadata caching (memory + SQLite)
 - Hash computation and caching
 - Metadata tree UI components
@@ -95,7 +95,7 @@ The Metadata Engine **does NOT own**:
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    EXTRACTION LAYER                                  │
-│  ExifToolWrapper → exiftool subprocess                               │
+│  ExopsisWrapper → Exopsis Python package                             │
 │  ParallelMetadataLoader → ThreadPoolExecutor                         │
 │  HashManager → CRC32 calculation                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -115,7 +115,7 @@ The Metadata Engine **does NOT own**:
 | `parallel_metadata_loader.py` | ThreadPoolExecutor for parallel extraction |
 | `metadata_staging_manager.py` | Tracks pending changes before save |
 | `companion_metadata_handler.py` | XMP/sidecar file merging |
-| `metadata_save_handler.py` | ExifTool write operations |
+| `metadata_save_handler.py` | Metadata write operations |
 | `structured_metadata_manager.py` | Database-backed field categorization |
 
 ### Cache Layer (`oncutf/core/cache/`)
@@ -153,7 +153,7 @@ The Metadata Engine **does NOT own**:
 
 | File | Responsibility |
 | ---- | -------------- |
-| `exiftool_wrapper.py` | Low-level exiftool subprocess wrapper |
+| `exopsis_wrapper.py` | Low-level Exopsis metadata wrapper |
 | `file_status_helpers.py` | **Recommended** — Central helpers for metadata/hash checks |
 
 ---
@@ -193,9 +193,9 @@ The Metadata Engine **does NOT own**:
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 4. EXTRACTION                                                        │
-│    ExifToolWrapper.get_metadata(file_path, use_extended)             │
-│    ├─→ Fast mode: exiftool -json file.jpg                            │
-│    └─→ Extended mode: exiftool -json -ee -b file.mp4                 │
+│    ExopsisWrapper.get_metadata(file_path, use_extended)              │
+│    ├─→ Fast mode:     ExtractOptions(frame_sample='first')           │
+│    └─→ Extended mode: ExtractOptions(frame_sample='first')           │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -320,7 +320,7 @@ Key metadata fields used:
 
 | Dependency | Purpose | Required |
 | ---------- | ------- | -------- |
-| **exiftool** | Metadata extraction/writing | Yes (PATH) |
+| **exopsis** | Metadata extraction | Yes (pip install) |
 | **PyQt5** | Signals, QThread, QTreeView | Yes |
 | **sqlite3** | Persistent cache | Yes (stdlib) |
 | **zlib** | CRC32 calculation | Yes (stdlib) |
@@ -441,11 +441,11 @@ if has_hash(file_path):
 - **Role**: Tracks pending metadata changes before save
 - **Signals**: `change_staged`, `change_unstaged`, `changes_cleared`
 
-### ExifToolWrapper
+### ExopsisWrapper
 
-- **File**: `oncutf/utils/exiftool_wrapper.py`
-- **Role**: Low-level exiftool subprocess management
-- **Modes**: Fast (`-json`) vs Extended (`-json -ee -b`)
+- **File**: `oncutf/infra/external/exopsis_wrapper.py`
+- **Role**: Exopsis-backed metadata extraction wrapper
+- **Modes**: Fast and Extended both use `frame_sample='first'` — always stops at first frame
 
 ---
 
@@ -491,7 +491,7 @@ Both `UnifiedMetadataManager` and `MetadataController` orchestrate metadata load
 
 | Aspect | Status |
 | -------- | ------ |
-| Metadata extraction | [x] Complete (exiftool) |
+| Metadata extraction | [x] Complete (Exopsis) |
 | Two-tier caching | [x] Memory + SQLite |
 | Parallel loading | [x] ThreadPoolExecutor |
 | Hash computation | [x] CRC32 with caching |
@@ -504,5 +504,5 @@ The Metadata Engine is **production-ready** and provides:
 - Fast cached access for previously-loaded files
 - Parallel extraction for batch operations
 - Persistent storage across application sessions
-- Full EXIF/XMP support via exiftool
+- Full EXIF/XMP support via Exopsis
 - Clear entry point guidelines (as of 2026-01-01)

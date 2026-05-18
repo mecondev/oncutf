@@ -39,17 +39,17 @@ class TestShutdownCoordinator:
         timer_mgr = Mock()
         thread_mgr = Mock()
         db_mgr = Mock()
-        exiftool_wrapper = Mock()
+        metadata_wrapper = Mock()
 
         coordinator.register_timer_manager(timer_mgr)
         coordinator.register_thread_pool_manager(thread_mgr)
         coordinator.register_database_manager(db_mgr)
-        coordinator.register_exiftool_wrapper(exiftool_wrapper)
+        coordinator.register_metadata_wrapper(metadata_wrapper)
 
         assert coordinator._timer_manager is timer_mgr
         assert coordinator._thread_pool_manager is thread_mgr
         assert coordinator._database_manager is db_mgr
-        assert coordinator._exiftool_wrapper is exiftool_wrapper
+        assert coordinator._metadata_wrapper is metadata_wrapper
 
     def test_set_phase_timeout(self, coordinator):
         """Test setting custom timeout for a phase."""
@@ -150,60 +150,59 @@ class TestShutdownCoordinator:
         if hasattr(mock_db_mgr, "commit"):
             mock_db_mgr.commit.assert_called()
 
-    @patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper")
-    def test_shutdown_exiftool_success(self, mock_exiftool_class, coordinator):
-        """Test successful ExifTool shutdown."""
+    @patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper")
+    def test_shutdown_metadata_wrapper_success(self, mock_exopsis_class, coordinator):
+        """Test successful metadata wrapper shutdown."""
         mock_wrapper = Mock()
-        coordinator.register_exiftool_wrapper(mock_wrapper)
+        coordinator.register_metadata_wrapper(mock_wrapper)
 
-        success, error = coordinator._shutdown_exiftool()
+        success, error = coordinator._shutdown_metadata_wrapper()
 
         assert success is True
         assert error is None
         mock_wrapper.stop.assert_called_once()
-        mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
+        mock_exopsis_class.force_cleanup.assert_called()
 
-    @patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper")
-    def test_shutdown_exiftool_no_wrapper(self, mock_exiftool_class, coordinator):
-        """Test ExifTool shutdown with no wrapper registered."""
-        success, error = coordinator._shutdown_exiftool()
+    @patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper")
+    def test_shutdown_metadata_wrapper_no_wrapper(self, mock_exopsis_class, coordinator):
+        """Test metadata wrapper shutdown with no wrapper registered."""
+        success, error = coordinator._shutdown_metadata_wrapper()
 
         assert success is True
         assert error is None
         # Should still call force cleanup
-        mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
+        mock_exopsis_class.force_cleanup.assert_called()
 
-    @patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper")
+    @patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper")
     @patch("platform.system")
-    def test_shutdown_exiftool_windows_delay(self, mock_platform, mock_exiftool_class, coordinator):
-        """Test ExifTool shutdown completes on Windows."""
+    def test_shutdown_metadata_wrapper_windows(
+        self, mock_platform, mock_exopsis_class, coordinator
+    ):
+        """Test metadata wrapper shutdown completes on Windows."""
         mock_platform.return_value = "Windows"
         mock_wrapper = Mock()
-        coordinator.register_exiftool_wrapper(mock_wrapper)
+        coordinator.register_metadata_wrapper(mock_wrapper)
 
-        success, error = coordinator._shutdown_exiftool()
+        success, error = coordinator._shutdown_metadata_wrapper()
 
         assert success is True
         assert error is None
-        # Verify wrapper.stop was called
         mock_wrapper.stop.assert_called_once()
-        # Verify force cleanup was called
-        mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
+        mock_exopsis_class.force_cleanup.assert_called()
 
-    @patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper")
-    def test_shutdown_exiftool_exception_recovery(self, mock_exiftool_class, coordinator):
-        """Test ExifTool shutdown handles exceptions gracefully."""
+    @patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper")
+    def test_shutdown_metadata_wrapper_exception_recovery(self, mock_exopsis_class, coordinator):
+        """Test metadata wrapper shutdown handles exceptions gracefully."""
         mock_wrapper = Mock()
-        mock_wrapper.stop.return_value = True  # Successful stop
+        mock_wrapper.stop.return_value = True
 
-        coordinator.register_exiftool_wrapper(mock_wrapper)
+        coordinator.register_metadata_wrapper(mock_wrapper)
 
-        success, error = coordinator._shutdown_exiftool()
+        success, error = coordinator._shutdown_metadata_wrapper()
 
         assert success is True
         assert error is None
-        # Should have attempted force cleanup
-        mock_exiftool_class.force_cleanup_all_exiftool_processes.assert_called()
+        mock_exopsis_class.force_cleanup.assert_called()
 
     def test_shutdown_finalize(self, coordinator):
         """Test finalization phase."""
@@ -218,15 +217,14 @@ class TestShutdownCoordinator:
         mock_timer_mgr.cleanup_all.return_value = 3
         mock_thread_mgr = Mock()
         mock_db_mgr = Mock()
-        mock_exiftool = Mock()
+        mock_metadata = Mock()
 
         coordinator.register_timer_manager(mock_timer_mgr)
         coordinator.register_thread_pool_manager(mock_thread_mgr)
         coordinator.register_database_manager(mock_db_mgr)
-        coordinator.register_exiftool_wrapper(mock_exiftool)
+        coordinator.register_metadata_wrapper(mock_metadata)
 
-        # Mock ExifToolWrapper.force_cleanup_all_exiftool_processes
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             success = coordinator.execute_shutdown()
 
         assert success is True
@@ -237,7 +235,7 @@ class TestShutdownCoordinator:
         mock_timer_mgr.cleanup_all.assert_called_once()
         mock_thread_mgr.shutdown.assert_called_once()
         mock_db_mgr.close.assert_called_once()
-        mock_exiftool.stop.assert_called_once()
+        mock_metadata.stop.assert_called_once()
 
     def test_execute_shutdown_prevents_double_execution(self, coordinator):
         """Test that shutdown can't be executed twice simultaneously."""
@@ -252,7 +250,7 @@ class TestShutdownCoordinator:
         mock_thread_mgr = Mock()
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             success = coordinator.execute_shutdown(emergency=True)
 
         assert success is True
@@ -265,7 +263,7 @@ class TestShutdownCoordinator:
         def progress_callback(message, progress):
             progress_calls.append((message, progress))
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             coordinator.execute_shutdown(progress_callback=progress_callback)
 
         # Should have received progress updates
@@ -280,7 +278,7 @@ class TestShutdownCoordinator:
         coordinator.register_timer_manager(mock_timer_mgr)
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             success = coordinator.execute_shutdown()
 
         # Overall success should be False due to timer failure
@@ -292,7 +290,7 @@ class TestShutdownCoordinator:
 
     def test_get_results(self, coordinator):
         """Test getting shutdown results."""
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             coordinator.execute_shutdown()
 
         results = coordinator.get_results()
@@ -301,7 +299,7 @@ class TestShutdownCoordinator:
 
     def test_get_summary(self, coordinator):
         """Test getting shutdown summary."""
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             coordinator.execute_shutdown()
 
         summary = coordinator.get_summary()
@@ -328,7 +326,7 @@ class TestShutdownCoordinator:
         mock_thread_mgr.shutdown.side_effect = slow_shutdown
         coordinator.register_thread_pool_manager(mock_thread_mgr)
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             coordinator.execute_shutdown()
 
         # Find thread pool result
@@ -352,7 +350,7 @@ class TestShutdownCoordinator:
 
         with (
             qtbot.waitSignal(coordinator.shutdown_completed, timeout=5000),
-            patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"),
+            patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"),
         ):
             coordinator.execute_shutdown()
 
@@ -366,12 +364,12 @@ class TestShutdownCoordinator:
         mock_platform.return_value = "Windows"
 
         mock_db_mgr = Mock()
-        mock_exiftool = Mock()
+        mock_metadata = Mock()
 
         coordinator.register_database_manager(mock_db_mgr)
-        coordinator.register_exiftool_wrapper(mock_exiftool)
+        coordinator.register_metadata_wrapper(mock_metadata)
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             success = coordinator.execute_shutdown()
 
         assert success is True
@@ -384,14 +382,14 @@ class TestShutdownCoordinator:
         mock_platform.return_value = "Linux"
 
         mock_db_mgr = Mock()
-        mock_exiftool = Mock()
+        mock_metadata = Mock()
 
         coordinator.register_database_manager(mock_db_mgr)
-        coordinator.register_exiftool_wrapper(mock_exiftool)
+        coordinator.register_metadata_wrapper(mock_metadata)
 
         start_time = time.time()
 
-        with patch("oncutf.infra.external.exiftool_wrapper.ExifToolWrapper"):
+        with patch("oncutf.infra.external.exopsis_wrapper.ExopsisWrapper"):
             coordinator.execute_shutdown()
 
         duration = time.time() - start_time
@@ -440,7 +438,7 @@ class TestShutdownPhase:
         assert ShutdownPhase.TIMERS.value == "timers"
         assert ShutdownPhase.THREAD_POOL.value == "thread_pool"
         assert ShutdownPhase.DATABASE.value == "database"
-        assert ShutdownPhase.EXIFTOOL.value == "exiftool"
+        assert ShutdownPhase.METADATA_WRAPPER.value == "metadata_wrapper"
         assert ShutdownPhase.FINALIZE.value == "finalize"
 
     def test_shutdown_phases_count(self):

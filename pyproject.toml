@@ -253,8 +253,7 @@ module = [
     "oncutf.utils.ui.placeholder_helper",
     "oncutf.utils.ui.combo_popup_helper",
     "oncutf.utils.ui.file_table_state_helper",
-    "oncutf.utils.ui.fonts_rc",
-    "oncutf.utils.metadata.exiftool_adapter"
+    "oncutf.utils.ui.fonts_rc"
 ]
 ignore_errors = false
 # Keep UI/glue code pragmatic while preserving type checks
@@ -479,7 +478,6 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "gui: marks tests that require GUI (skipped on CI)",
-    "exiftool: marks tests that require exiftool",
     "local_only: marks tests that only run in local environment",
     "manual: marks tests for manual execution only (requires explicit marker selection)"
 ]

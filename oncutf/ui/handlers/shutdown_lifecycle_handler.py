@@ -739,17 +739,15 @@ class ShutdownLifecycleHandler:
                     self.main_window.thumbnail_manager
                 )
 
-            # Register ExifTool wrapper (get active instance if any)
+            # Register metadata wrapper (use active instance from metadata_manager)
             try:
-                from oncutf.boot.infra_wiring import get_exiftool_wrapper
-
-                exiftool_wrapper_class = get_exiftool_wrapper()
-                # Get any active instance
-                if exiftool_wrapper_class._instances:
-                    exiftool = next(iter(exiftool_wrapper_class._instances))
-                    self.main_window.shutdown_coordinator.register_exiftool_wrapper(exiftool)
+                mm = getattr(self.main_window, "metadata_manager", None)
+                if mm is not None:
+                    wrapper = getattr(mm, "_metadata_wrapper", None)
+                    if wrapper is not None:
+                        self.main_window.shutdown_coordinator.register_metadata_wrapper(wrapper)
             except Exception as e:
-                logger.debug("[MainWindow] ExifTool wrapper not available: %s", e)
+                logger.debug("[MainWindow] Metadata wrapper not available: %s", e)
 
             logger.info("[MainWindow] Shutdown components registered successfully")
 

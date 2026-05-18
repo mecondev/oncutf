@@ -1,7 +1,7 @@
 """Infrastructure layer - implementation of ports.
 
 This layer contains:
-- External tool clients (ExifTool, FFmpeg)
+- External tool clients (Exopsis wrapper, FFmpeg)
 - Cache implementations
 - Database repositories
 - Filesystem adapters

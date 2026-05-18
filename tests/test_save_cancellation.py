@@ -208,8 +208,8 @@ class TestSaveCancellation:
         }
         manager.parent_window.context.get_manager.return_value = mock_staging
 
-        # Mock exiftool wrapper
-        manager._exiftool_wrapper = MagicMock()
+        # Mock metadata wrapper
+        manager._wrapper = MagicMock()
 
         # Track how many files were processed
         processed_files = []
@@ -221,9 +221,9 @@ class TestSaveCancellation:
                 manager._save_cancelled = True
             return True
 
-        manager._exiftool_wrapper.write_metadata = mock_write_metadata
-        # Writer holds its own exiftool wrapper getter; point it to the same mock
-        manager._writer._exiftool_wrapper = manager._exiftool_wrapper
+        manager._wrapper.write_metadata = mock_write_metadata
+        # Writer holds its own wrapper; point it to the same mock
+        manager._writer._wrapper = manager._wrapper
         manager._writer.parent_window = manager.parent_window
 
         # Mock progress dialog and other dependencies
@@ -248,7 +248,7 @@ class TestSaveCancellation:
                     cancel_writer()
                 return result
 
-            manager._writer._exiftool_wrapper.write_metadata = proxy
+            manager._writer._wrapper.write_metadata = proxy
 
             # Call the live save method (writer)
             manager._writer._save_metadata_files(

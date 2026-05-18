@@ -1,6 +1,6 @@
 """Structured Metadata Manager.
 
-This module handles the conversion of raw metadata from ExifTool to structured metadata
+This module handles the conversion of raw metadata from Exopsis to structured metadata
 that can be stored in the database with proper categorization and field definitions.
 """
 
@@ -17,7 +17,7 @@ class StructuredMetadataManager:
     """Manages the conversion and storage of structured metadata.
 
     This class handles:
-    - Converting raw ExifTool metadata to structured format
+    - Converting raw Exopsis metadata to structured format
     - Storing structured metadata in the database
     - Retrieving structured metadata with proper categorization
     - Managing metadata field definitions and categories
@@ -59,7 +59,7 @@ class StructuredMetadataManager:
 
         Args:
             file_path: Path to the file
-            raw_metadata: Raw metadata dictionary from ExifTool
+            raw_metadata: Raw metadata dictionary from Exopsis
 
         Returns:
             True if successful, False otherwise

@@ -161,7 +161,7 @@ If a tool is skipped, it must be justified explicitly.
   - Locate the exact symbol definition.
   - Locate all relevant call sites.
 - When modifying sensitive areas (e.g. rename logic, preview,
-  execution, metadata caching, exiftool integration):
+  execution, metadata caching, exopsis integration):
   - Add or update tests where feasible.
   - If tests are not possible, explain why.
 

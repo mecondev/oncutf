@@ -70,28 +70,28 @@ def test_app_paths_windows(monkeypatch, tmp_path):
     AppPaths.reset()
 
 
-def test_cleanup_on_exit_calls_exiftool(monkeypatch):
+def test_cleanup_on_exit_calls_exopsis(monkeypatch):
     # Import lifecycle module where cleanup logic now lives
     from oncutf.boot import lifecycle
 
     # Ensure cleanup flag is reset
     monkeypatch.setattr(lifecycle, "_cleanup_done", False)
 
-    # Create a fake infra.external.exiftool_wrapper module with a callable ExifToolWrapper
-    fake_mod = ModuleType("oncutf.infra.external.exiftool_wrapper")
+    # Create a fake exopsis_wrapper module with a callable ExopsisWrapper
+    fake_mod = ModuleType("oncutf.infra.external.exopsis_wrapper")
 
     calls = {"count": 0}
 
-    class FakeExif:
+    class FakeWrapper:
         @staticmethod
-        def force_cleanup_all_exiftool_processes():
+        def force_cleanup():
             calls["count"] += 1
-            return 0  # Return 0 to indicate no processes cleaned
+            return 0
 
-    fake_mod.ExifToolWrapper = FakeExif
+    fake_mod.ExopsisWrapper = FakeWrapper
 
     # Inject into sys.modules so import inside function finds it
-    sys.modules["oncutf.infra.external.exiftool_wrapper"] = fake_mod
+    sys.modules["oncutf.infra.external.exopsis_wrapper"] = fake_mod
 
     try:
         # First call should invoke the fake cleanup
@@ -105,7 +105,7 @@ def test_cleanup_on_exit_calls_exiftool(monkeypatch):
 
     finally:
         # Clean up our injected module
-        sys.modules.pop("oncutf.infra.external.exiftool_wrapper", None)
+        sys.modules.pop("oncutf.infra.external.exopsis_wrapper", None)
 
 
 def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
@@ -114,15 +114,12 @@ def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
     # Reset flag
     monkeypatch.setattr(lifecycle, "_cleanup_done", False)
 
-    # Ensure no utils.exiftool_wrapper present
-    sys.modules.pop("utils.exiftool_wrapper", None)
-
     # Monkeypatch builtins.__import__ to raise for the target module to simulate import failure
 
     real_import = builtins.__import__
 
     def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
-        if name == "utils.exiftool_wrapper" or name.endswith("exiftool_wrapper"):
+        if name.endswith("exopsis_wrapper"):
             raise ModuleNotFoundError("simulated import failure")
         return real_import(name, globals, locals, fromlist, level)
 

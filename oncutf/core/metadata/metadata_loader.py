@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
     from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
     from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
@@ -51,7 +51,7 @@ class MetadataLoader:
 
     def __init__(
         self,
-        exiftool_getter: Callable[[], ExifToolWrapper] | None = None,
+        wrapper_getter: Callable[[], ExopsisWrapper] | None = None,
         companion_handler: CompanionMetadataHandler | None = None,
         progress_handler: MetadataProgressHandler | None = None,
         *,
@@ -60,7 +60,7 @@ class MetadataLoader:
         """Initialize metadata loader.
 
         Args:
-            exiftool_getter: Callable that returns ExifToolWrapper instance
+            wrapper_getter: Callable that returns ExopsisWrapper instance
             companion_handler: Handler for companion file metadata
             progress_handler: Handler for progress dialogs
             ui_bridge: Typed bridge for UI operations (cache, display, status).
@@ -72,7 +72,7 @@ class MetadataLoader:
         else:
             self._ui_bridge = NullMetadataUIBridge()
 
-        self._exiftool_getter = exiftool_getter
+        self._wrapper_getter = wrapper_getter
         self._companion_handler = companion_handler
         self._progress_handler = progress_handler
 
@@ -93,14 +93,13 @@ class MetadataLoader:
         self._ui_bridge = value
 
     @property
-    def exiftool_wrapper(self) -> ExifToolWrapper:
-        """Get ExifTool wrapper via getter function."""
-        if self._exiftool_getter:
-            return self._exiftool_getter()
-        # Fallback: create new instance
-        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    def wrapper(self) -> ExopsisWrapper:
+        """Return the metadata wrapper via getter function."""
+        if self._wrapper_getter:
+            return self._wrapper_getter()
+        from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-        return ExifToolWrapper()
+        return ExopsisWrapper()
 
     @property
     def parallel_loader(self) -> Any:
@@ -109,9 +108,9 @@ class MetadataLoader:
             from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
 
             self._parallel_loader = ParallelMetadataLoader()
-            if not self._parallel_loader.exiftool_available:
+            if not self._parallel_loader.exopsis_available:
                 raise RuntimeError(
-                    "ExifTool is not available. Install exiftool or place it in the bin/ directory."
+                    "Exopsis is not available. Install the exopsis package to enable metadata loading."
                 )
             logger.debug(
                 "[MetadataLoader] ParallelMetadataLoader initialized",
@@ -206,7 +205,7 @@ class MetadataLoader:
             logger.debug("[MetadataLoader] No items provided for metadata loading")
             return
 
-        if not FeatureAvailability.exiftool_available:
+        if not FeatureAvailability.exopsis_available:
             logger.warning(
                 "[MetadataLoader] Exopsis not available, skipping metadata load for %d file(s)",
                 len(items),
@@ -237,20 +236,17 @@ class MetadataLoader:
             return
 
         # Log loading info
-        mode_str = "extended" if use_extended else "fast"
         if skipped_count > 0:
             logger.info(
-                "[%s] Loading %s metadata: %d files (skipped %d cached)",
+                "[%s] Loading metadata: %d files (skipped %d cached)",
                 source,
-                mode_str,
                 len(needs_loading),
                 skipped_count,
             )
         else:
             logger.info(
-                "[%s] Loading %s metadata for %d files",
+                "[%s] Loading metadata for %d files",
                 source,
-                mode_str,
                 len(needs_loading),
             )
 
@@ -354,55 +350,25 @@ class MetadataLoader:
     def _load_single_file_metadata(
         self, item: FileItem, use_extended: bool, _metadata_tree_view: Any
     ) -> None:
-        """Load metadata for a single file with cancellation support.
+        """Load metadata for a single file using wait cursor only (no dialog).
 
         Args:
             item: The FileItem to load metadata for
-            use_extended: Whether to use extended metadata
-            _metadata_tree_view: Unused (kept for signature compat).
+            use_extended: Unused — kept for signature compat.
+            _metadata_tree_view: Unused — kept for signature compat.
 
         """
-        from oncutf.app.services import create_metadata_dialog, wait_cursor
+        from oncutf.app.services import wait_cursor
         from oncutf.app.services.ui_events import process_events
-        from oncutf.utils.filesystem.file_size_calculator import (
-            calculate_files_total_size,
-        )
 
         self.reset_cancellation_flag()
-
-        def cancel_callback() -> None:
-            self.request_cancellation()
-            logger.info("[MetadataLoader] Metadata loading cancelled by user (single file)")
-
-        loading_dialog = create_metadata_dialog(
-            self._ui_bridge.dialog_parent,
-            is_extended=use_extended,
-            cancel_callback=cancel_callback,
-        )
-        loading_dialog.set_status(
-            "Loading extended metadata..." if use_extended else "Loading metadata..."
-        )
-
-        total_size = calculate_files_total_size([item])
-        loading_dialog.start_progress_tracking(total_size)
-        loading_dialog.set_count(0, 1)
-        loading_dialog.set_filename(item.filename)
-
-        loading_dialog.show()
-        loading_dialog.activateWindow()
-        loading_dialog.setFocus()
-        loading_dialog.raise_()
-
-        for _ in range(3):
-            process_events()
 
         with wait_cursor():
             try:
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(
-                        self.exiftool_wrapper.get_metadata,
+                        self.wrapper.get_metadata,
                         item.full_path,
-                        use_extended,
                         self.is_cancelled,
                     )
 
@@ -415,77 +381,36 @@ class MetadataLoader:
                             process_events()
                             continue
 
-                loading_dialog.set_count(1, 1)
-                loading_dialog.update_progress(
-                    file_count=1,
-                    total_files=1,
-                    processed_bytes=total_size,
-                    total_bytes=total_size,
-                )
-                if self.is_cancelled():
-                    logger.info(
-                        "[MetadataLoader] Single file metadata loading cancelled by user for %s",
-                        item.filename,
-                    )
-                    self._ui_bridge.set_metadata_status(
-                        "Metadata loading cancelled by user",
-                        operation_type="cancelled",
-                        file_count=1,
-                        auto_reset=True,
-                    )
-                    return
-
                 if metadata:
-                    # Mark metadata with loading mode
-                    if use_extended:
-                        metadata["__extended__"] = True
-                    elif "__extended__" in metadata:
-                        del metadata["__extended__"]
-
-                    # Enhance with companion file data
                     enhanced_metadata = self._enhance_with_companions(item, metadata, [item])
 
-                    # Save to cache
                     self._ui_bridge.cache_set(
-                        item.full_path, enhanced_metadata, is_extended=use_extended
+                        item.full_path, enhanced_metadata, is_extended=False
                     )
-
-                    # Update file item
                     item.metadata = enhanced_metadata
-
-                    # Update UI
                     self._ui_bridge.refresh_model_icons()
 
-                    # Smart display: respect selection count
                     selection_count = self._ui_bridge.get_selection_count()
                     self._ui_bridge.display_metadata(
                         enhanced_metadata, selection_count, "single_file_load"
                     )
 
-                    logger.debug(
-                        "[MetadataLoader] Loaded %s metadata for %s",
-                        "extended" if use_extended else "fast",
-                        item.filename,
-                    )
+                    logger.debug("[MetadataLoader] Loaded metadata for %s", item.filename)
                 else:
                     logger.warning(
-                        "[MetadataLoader] No metadata returned for %s",
-                        item.filename,
+                        "[MetadataLoader] No metadata returned for %s", item.filename
                     )
 
             except Exception:
                 logger.exception(
-                    "[MetadataLoader] Failed to load metadata for %s",
-                    item.filename,
+                    "[MetadataLoader] Failed to load metadata for %s", item.filename
                 )
                 self._ui_bridge.set_metadata_status(
-                    "ExifTool is not available. Install exiftool to enable metadata loading.",
+                    "Exopsis is not available. Install the exopsis package to enable metadata loading.",
                     operation_type="error",
                     file_count=1,
                     auto_reset=False,
                 )
-            finally:
-                loading_dialog.close()
 
     # =========================================================================
     # Multiple Files Loading
@@ -591,18 +516,12 @@ class MetadataLoader:
 
             # Process metadata
             if metadata:
-                # Mark metadata with loading mode
-                if use_extended:
-                    metadata["__extended__"] = True
-                elif "__extended__" in metadata:
-                    del metadata["__extended__"]
-
                 # Enhance with companion data
                 enhanced_metadata = self._enhance_with_companions(item, metadata, needs_loading)
 
                 # Save to cache
                 self._ui_bridge.cache_set(
-                    item.full_path, enhanced_metadata, is_extended=use_extended
+                    item.full_path, enhanced_metadata, is_extended=False
                 )
 
                 # Update file item
@@ -654,7 +573,7 @@ class MetadataLoader:
             loading_dialog.close()
             logger.exception("[MetadataLoader] Cannot load metadata")
             self._ui_bridge.set_metadata_status(
-                "ExifTool is not available. Install exiftool to enable metadata loading.",
+                "Exopsis is not available. Install the exopsis package to enable metadata loading.",
                 operation_type="error",
                 file_count=len(needs_loading),
                 auto_reset=False,
@@ -722,7 +641,7 @@ class MetadataLoader:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_item = {
                 executor.submit(
-                    self.exiftool_wrapper.get_metadata, item.full_path, use_extended
+                    self.wrapper.get_metadata, item.full_path, use_extended
                 ): item
                 for item in items_to_load
             }
@@ -757,7 +676,7 @@ class MetadataLoader:
 
         Args:
             file_item: The main file being processed
-            base_metadata: Base metadata from ExifTool
+            base_metadata: Base metadata from Exopsis
             all_files: All files being processed (for folder context)
 
         Returns:

@@ -19,7 +19,7 @@ from collections.abc import Callable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import Any
 
-from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
@@ -31,7 +31,7 @@ class ParallelMetadataLoader:
     """Parallel metadata loader using thread pool for optimal performance.
 
     Features:
-    - Parallel ExifTool execution (multiple files simultaneously)
+    - Parallel Exopsis extraction (multiple files simultaneously)
     - Progressive callbacks as results arrive
     - Cancellation support via flag
     - Automatic batch size optimization based on file count
@@ -49,7 +49,7 @@ class ParallelMetadataLoader:
         Args:
             max_workers: Maximum number of worker threads. If None, uses optimal default:
                         - CPU count for small files
-                        - CPU count * 2 for I/O-bound operations (exiftool)
+                        - CPU count * 2 for I/O-bound operations (Exopsis)
 
         """
         if max_workers is None:
@@ -60,22 +60,18 @@ class ParallelMetadataLoader:
             max_workers = min(cpu_count * 2, 16)  # Cap at 16 to avoid overwhelming system
 
         self.max_workers = max_workers
-        self._exiftool_wrapper: ExifToolWrapper | None = None
+        self._metadata_wrapper: ExopsisWrapper | None = None
         try:
-            self._exiftool_wrapper = ExifToolWrapper()
-            self.exiftool_available = True
+            self._metadata_wrapper = ExopsisWrapper()
+            self.exopsis_available = True
         except RuntimeError:
-            self.exiftool_available = False
+            self.exopsis_available = False
             logger.warning(
                 "[ParallelMetadataLoader] metadata extraction engine not available. Metadata loading disabled."
             )
         self._cancelled = False
-        # NOTE: Process management lives entirely in the persistent
-        # ExifToolWrapper (-stay_open True). This loader only schedules
-        # work via ThreadPoolExecutor; cancellation is signalled via
-        # the cancellation flag and pending-future cancellation.
 
-        if self.exiftool_available:
+        if self.exopsis_available:
             logger.info("[ParallelMetadataLoader] Initialized with %d workers", max_workers)
 
     def load_metadata_parallel(
@@ -102,9 +98,9 @@ class ParallelMetadataLoader:
         if not items:
             return []
 
-        if not self.exiftool_available:
+        if not self.exopsis_available:
             raise RuntimeError(
-                "ExifTool is not available. Install exiftool or place it in the bin/ directory."
+                "Exopsis is not available. Install the exopsis package to enable metadata loading."
             )
 
         # Reset cancellation flag
@@ -122,7 +118,7 @@ class ParallelMetadataLoader:
         )
 
         try:
-            # Use ThreadPoolExecutor for parallel ExifTool execution
+            # Use ThreadPoolExecutor for parallel Exopsis extraction
             executor = ThreadPoolExecutor(max_workers=self.max_workers)
 
             def should_cancel() -> bool:
@@ -264,35 +260,25 @@ class ParallelMetadataLoader:
 
         """
         try:
-            logger.info(
-                "[ParallelMetadataLoader] Loading %s: use_extended=%s",
-                item.filename,
-                use_extended,
-            )
+            logger.info("[ParallelMetadataLoader] Loading %s", item.filename)
 
-            assert self._exiftool_wrapper is not None  # guaranteed by exiftool_available check
-            metadata = self._exiftool_wrapper.get_metadata(
+            assert self._metadata_wrapper is not None  # guaranteed by exopsis_available check
+            metadata = self._metadata_wrapper.get_metadata(
                 item.full_path,
-                use_extended=use_extended,
                 cancellation_check=cancellation_check,
             )
 
-            if metadata:
-                # Mark metadata with loading mode
-                if use_extended and "__extended__" not in metadata:
-                    metadata["__extended__"] = True
-                elif not use_extended and "__extended__" in metadata:
-                    del metadata["__extended__"]
-            elif cancellation_check and cancellation_check():
-                logger.info(
-                    "[ParallelMetadataLoader] Metadata loading cancelled by user for %s",
-                    item.filename,
-                )
-            else:
-                logger.warning(
-                    "[ParallelMetadataLoader] No metadata returned for %s",
-                    item.filename,
-                )
+            if not metadata:
+                if cancellation_check and cancellation_check():
+                    logger.info(
+                        "[ParallelMetadataLoader] Metadata loading cancelled by user for %s",
+                        item.filename,
+                    )
+                else:
+                    logger.warning(
+                        "[ParallelMetadataLoader] No metadata returned for %s",
+                        item.filename,
+                    )
         except Exception:
             logger.exception(
                 "[ParallelMetadataLoader] Error loading %s",
@@ -337,10 +323,9 @@ class ParallelMetadataLoader:
     def cleanup(self) -> None:
         """Clean up resources.
 
-        The persistent ExifTool process is owned by ExifToolWrapper and
-        cleaned up by its own close() method (called separately during
-        shutdown). This method only flips the cancellation flag so any
-        in-flight futures observe it on their next check.
+        ExopsisWrapper.close() handles actual resource cleanup during shutdown.
+        This method only flips the cancellation flag so any in-flight futures
+        observe it on their next check.
         """
         self._cancelled = True
         logger.info("[ParallelMetadataLoader] Cleanup completed")

@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-12-20
 
 This script tests:
-1. ExifTool overhead
+1. Exopsis overhead
 2. Per-file metadata load time
 3. Batch vs sequential loading
 4. Cache hit performance
@@ -31,7 +31,7 @@ def find_test_images() -> list[Path]:
         Path("/usr/share/pixmaps"),
     ]
 
-    images = []
+    images: list[Path] = []
     for test_path in test_paths:
         if test_path.exists():
             # Find JPG, PNG, TIFF files
@@ -45,35 +45,35 @@ def find_test_images() -> list[Path]:
     return images[:20]  # Limit to 20 files
 
 
-def profile_exiftool_overhead() -> dict[str, float]:
-    """Profile ExifTool startup/initialization overhead."""
+def profile_exopsis_overhead() -> dict[str, float]:
+    """Profile Exopsis initialization overhead."""
     print("\n" + "=" * 80)
-    print("PROFILING: ExifTool Overhead")
+    print("PROFILING: Exopsis Overhead")
     print("=" * 80)
 
     # Import time
     import_start = time.perf_counter()
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
     import_time = time.perf_counter() - import_start
 
     # Initialization time
     init_start = time.perf_counter()
-    exiftool = ExifToolWrapper()
+    exopsis = ExopsisWrapper()
     init_time = time.perf_counter() - init_start
 
     # First command (warm-up)
     test_images = find_test_images()
     if test_images:
         warmup_start = time.perf_counter()
-        _ = exiftool.get_metadata(str(test_images[0]))
+        _ = exopsis.get_metadata(str(test_images[0]))
         warmup_time = time.perf_counter() - warmup_start
     else:
         warmup_time = 0.0
         print("⚠️  No test images found for warmup")
 
     # Cleanup
-    exiftool.close()
+    exopsis.close()
 
     results = {
         "import_time": import_time * 1000,
@@ -81,7 +81,7 @@ def profile_exiftool_overhead() -> dict[str, float]:
         "warmup_time": warmup_time * 1000,
     }
 
-    print("\n📊 ExifTool Overhead:")
+    print("\n📊 Exopsis Overhead:")
     print(f"  Import:     {results['import_time']:>8.1f} ms")
     print(f"  Init:       {results['init_time']:>8.1f} ms")
     print(f"  First cmd:  {results['warmup_time']:>8.1f} ms")
@@ -103,23 +103,23 @@ def profile_sequential_loading() -> dict[str, float]:
 
     print(f"Testing with {len(test_images)} files")
 
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-    exiftool = ExifToolWrapper()
+    exopsis = ExopsisWrapper()
 
     # Measure individual file load times
-    load_times = []
+    load_times: list[float] = []
     total_start = time.perf_counter()
 
     for img in test_images:
         start = time.perf_counter()
-        _ = exiftool.get_metadata(str(img))
+        _ = exopsis.get_metadata(str(img))
         elapsed = time.perf_counter() - start
         load_times.append(elapsed * 1000)
 
     total_time = time.perf_counter() - total_start
 
-    exiftool.close()
+    exopsis.close()
 
     results = {
         "total_time": total_time * 1000,
@@ -152,16 +152,16 @@ def profile_batch_loading() -> dict[str, float]:
 
     print(f"Testing with {len(test_images)} files")
 
-    from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+    from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-    exiftool = ExifToolWrapper()
+    exopsis = ExopsisWrapper()
 
     # Batch load
     start = time.perf_counter()
-    _ = exiftool.get_metadata_batch([str(img) for img in test_images])
+    _ = exopsis.get_metadata_batch([str(img) for img in test_images])
     total_time = time.perf_counter() - start
 
-    exiftool.close()
+    exopsis.close()
 
     results = {
         "total_time": total_time * 1000,
@@ -202,7 +202,7 @@ def main() -> int:
     results = {}
 
     try:
-        results["exiftool"] = profile_exiftool_overhead()
+        results["exopsis"] = profile_exopsis_overhead()
         results["sequential"] = profile_sequential_loading()
         results["batch"] = profile_batch_loading()
         # Skip cache profiling - requires FileItem objects
@@ -219,8 +219,8 @@ def main() -> int:
     print("📈 PROFILING SUMMARY")
     print("=" * 80)
 
-    if results.get("exiftool"):
-        print(f"\n✅ ExifTool overhead: {sum(results['exiftool'].values()):.1f} ms")
+    if results.get("exopsis"):
+        print(f"\n✅ Exopsis overhead: {sum(results['exopsis'].values()):.1f} ms")
 
     if results.get("sequential"):
         seq = results["sequential"]

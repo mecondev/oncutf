@@ -12,7 +12,7 @@ This module now serves as a thin facade that delegates to specialized handlers:
 - MetadataProgressHandler: Progress dialog management
 - MetadataCacheService: Cache operations
 - CompanionMetadataHandler: Companion file metadata
-- MetadataWriter: Save operations (ExifTool write)
+- MetadataWriter: Save operations (metadata write)
 
 The facade maintains backward compatibility while internal implementation
 is now cleanly separated into focused modules.
@@ -63,8 +63,8 @@ class UnifiedMetadataManager(QObject):
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
 
-        # ExifTool wrapper (lazy-initialized)
-        self._exiftool_wrapper = None
+        # Metadata wrapper (lazy-initialized)
+        self._metadata_wrapper = None
 
         # Parallel loader (lazy-initialized)
         self._parallel_loader = None
@@ -94,7 +94,7 @@ class UnifiedMetadataManager(QObject):
         self._hash_service = HashLoadingService(parent_window, self._cache_service)
         self._ui_bridge = QtMetadataUIBridge(parent_window)
         self._loader = MetadataLoader(
-            exiftool_getter=lambda: self.exiftool_wrapper,
+            wrapper_getter=lambda: self.metadata_wrapper,
             companion_handler=self._companion_handler,
             progress_handler=self._progress_handler,
             ui_bridge=self._ui_bridge,
@@ -107,17 +107,17 @@ class UnifiedMetadataManager(QObject):
     # =========================================================================
 
     @property
-    def exiftool_wrapper(self) -> Any:
-        """Lazy-initialized ExifTool wrapper."""
-        if self._exiftool_wrapper is None:
-            from oncutf.boot.infra_wiring import create_exiftool_wrapper
+    def metadata_wrapper(self) -> Any:
+        """Lazy-initialized metadata wrapper."""
+        if self._metadata_wrapper is None:
+            from oncutf.boot.infra_wiring import create_metadata_wrapper
 
-            self._exiftool_wrapper = create_exiftool_wrapper()
+            self._metadata_wrapper = create_metadata_wrapper()
             logger.debug(
-                "[UnifiedMetadataManager] ExifToolWrapper initialized",
+                "[UnifiedMetadataManager] Metadata wrapper initialized",
                 extra={"dev_only": True},
             )
-        return self._exiftool_wrapper
+        return self._metadata_wrapper
 
     @property
     def structured(self) -> Any:
@@ -386,8 +386,8 @@ class UnifiedMetadataManager(QObject):
 
         self._progress_handler.cleanup()
 
-        if hasattr(self, "_exiftool_wrapper") and self._exiftool_wrapper:
-            self._exiftool_wrapper.close()
+        if hasattr(self, "_metadata_wrapper") and self._metadata_wrapper:
+            self._metadata_wrapper.close()
 
         if self._structured_manager is not None:
             self._structured_manager = None

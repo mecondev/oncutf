@@ -73,7 +73,7 @@ logger.info("Processing %d files", count)
 ```bash
 pip install -e .[dev]       # Setup
 python main.py              # Run app
-pytest                      # Tests (requires exiftool)
+pytest                      # Tests
 pytest -q                   # Quick test run
 pytest -q -k <pattern>      # Filtered tests
 ruff check . --fix          # Auto-fix (only when explicitly asked)

@@ -80,7 +80,7 @@
 │           Infrastructure (Persistence)                      │
 ├─────────────────────────────────────────────────────────────┤
 │  TIER 1 — PRAGMATIC STRICT TYPING                           │
-│  ├── external/                  (ExifTool, FFmpeg clients)  │
+│  ├── external/                  (Exopsis wrapper, FFmpeg clients)  │
 │  ├── cache/                     (metadata, hash, thumbnail) │
 │  ├── db/                        (file repository, database) │
 │  └── Persistent Caches          (SQLite with LRU eviction)  │
@@ -249,7 +249,7 @@ All are **runtime-only attributes** where type:ignore is the correct solution.
 #### Performance Optimizations [x]
 
 - **Startup Time:** 31% faster (1426ms → 989ms)
-  - Lazy-loaded ExifToolWrapper: -12% (1426ms → 1261ms)
+  - Lazy-loaded metadata wrapper: -12% (1426ms → 1261ms)
   - Lazy-loaded CompanionFilesHelper: -21% (1261ms → 989ms)
   - **Result:** Exceeded <1000ms target 🎯
 
@@ -412,7 +412,7 @@ oncutf/
 │   ├── filesystem/
 │   │   └── file_status_helpers.py   # Canonical metadata/hash cache access
 │   ├── metadata/
-│   │   └── exiftool_adapter.py      # Low-level ExifTool wrapper
+│   │   └── exopsis_adapter.py       # Low-level metadata wrapper (Exopsis)
 │   ├── icon_cache.py
 │   └── ... (50+ helpers)
 │
@@ -676,7 +676,7 @@ Historical phase execution plans are archived in `_archive/`.
 **Responsibilities:**
 
 - Filesystem operations (read/write files, directories)
-- External tool integration (ExifTool, hash calculators)
+- External tool integration (Exopsis, hash calculators)
 - Database operations (SQLite reads/writes)
 - Network I/O (if any)
 - Pure I/O adapters with minimal business logic
@@ -684,7 +684,7 @@ Historical phase execution plans are archived in `_archive/`.
 **Examples:**
 
 - `services/filesystem_service.py` — File system operations (list files, check existence)
-- `services/exiftool_service.py` — ExifTool wrapper for metadata extraction
+- `infra/external/exopsis_wrapper.py` — Exopsis-backed metadata wrapper
 - `services/hash_service.py` — File hash computation
 
 **Naming rule:** `<domain>_service.py` in `services/`
@@ -766,7 +766,7 @@ Is it a pure helper function?
 [x] **Good (follows rules):**
 
 - `controllers/file_load_controller.py` — UI flow orchestration
-- `services/exiftool_service.py` — External tool adapter
+- `infra/external/exopsis_wrapper.py` — External tool adapter (Exopsis)
 - `core/metadata/unified_manager.py` — Stateful metadata orchestration
 - `utils/path_normalizer.py` — Pure path helper
 
@@ -832,7 +832,7 @@ To avoid architectural confusion, follow these rules when placing code:
 
 ### Known Technical Debt
 
-- **Metadata loader separation:** `utils/metadata/exiftool_adapter.py` is the low-level ExifTool wrapper, while `core/metadata/metadata_loader.py` is the orchestration layer. `MetadataLoader` communicates with the UI through the `MetadataUIBridge` protocol (`core/metadata/metadata_ui_bridge.py`); the Qt implementation lives in `ui/adapters/metadata_ui_bridge_qt.py`.
+- **Metadata loader separation:** `infra/external/exopsis_wrapper.py` is the low-level Exopsis wrapper, while `core/metadata/metadata_loader.py` is the orchestration layer. `MetadataLoader` communicates with the UI through the `MetadataUIBridge` protocol (`core/metadata/metadata_ui_bridge.py`); the Qt implementation lives in `ui/adapters/metadata_ui_bridge_qt.py`.
 
 ---
 

@@ -5,7 +5,7 @@ Date: 2025-12-16
 
 This module provides the controller for metadata loading, reloading,
 configuration, and export operations. It coordinates between the UI layer
-(MainWindow) and domain services (MetadataManager, ExifTool wrappers).
+(MainWindow) and domain services (MetadataManager, Exopsis wrappers).
 
 Architecture:
     - UI (MainWindow) → Controller → Services (Managers)

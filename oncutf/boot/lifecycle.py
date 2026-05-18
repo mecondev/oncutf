@@ -58,13 +58,13 @@ def cleanup_on_exit() -> None:
         logger.warning("[CLEANUP] Error saving configuration: %s", e)
 
     try:
-        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-        cleaned_count = ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        cleaned_count = ExopsisWrapper.force_cleanup()
         if cleaned_count > 0:
-            logger.info("[CLEANUP] ExifTool processes terminated (%d)", cleaned_count)
+            logger.info("[CLEANUP] Metadata wrapper processes terminated (%d)", cleaned_count)
     except Exception as e:
-        logger.warning("[CLEANUP] Error terminating ExifTool processes: %s", e)
+        logger.warning("[CLEANUP] Error terminating metadata wrapper processes: %s", e)
 
     try:
         from oncutf.ui.thumbnail.providers import VideoThumbnailProvider
@@ -153,16 +153,16 @@ def perform_graceful_shutdown(app: QApplication, exit_code: int) -> int:
     global _cleanup_done, _app_quit_called
     logger.info("[App] Application shutting down with exit code: %d", exit_code)
 
-    # Force cleanup any remaining ExifTool processes
+    # Force cleanup (no-op for Exopsis, kept for future wrapper backends)
     try:
-        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-        cleaned_count = ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        cleaned_count = ExopsisWrapper.force_cleanup()
         _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
         if cleaned_count > 0:
-            logger.info("[App] ExifTool processes cleaned up (%d)", cleaned_count)
+            logger.info("[App] Metadata wrapper processes cleaned up (%d)", cleaned_count)
     except Exception as e:
-        logger.warning("[App] Error cleaning up ExifTool processes: %s", e)
+        logger.warning("[App] Error during metadata wrapper cleanup: %s", e)
 
     # Windows-specific: Process pending deleteLater events before quit
     if platform.system() == "Windows":
@@ -201,11 +201,11 @@ def perform_graceful_shutdown(app: QApplication, exit_code: int) -> int:
 
 
 def perform_emergency_cleanup() -> None:
-    """Emergency cleanup on fatal crash (ExifTool + lock file)."""
+    """Emergency cleanup on fatal crash (metadata wrapper + lock file)."""
     try:
-        from oncutf.infra.external.exiftool_wrapper import ExifToolWrapper
+        from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
-        ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        ExopsisWrapper.force_cleanup()
     except Exception:
         pass
     try:
