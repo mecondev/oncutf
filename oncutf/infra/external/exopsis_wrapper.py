@@ -253,6 +253,14 @@ class ExopsisWrapper:
                 continue
             for key, value in group.items():
                 metadata.setdefault(key, value)
+            del metadata[group_name]
+
+        # timed_metadata is per-frame sensor data — not useful for display
+        metadata.pop("timed_metadata", None)
+
+        # Drop any remaining top-level dict/list values (un-flattened nested structures)
+        for key in [k for k, v in metadata.items() if isinstance(v, (dict, list))]:
+            del metadata[key]
 
     @staticmethod
     def _inject_exopsis_version(metadata: dict[str, Any]) -> None:

@@ -362,6 +362,14 @@ class CompanionFilesHelper:
                 processed_files.add(file_path)
                 continue
 
+            # Orphaned companion: matches a known companion pattern but main file is absent
+            if cls._matches_any_companion_pattern(Path(file_path).name):
+                processed_files.add(file_path)
+                logger.debug(
+                    "[CompanionFiles] Orphaned companion filtered: %s", Path(file_path).name
+                )
+                continue
+
             # This is a main file - find its companions
             companions = cls.find_companion_files(file_path, folder_files)
 
@@ -382,6 +390,21 @@ class CompanionFilesHelper:
             len(file_groups),
         )
         return file_groups
+
+    @classmethod
+    def _matches_any_companion_pattern(cls, filename: str) -> bool:
+        """Return True if filename matches any companion pattern across all main file types.
+
+        Used to detect orphaned companions (pattern matches but main file is absent).
+        """
+        ext = Path(filename).suffix[1:].lower()
+        if ext not in cls.COMPANION_EXTENSIONS:
+            return False
+        for patterns in cls.COMPANION_PATTERNS.values():
+            for pattern in patterns:
+                if re.match(pattern, filename, re.IGNORECASE):
+                    return True
+        return False
 
     @classmethod
     def is_companion_file(cls, file_path: str, folder_files: list[str]) -> bool:

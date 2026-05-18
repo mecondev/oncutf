@@ -9,7 +9,7 @@ psutil>=6.1.0
 aiofiles>=24.1.0
 typing_extensions>=4.0.0
 rawpy>=0.21.0
-exopsis>=1.3.2
+exopsis @ git+ssh://git@github.com/mecondev/Exopsis.git
 watchdog>=6.0.0
 
 # --- Development dependencies ---

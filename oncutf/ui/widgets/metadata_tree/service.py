@@ -93,7 +93,11 @@ class MetadataTreeService:
             # Simplification successful
             return simplified
 
-        # Fallback: camelCase splitting for keys without prefixes
+        # Fallback: snake_case keys (exopsis native format)
+        if "_" in key:
+            return " ".join(w.capitalize() for w in key.split("_"))
+
+        # Final fallback: camelCase splitting
         return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
 
     def classify_key(self, key: str) -> str:
@@ -372,6 +376,10 @@ class MetadataTreeService:
 
             # Add field nodes to group
             for key, value in items:
+                # Skip nested dicts/lists — these are un-flattened group objects
+                if isinstance(value, (dict, list)):
+                    continue
+
                 field_status = self._determine_field_status(
                     key, group_name, modified_keys, extended_keys
                 )

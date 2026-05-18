@@ -186,6 +186,7 @@ class ParallelMetadataLoader:
                             # Progressive callback for UI updates
                             if progress_callback:
                                 progress_callback(completed, total_files, item, metadata)
+                                process_events()
 
                             logger.debug(
                                 "[ParallelMetadataLoader] Loaded %d/%d: %s",
@@ -206,6 +207,7 @@ class ParallelMetadataLoader:
                             # Still call progress callback to update count
                             if progress_callback:
                                 progress_callback(completed, total_files, item, {})
+                                process_events()
 
             finally:
                 # Ensure executor is always shut down

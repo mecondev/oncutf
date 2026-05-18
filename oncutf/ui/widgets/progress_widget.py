@@ -352,12 +352,6 @@ class ProgressWidget(QWidget):
             total_bytes: Total number of bytes to process
 
         """
-        # Throttling to prevent excessive updates (max 20 updates per second)
-        current_time = time.time()
-        if current_time - self._last_update_time < 0.05:  # 50ms = 20 FPS
-            return
-        self._last_update_time = current_time
-
         if total_bytes <= 0:
             percentage = 0
         else:
