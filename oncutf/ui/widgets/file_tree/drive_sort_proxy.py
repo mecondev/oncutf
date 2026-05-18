@@ -25,7 +25,7 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 _StrCmpLogicalW: Any = None
 if sys.platform == "win32":
     try:
-        _shlwapi = ctypes.windll.Shlwapi  # type: ignore[attr-defined]
+        _shlwapi = ctypes.windll.Shlwapi
         _StrCmpLogicalW = _shlwapi.StrCmpLogicalW
         _StrCmpLogicalW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
         _StrCmpLogicalW.restype = ctypes.c_int
