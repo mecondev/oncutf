@@ -103,6 +103,10 @@ class MetadataTreeService:
             # Simplification successful
             return simplified
 
+        # ISOBMFF Colour box keys are emitted as "colr_*" — show as "Color *".
+        if key.lower().startswith("colr_"):
+            key = "color_" + key[len("colr_"):]
+
         # Fallback: snake_case keys (exopsis native format).
         # Preserve common acronyms (BPS, FPS, ISO, …) in upper case.
         if "_" in key:
@@ -113,6 +117,34 @@ class MetadataTreeService:
 
         # Final fallback: camelCase splitting
         return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
+
+    @staticmethod
+    def _format_display_value(key: str, value: Any) -> str:
+        """Format a raw metadata value for display in the tree.
+
+        Display-only: the underlying cache keeps raw values for rename/lookup.
+        Covers the common eyesores — f-numbers with APEX float noise, byte sizes,
+        and bitrates in bare bps.
+        """
+        kl = key.lower()
+        try:
+            if kl == "fnumber" or kl.endswith("_fnumber") or "aperture" in kl:
+                return f"f/{float(value):.1f}"
+            if kl in ("filesize", "size_bytes") or kl.endswith("_size_bytes"):
+                from oncutf.utils.filesystem.file_size_formatter import (
+                    format_file_size_system_compatible,
+                )
+
+                return format_file_size_system_compatible(int(value))
+            if kl.endswith("_bps"):
+                bps = int(value)
+                # Audio is conventionally shown in kbps; video in Mbps.
+                if "audio" in kl or bps < 1_000_000:
+                    return f"{bps // 1000} kbps"
+                return f"{bps / 1_000_000:g} Mbps"
+        except (TypeError, ValueError):
+            pass
+        return str(value)
 
     def classify_key(self, key: str) -> str:
         """Classify a metadata key into a detailed group label.
@@ -400,7 +432,7 @@ class MetadataTreeService:
 
                 field_node = TreeNodeData(
                     key=key,
-                    value=str(value),
+                    value=self._format_display_value(key, value),
                     node_type=NodeType.FIELD,
                     status=field_status,
                 )
