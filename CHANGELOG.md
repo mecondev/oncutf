@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-05-31
+
+### Fixed
+
+- **Rename preserves file identity:** a rename now keeps the DB `path_id` (via
+  `DatabaseManager.update_file_path`) and remaps the in-memory metadata/hash
+  cache keys, so a file's metadata/hashes/history/color survive the rename
+  instead of being orphaned until the next reload. New `rename_path` on both
+  persistent caches; `_relink_renamed_file` in `core/file/operations_manager.py`.
+- **Startup no longer times out on every launch:** the boot worker/`QThread`
+  were function-locals that could be GC'd before their `finished` signal was
+  delivered, forcing every startup through the timeout fallback (logged as an
+  ERROR). Strong references are now held for the process lifetime; added a
+  gate-state debug log.
+- **exopsis O(1) first-frame extraction actually applied** and upgraded to the
+  exopsis ≥ 3.x line (`frame_sample='first'` is now the package default).
+- Companion-file orphan filtering narrowed to Sony `M0N.XML` camera sidecars so
+  standalone `.srt`/`.xmp`/`.cube` workflows stay visible.
+- Metadata tree: acronym-preserving key formatting; flatten step drops/logs
+  un-flattened groups instead of showing embedded JSON.
+- Demoted noisy mouse/drag/selection INFO logs to debug.
+
+### Architecture
+
+- Completed the `models/` split: pure entities → `domain/models/`
+  (logger/formatter couplings removed for domain purity); Qt-bound models →
+  `ui/models/`. The `models/` layer no longer exists.
+- `utils/` purity: removed dead Qt shims (`qt_compat`, cursor/SVG re-exports);
+  added `utils_must_not_import_ui_app_core` audit rule.
+
+### Documentation
+
+- Audited and consolidated `docs/` to match the codebase: removed 14
+  completed/abandoned plan docs, rewrote the index and entry-point docs, fixed
+  broken links and stale paths, rewrote `TODO.md` as a verified unfinished-work
+  catalogue (removed the ghost `core/rename_graph` items), and added
+  `docs/undo_redo_architecture.md` (unified undo/redo design).
+
 ## [Unreleased] - 2026-03-08
 
 ### Architecture Refactoring (4-Phase)

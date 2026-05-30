@@ -27,6 +27,7 @@ lives here in `docs/`.
 - **[subsystems/file_engine.md](subsystems/file_engine.md)** — File discovery, loading, monitoring
 - **[subsystems/metadata_engine.md](subsystems/metadata_engine.md)** — Metadata extraction, caching, staging
 - **[subsystems/rename_engine.md](subsystems/rename_engine.md)** — Rename pipeline: preview, validate, execute, undo
+- **[undo_redo_architecture.md](undo_redo_architecture.md)** — Design: unified undo/redo contract (not yet implemented)
 
 ## Application systems
 
