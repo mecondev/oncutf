@@ -56,7 +56,8 @@ UI (PyQt5)  →  Controllers  →  App Services (Facades)  →  Core / Domain / 
 | Controllers | `oncutf/controllers/` | UI-agnostic orchestration (FileLoad, Metadata, Rename, MainWindow) |
 | App Services | `oncutf/app/` | Ports, services, use cases, events, state — clean arch facades |
 | Core | `oncutf/core/` | Business logic: UnifiedRenameEngine, UnifiedMetadataManager, caching, DB |
-| Domain | `oncutf/domain/` | Models (FileRecord, MetadataRecord), validation rules |
+| Domain | `oncutf/domain/` | Pure rules: keyboard enums, field validators, metadata-mode decision, service protocols/ports |
+| Models | `oncutf/models/` | Data entities (FileItem, MetadataEntry, FileGroup, CounterScope, ValidationResult). May use utils/config; **no Qt/UI** — Qt-bound models live in `oncutf/ui/models/` |
 | Infra | `oncutf/infra/` | External tools (exopsis, ffmpeg), cache, SQLite, filesystem ops |
 | Modules | `oncutf/modules/` | Composable rename-fragment implementations (counter, metadata, text, datetime…) |
 
