@@ -21,6 +21,18 @@ if TYPE_CHECKING:
 
 logger = get_cached_logger(__name__)
 
+# Strong references to the boot worker and its QThread. run_startup() is
+# non-blocking and returns immediately, so its `worker`/`worker_thread` locals
+# would otherwise be released on return. The only remaining references would be
+# a fragile Python<->C++ cycle (C++ worker holds the `finished` slot closure
+# which captures worker_thread; C++ thread holds `worker.run` which captures
+# worker) that CPython's cyclic GC traverses unreliably across sip wrappers.
+# When collected, the worker's `finished` signal is never delivered, so
+# check_and_show_main never observes worker_ready and every startup limps
+# through the timeout fallback. Holding refs here for the process lifetime fixes
+# that deterministically.
+_boot_refs: list[Any] = []
+
 
 def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | None = None) -> None:
     """Create splash screen, start boot worker, and set up dual-flag synchronization.
@@ -83,6 +95,9 @@ def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | No
         worker_thread = QThread()
         worker.moveToThread(worker_thread)
 
+        # Keep the worker/thread alive past this function's return (see _boot_refs).
+        _boot_refs.extend((worker, worker_thread))
+
         # -- Callback closures (run in main thread via Qt signals) ---------
 
         def on_worker_progress(percentage: int, status: str) -> None:
@@ -125,6 +140,12 @@ def run_startup(app: QApplication, theme_manager: ThemeManager, splash: Any | No
         def check_and_show_main() -> None:
             """Show MainWindow when both worker and min time are ready."""
             if not (init_state["worker_ready"] and init_state["min_time_elapsed"]):
+                logger.debug(
+                    "[Init] Gate waiting (worker_ready=%s, min_time_elapsed=%s)",
+                    init_state["worker_ready"],
+                    init_state["min_time_elapsed"],
+                    extra={"dev_only": True},
+                )
                 return  # Wait for both conditions
 
             logger.info("[Init] All initialization complete, showing main window")
