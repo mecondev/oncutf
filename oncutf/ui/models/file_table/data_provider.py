@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.data_provider.
+"""oncutf.ui.models.file_table.data_provider.
 
 Qt model data interface for file table model.
 
@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from oncutf.models.file_item import FileItem
-    from oncutf.models.file_table.icon_manager import IconManager
-    from oncutf.models.file_table.model_column_manager import ColumnManager
+    from oncutf.ui.models.file_table.icon_manager import IconManager
+    from oncutf.ui.models.file_table.model_column_manager import ColumnManager
 
 from PyQt5.QtCore import QModelIndex, Qt, QVariant
 from PyQt5.QtGui import QColor

@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.file_table_model.
+"""oncutf.ui.models.file_table.file_table_model.
 
 Main file table model for displaying file data in a table view.
 
@@ -23,12 +23,12 @@ from PyQt5.QtCore import (
 )
 
 from oncutf.models.file_item import FileItem
-from oncutf.models.file_table.data_provider import DataProvider
-from oncutf.models.file_table.icon_manager import IconManager
-from oncutf.models.file_table.model_column_manager import ColumnManager
-from oncutf.models.file_table.model_file_operations import FileOperationsManager
-from oncutf.models.file_table.sort_manager import SortManager
 from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+from oncutf.ui.models.file_table.data_provider import DataProvider
+from oncutf.ui.models.file_table.icon_manager import IconManager
+from oncutf.ui.models.file_table.model_column_manager import ColumnManager
+from oncutf.ui.models.file_table.model_file_operations import FileOperationsManager
+from oncutf.ui.models.file_table.sort_manager import SortManager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

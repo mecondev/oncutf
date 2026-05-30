@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.icon_manager.
+"""oncutf.ui.models.file_table.icon_manager.
 
 Icon and tooltip management for file table model.
 

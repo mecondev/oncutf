@@ -1,4 +1,4 @@
-"""oncutf.models.file_table.column_manager.
+"""oncutf.ui.models.file_table.column_manager.
 
 Column visibility and mapping management for file table model.
 

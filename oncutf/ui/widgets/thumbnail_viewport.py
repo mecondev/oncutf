@@ -49,7 +49,7 @@ from oncutf.utils.shared.timer_manager import cancel_timer, schedule_ui_update
 if TYPE_CHECKING:
     from PyQt5.QtCore import QModelIndex
 
-    from oncutf.models.file_table.file_table_model import FileTableModel
+    from oncutf.ui.models.file_table.file_table_model import FileTableModel
 
 logger = get_cached_logger(__name__)
 

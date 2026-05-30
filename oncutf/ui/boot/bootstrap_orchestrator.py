@@ -191,11 +191,11 @@ class BootstrapOrchestrator:
         - Icon maps and utilities
         - State tracking attributes
         """
-        from oncutf.models.file_table import FileTableModel
         from oncutf.ui.managers.metadata_unified_manager import (
             get_unified_metadata_manager,
         )
         from oncutf.ui.managers.selection_manager import SelectionManager
+        from oncutf.ui.models.file_table import FileTableModel
 
         # Thread attributes
         self.window.metadata_thread = None

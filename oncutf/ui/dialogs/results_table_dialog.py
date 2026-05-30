@@ -47,7 +47,7 @@ from oncutf.config import (
     RESULTS_TABLE_MIN_HEIGHT,
     RESULTS_TABLE_MIN_WIDTH,
 )
-from oncutf.models.results_table_model import ResultsTableModel
+from oncutf.ui.models.results_table_model import ResultsTableModel
 from oncutf.ui.theme_manager import get_theme_manager
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

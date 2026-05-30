@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from PyQt5.QtGui import QMouseEvent
     from PyQt5.QtWidgets import QListView
 
-    from oncutf.models.file_table.file_table_model import FileTableModel
+    from oncutf.ui.models.file_table.file_table_model import FileTableModel
 
 logger = get_cached_logger(__name__)
 
