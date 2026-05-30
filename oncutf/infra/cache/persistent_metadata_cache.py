@@ -358,6 +358,28 @@ class PersistentMetadataCache:
         logger.debug("[PersistentMetadataCache] Removed from memory cache: %s", file_path)
         return True
 
+    def rename_path(self, old_path: str, new_path: str) -> None:
+        """Remap the in-memory cache entry from old_path to new_path after a rename.
+
+        The database side is handled separately by DatabaseManager.update_file_path
+        (which preserves the path_id and all attached metadata). This only moves the
+        in-memory LRU entry so a lookup by the new path is an immediate hit instead
+        of a miss that would re-query the database.
+        """
+        old_norm = self._normalize_path(old_path)
+        new_norm = self._normalize_path(new_path)
+        if old_norm == new_norm:
+            return
+        entry = self._memory_cache.pop(old_norm, None)
+        if entry is not None:
+            self._memory_cache[new_norm] = entry
+            logger.debug(
+                "[PersistentMetadataCache] Remapped cache key %s -> %s",
+                old_norm,
+                new_norm,
+                extra={"dev_only": True},
+            )
+
     def get_cache_stats(self) -> dict[str, Any]:
         """Get cache performance statistics."""
         total_requests = self._cache_hits + self._cache_misses

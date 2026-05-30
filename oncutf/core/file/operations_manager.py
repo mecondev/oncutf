@@ -231,6 +231,13 @@ class FileOperationsManager:
         for exec_item in execution_result.items:
             if exec_item.success:
                 renamed_count += 1
+                # Preserve metadata/hashes/history/color across the rename by keeping
+                # the same DB path_id and remapping the in-memory cache keys. Without
+                # this, the file's cached data would be orphaned under the old path
+                # until the next full reload.
+                self._relink_renamed_file(
+                    exec_item.old_path, exec_item.new_path, metadata_cache
+                )
                 item = find_file_by_path(selected_files, exec_item.old_path, "full_path")
                 if item:
                     item.filename = Path(exec_item.new_path).name
@@ -304,6 +311,34 @@ class FileOperationsManager:
                 )
 
         return renamed_count
+
+    def _relink_renamed_file(
+        self, old_path: str, new_path: str, metadata_cache: Any
+    ) -> None:
+        """Carry persisted + cached data across a successful rename.
+
+        Updates the database path in place (preserving the path_id, so the
+        attached metadata, hashes, rename history and color tag stay linked)
+        and remaps the in-memory metadata/hash cache keys. This makes rename
+        and metadata independent operations — a prerequisite for safe,
+        out-of-order undo/redo.
+        """
+        if old_path == new_path:
+            return
+        try:
+            from oncutf.infra.cache.persistent_hash_cache import (
+                get_persistent_hash_cache,
+            )
+            from oncutf.infra.db.database_manager import get_database_manager
+
+            get_database_manager().update_file_path(old_path, new_path)
+            if metadata_cache is not None and hasattr(metadata_cache, "rename_path"):
+                metadata_cache.rename_path(old_path, new_path)
+            get_persistent_hash_cache().rename_path(old_path, new_path)
+        except Exception:
+            logger.exception(
+                "[Rename] Failed to relink cached data %s -> %s", old_path, new_path
+            )
 
     def find_fileitem_by_path(self, files: list[FileItem], path: str) -> FileItem | None:
         """Find FileItem by path using normalized comparison."""

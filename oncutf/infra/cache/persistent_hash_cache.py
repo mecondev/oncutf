@@ -141,6 +141,22 @@ class PersistentHashCache:
         logger.debug("[PersistentHashCache] Removed from memory cache: %s", file_path)
         return True
 
+    def rename_path(self, old_path: str, new_path: str) -> None:
+        """Remap in-memory hash entries from old_path to new_path after a rename.
+
+        The database side is handled by DatabaseManager.update_file_path (preserves
+        the path_id and its hashes). Keys are composite ``{path}:{algorithm}``, so
+        every algorithm entry for the old path is moved to the new path.
+        """
+        old_norm = self._normalize_path(old_path)
+        new_norm = self._normalize_path(new_path)
+        if old_norm == new_norm:
+            return
+        old_prefix = f"{old_norm}:"
+        for key in [k for k in self._memory_cache if k.startswith(old_prefix)]:
+            algorithm = key[len(old_prefix):]
+            self._memory_cache[f"{new_norm}:{algorithm}"] = self._memory_cache.pop(key)
+
     def find_duplicates(
         self, file_paths: list[str], algorithm: str = "CRC32"
     ) -> dict[str, list[str]]:

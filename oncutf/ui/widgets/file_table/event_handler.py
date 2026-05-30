@@ -114,7 +114,7 @@ class EventHandler:
             is_already_selected = index.row() in current_selection
 
             anchor_before = self._view._selection_behavior.get_anchor_row()
-            logger.info(
+            logger.debug(
                 "[MOUSE PRESS] Row=%d, Modifiers=%s, AlreadySelected=%s, Selection=%s, Anchor=%s",
                 index.row(),
                 _format_modifiers(modifiers),
@@ -130,7 +130,7 @@ class EventHandler:
                 self._ctrl_drag_start_row = index.row() if index.isValid() else None
                 self._view._drag_start_pos = event.pos()
                 self._view._preserved_selection_for_drag = False
-                logger.info(
+                logger.debug(
                     "[CTRL DRAG START] Start row=%s, selection=%s",
                     self._ctrl_drag_start_row,
                     sorted(self._ctrl_drag_initial_selection),
@@ -145,7 +145,7 @@ class EventHandler:
                 and len(current_selection) > 1
             ):
                 # Preserve selection without changing anchor (keep original anchor for correct drag behavior)
-                logger.info(
+                logger.debug(
                     "[PRESERVE] Preserving multi-selection for drag, clicked row=%d, keeping anchor=%s, selection=%s",
                     index.row(),
                     anchor_before,
@@ -167,7 +167,7 @@ class EventHandler:
                     # Ensure anchor is preserved (it might not change, but just in case)
                     self._view._selection_behavior.set_anchor_row(anchor_before, emit_signal=False)
 
-                    logger.info(
+                    logger.debug(
                         "[PRESERVE] Skipped super(), set CurrentIndex=%d, selection=%s, anchor=%s",
                         index.row(),
                         sorted(self._view._get_current_selection_safe()),
@@ -246,7 +246,7 @@ class EventHandler:
                 if start_row is not None and end_row is not None and actual_drag_happened:
                     range_rows = set(range(min(start_row, end_row), max(start_row, end_row) + 1))
                     toggled = self._ctrl_drag_initial_selection.symmetric_difference(range_rows)
-                    logger.info(
+                    logger.debug(
                         "[CTRL DRAG END] range=%s-%s, initial=%s, final=%s",
                         start_row,
                         end_row,
@@ -285,7 +285,7 @@ class EventHandler:
                 # Only consider it a real drag if moved at least the drag distance
                 actual_drag_happened = distance >= QApplication.startDragDistance()
 
-            logger.info(
+            logger.debug(
                 "[MOUSE RELEASE] Preserved=%s, IsDragging=%s, ActualDrag=%s, ClickedRow=%s, Selection=%s, Anchor=%s",
                 self._view._preserved_selection_for_drag,
                 self._view._drag_drop_behavior.is_dragging,
@@ -305,7 +305,7 @@ class EventHandler:
                 and self._view._clicked_index.isValid()
             ):
                 # User clicked on selected item but didn't drag - select only that item
-                logger.info(
+                logger.debug(
                     "[SINGLE SELECT] Converting multi-selection to single: %d",
                     self._view._clicked_index.row(),
                 )
@@ -329,7 +329,7 @@ class EventHandler:
                         )
                     anchor_after = self._view._selection_behavior.get_anchor_row()
                     new_selection = self._view._get_current_selection_safe()
-                    logger.info(
+                    logger.debug(
                         "[SINGLE SELECT] Done - Selection=%s, Anchor=%s -> %s",
                         sorted(new_selection),
                         anchor_before,
@@ -400,7 +400,7 @@ class EventHandler:
                 toggled = self._ctrl_drag_initial_selection.symmetric_difference(range_rows)
                 self._view._selection_behavior.update_selection_store(toggled, emit_signal=True)
                 self._view._selection_behavior.set_anchor_row(start_row, emit_signal=False)
-                logger.info(
+                logger.debug(
                     "[CTRL DRAG MOVE] start=%s end=%s range=%s selection=%s",
                     start_row,
                     end_row,
@@ -450,7 +450,7 @@ class EventHandler:
                                     self._view._selection_behavior.get_anchor_row(),
                                     emit_signal=False,
                                 )
-                                logger.info(
+                                logger.debug(
                                     "[DRAG] Restored preserved selection before drag: %s -> %s",
                                     sorted(current),
                                     sorted(preserved_rows),
