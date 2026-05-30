@@ -8,25 +8,25 @@ The oncutf application now includes a comprehensive database system for persiste
 
 ### Core Components
 
-1. **DatabaseManager** (`core/database_manager.py`)
+1. **DatabaseManager** (`infra/db/database_manager.py`)
    - SQLite backend for persistent storage
    - Thread-safe operations with connection pooling
    - Automatic schema migrations
    - Manages three main data types: files, metadata, hashes, and rename history
 
-2. **PersistentMetadataCache** (`core/persistent_metadata_cache.py`)
+2. **PersistentMetadataCache** (`infra/cache/persistent_metadata_cache.py`)
    - Drop-in replacement for the original MetadataCache
    - Automatic database persistence of metadata
    - Memory cache for performance with database fallback
    - Maintains existing API for backward compatibility
 
-3. **PersistentHashCache** (`core/persistent_hash_cache.py`)
+3. **PersistentHashCache** (`infra/cache/persistent_hash_cache.py`)
    - Persistent storage of file hashes (CRC32)
    - Enhanced duplicate detection capabilities
    - Integration with existing hash operations
    - Support for multiple hash algorithms
 
-4. **RenameHistoryManager** (`core/rename_history_manager.py`)
+4. **RenameHistoryManager** (`app/services/rename_history_service.py`)
    - Tracks rename operations for undo/redo functionality
    - Batch operation recording and rollback
    - Operation validation and integrity checking
@@ -34,7 +34,17 @@ The oncutf application now includes a comprehensive database system for persiste
 
 ## Database Schema
 
-### Files Table
+> **Canonical schema:** `oncutf/infra/db/migrations.py` is the single source of
+> truth. The real design uses a `file_paths` table with an integer surrogate
+> `id` (`path_id`); `file_metadata`, `file_hashes`, and `file_rename_history`
+> all reference it via `FOREIGN KEY (path_id) REFERENCES file_paths(id)`. This
+> stable `path_id` is what lets a rename preserve a file's metadata/hashes/
+> history (the path string is updated in place via `update_file_path`). The
+> illustrative SQL below predates the `file_paths` rename and is kept only as a
+> conceptual sketch — consult `migrations.py` for exact column definitions.
+
+### Files Table (illustrative — see migrations.py for the real `file_paths` table)
+
 ```sql
 CREATE TABLE files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,7 +112,7 @@ The database system is automatically initialized when the main window starts:
 from core.database_manager import initialize_database
 from core.persistent_metadata_cache import get_persistent_metadata_cache
 from core.persistent_hash_cache import get_persistent_hash_cache
-from core.rename_history_manager import get_rename_history_manager
+from oncutf.app.services import RenameHistoryManager
 
 # Initialize database system
 db_manager = initialize_database()

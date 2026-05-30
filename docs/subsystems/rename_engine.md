@@ -92,8 +92,14 @@ The Rename Engine **does NOT own**:
 | File | Responsibility |
 | ---- | -------------- |
 | `unified_rename_engine.py` | Central facade: preview, validate, execute |
-| `rename_manager.py` | UI-aware workflow with post-rename state restoration |
-| `rename_history_manager.py` | Persistent undo/redo with SQLite storage |
+| `preview_manager.py` / `name_composer.py` | Preview generation + name assembly |
+| `validation_manager.py` / `execution_manager.py` | Validation + filesystem execution |
+| `state_manager.py` / `data_classes.py` | Rename state + result dataclasses |
+
+> UI-aware workflow lives in `ui/managers/rename_manager.py`; persistent
+> undo/redo history lives in `app/services/rename_history_service.py`
+> (`RenameHistoryManager`). Both were moved out of `core/rename/` for layer
+> compliance.
 
 ### Modules (`oncutf/modules/`)
 
@@ -128,7 +134,7 @@ The Rename Engine **does NOT own**:
 
 | File | Responsibility |
 | ---- | -------------- |
-| `file_validation_manager.py` | Pre-execution validation (existence, permissions) |
+| `file/validation_manager.py` | Pre-execution validation (existence, permissions) |
 | `conflict_resolver.py` | Filesystem conflict resolution strategies |
 
 ---
@@ -381,8 +387,8 @@ consolidating preview generation into a single path through
 
 The subsystem had overlapping "manager" classes:
 
-- `RenameManager` (UI-aware, in `core/ui_managers/`)
-- `FileOperationsManager` (file ops, in `core/ui_managers/`)
+- `RenameManager` (UI-aware, in `ui/managers/`)
+- `FileOperationsManager` (file ops, in `core/file/operations_manager.py`)
 - `PreviewManager` (preview generation, in `core/`)
 - `UnifiedPreviewManager` (inside UnifiedRenameEngine, **canonical**)
 

@@ -2,8 +2,10 @@
 
 ## Prerequisites
 
-- Python 3.9+
+- Python 3.13+
 - Git
+- **exopsis** — installed from the project's private repository via
+  `requirements.txt` (not on PyPI)
 
 ## Quick Start
 
@@ -115,20 +117,21 @@ make dist
 
 ## Project Structure
 
+See [CLAUDE.md](CLAUDE.md#architecture) and [docs/architecture.md](docs/architecture.md)
+for the authoritative layer breakdown. Top level:
+
 ```tree
 oncutf/
-├── core/                   # Core application components
-│   ├── application_context.py  # Application-wide context
-│   ├── backup_manager.py   # Database backup system
-│   ├── metadata_manager.py # Metadata operations
-│   └── ...
-├── models/                 # Data models
-├── modules/                # Rename logic modules
-├── utils/                  # Utility functions
-├── widgets/                # PyQt5 UI components
-├── tests/                  # Test suite
-├── docs/                   # Documentation
-└── resources/              # Application resources
+├── boot/         # Composition root (startup, DI wiring, shutdown)
+├── ui/           # PyQt5 widgets, behaviors, delegates, dialogs, Qt models
+├── controllers/  # UI-agnostic orchestration
+├── app/          # Application services: ports, services, state
+├── core/         # Business logic (cache, database, file, hash, metadata, rename)
+├── domain/       # Pure data models + rules (no Qt/UI/infra)
+├── infra/        # External tools (exopsis, ffmpeg), SQLite, caches, filesystem
+├── modules/      # Composable rename-fragment modules
+├── config/       # Configuration constants
+└── utils/        # Cross-cutting helpers (Qt-free; utils/ui for Qt helpers)
 ```
 
 ## Code Style
@@ -184,13 +187,19 @@ The application uses structured logging with `get_cached_logger()`.
 #### Logger Initialization
 
 ```python
-# ALWAYS use this pattern:
+# Default pattern (all layers except domain):
 from oncutf.utils.logging.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
+```
 
-# NEVER use:
-# import logging
-# logger = logging.getLogger(__name__)  # Wrong!
+**Exception — `domain/` must stay free of `oncutf.utils` imports** (enforced by
+`tools/audit_boundaries.py`). Domain modules use stdlib logging instead; the
+`dev_only` console filter still applies via the root handlers they propagate to:
+
+```python
+# domain/ only:
+import logging
+logger = logging.getLogger(__name__)
 ```
 
 #### Log Levels
@@ -248,9 +257,11 @@ python main.py
 ### Database Debugging
 
 ```python
-# In config.py
-DEBUG_RESET_DATABASE = True  # Reset database on startup
+# In oncutf/config/app.py
+DEBUG_FRESH_START = True  # Delete + recreate database on startup
 ```
+
+Or use the CLI flag: `python main.py --clean`.
 
 ## Contributing
 
@@ -296,7 +307,8 @@ Types:
 **Metadata extraction not available (exopsis missing):**
 
 ```bash
-pip install exopsis
+# exopsis is not on PyPI — reinstall from requirements.txt
+pip install -r requirements.txt
 ```
 
 **PyQt5 installation issues:**

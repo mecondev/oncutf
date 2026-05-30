@@ -396,7 +396,7 @@ rename_history_data = {
 #### A. Metadata Cache
 
 ```python
-# core/persistent_metadata_cache.py
+# infra/cache/persistent_metadata_cache.py
 class PersistentMetadataCache:
     # Caches metadata results between sessions
     # Key: file_path → Value: metadata_dict
@@ -406,7 +406,7 @@ class PersistentMetadataCache:
 #### B. Hash Cache
 
 ```python
-# core/persistent_hash_cache.py
+# infra/cache/persistent_hash_cache.py
 class PersistentHashCache:
     # Caches file checksums between sessions
     # Key: file_path → Value: hash_value

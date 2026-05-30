@@ -10,9 +10,10 @@
 
 ## Quick Links
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design & layer structure
-- **[Master Plan](docs/2025_12_19.md)** — Current status and next steps
-- **[Development Roadmap](docs/ROADMAP.md)** — Phase progress and milestones
+- **[CLAUDE.md](CLAUDE.md)** — Architecture, commands, and coding rules
+- **[Architecture Guide](docs/architecture.md)** — System design & layer structure
+- **[Documentation Index](docs/README.md)** — All available documentation
+- **[TODO.md](TODO.md)** — Active features, unfinished work, and known issues
 
 ---
 
@@ -65,8 +66,9 @@
 
 ## Requirements
 
-- **Python 3.12+**
-- **[exopsis](https://pypi.org/project/exopsis/)** - Python metadata extraction package (installed via pip)
+- **Python 3.13+**
+- **exopsis** — Python metadata extraction package (installed from the project's
+  private repository via `requirements.txt`; an in-progress C++ build is planned)
 - **PyQt5** - GUI framework
 - **FFmpeg / FFprobe** - Required for video thumbnail generation (optional)
 
@@ -182,41 +184,30 @@ python3.12 main.py
 
 ```tree
 oncutf/
-├── main.py                  # Slim entry point (delegates to boot/)
-├── config.py                # Global configuration constants
-├── ui/                      # UI layer (PyQt5 widgets)
-│   ├── main_window.py       # Main window wired to controllers
-│   ├── behaviors/           # Reusable UI behaviors (column mgmt, drag feedback)
-│   ├── delegates/           # Custom item delegates (color, validation)
-│   ├── dialogs/             # Dialog windows (metadata edit, history)
-│   ├── services/            # UI-specific services
-│   └── widgets/             # Custom PyQt5 widgets
-├── controllers/             # UI-agnostic orchestration layer
-│   ├── file_load_controller.py
-│   ├── metadata_controller.py
-│   ├── rename_controller.py
-│   └── main_window_controller.py
-├── core/                    # Business logic (organized subdirectories)
-│   ├── cache/               # Cache management (3 modules)
-│   ├── database/            # Database operations (2 modules)
-│   ├── drag/                # Drag & drop handling (3 modules)
-│   ├── events/              # Event handlers (3 modules)
-│   ├── hash/                # Hash operations (4 modules)
-│   ├── initialization/      # Startup logic (3 modules)
-│   ├── metadata/            # Metadata operations (4 modules)
-│   ├── rename/              # Rename engine (3 modules)
-│   ├── selection/           # Selection state (2 modules)
-│   ├── ui_managers/         # UI managers (7 modules)
-│   └── ...                  # Other flat modules
-├── domain/                  # Pure domain models
-├── models/                  # Data models (FileItem, etc.)
-├── modules/                 # Rename modules (composable steps)
-├── services/                # Service protocols (DI support)
-├── utils/                   # Helper utilities
+├── main.py                  # Slim entry point (delegates to oncutf/boot/)
+├── oncutf/
+│   ├── boot/                # Composition root: startup, DI wiring, shutdown
+│   ├── ui/                  # UI layer (PyQt5 widgets, behaviors, delegates, dialogs)
+│   │   ├── main_window.py
+│   │   ├── behaviors/       # Reusable UI behaviors (composition over mixins)
+│   │   ├── delegates/       # Custom item delegates
+│   │   ├── dialogs/         # Dialog windows
+│   │   ├── models/          # Qt-bound models (file_table/, results_table_model)
+│   │   ├── managers/        # UI-aware managers (rename, hash, status, …)
+│   │   └── widgets/         # Custom widgets (incl. node_editor/)
+│   ├── controllers/         # UI-agnostic orchestration (file_load, metadata, rename, main_window)
+│   ├── app/                 # Application services: ports, services, state (clean-arch facades)
+│   ├── core/                # Business logic: cache/, database/, events/, file/, hash/, metadata/, rename/
+│   ├── domain/              # Pure domain: models/ (FileItem, MetadataEntry, …), validation, ports
+│   ├── infra/               # External tools (exopsis, ffmpeg), cache, SQLite, filesystem ops
+│   ├── modules/             # Composable rename-fragment modules
+│   ├── config/              # Configuration constants
+│   └── utils/               # Cross-cutting helpers (Qt-free; utils/ui for Qt helpers)
 ├── docs/                    # Documentation (see docs/README.md)
-├── tests/                   # Comprehensive test suite (939 tests)
-├── scripts/                 # Tooling (profiling, maintenance)
-└── assets/resources/        # Icons, fonts, images
+├── tests/                   # Test suite (1158 passing)
+├── scripts/                 # Tooling (run_all_tests.py, audit_code.sh)
+├── tools/                   # Repo tooling (audit_boundaries.py, profilers)
+└── assets/                  # Icons, fonts, images
 ```
 
 ---
@@ -226,7 +217,7 @@ oncutf/
 Comprehensive documentation is available in the `docs/` directory:
 
 - **[Complete Documentation Index](docs/README.md)** — Overview and navigation
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design and layer structure
+- **[Architecture Guide](docs/architecture.md)** — System design and layer structure
 - **[Keyboard Shortcuts Reference](docs/keyboard_shortcuts.md)** — Complete keyboard shortcuts guide
 - **[Application Workflow](docs/application_workflow.md)** — Complete application flow from startup to rename execution
 - **[Database Quick Start](docs/database_quick_start.md)** — Get started with persistent storage
@@ -274,19 +265,15 @@ pytest tests/ -v
 **Current Status:**
 
 - **Ruff:** All checks passing
-- **MyPy:** Clean (0 errors, 330 source files)
-- **Pytest:** 949 tests passing
+- **MyPy:** Clean (~500 source files)
+- **Pytest:** 1158 tests passing
+- **Architecture audit:** `python tools/audit_boundaries.py` — 0 boundary violations
 
 ### Future Enhancements
 
-See [TODO.md](TODO.md) for planned features and improvements:
-
-- Last state restoration (sort column persistence)
-- Non-blocking conflict resolution UI
-- Metadata database search functionality
-- Rename preview profiling
-
-See [docs/REFACTORING_ROADMAP.md](docs/REFACTORING_ROADMAP.md) for technical debt and planned refactoring.
+See [TODO.md](TODO.md) for the current list of planned features, unfinished
+work, and known issues (thumbnail view, node editor, dockable widgets, unified
+undo/redo, metadata search, …).
 
 ### Development Guidelines
 

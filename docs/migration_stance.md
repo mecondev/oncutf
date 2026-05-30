@@ -472,7 +472,6 @@ ignore_missing_imports = false  # Tiers: strict on our code
 
 ## References
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — Overall system architecture
-- [_archive/UI_ARCHITECTURE_PATTERNS_COMPLETED.md](_archive/UI_ARCHITECTURE_PATTERNS_COMPLETED.md) — Mixins vs Behaviors vs Handlers (archived)
-- [_archive/mixin_to_behavior_extraction_COMPLETED.md](_archive/mixin_to_behavior_extraction_COMPLETED.md) — Behavior extraction guide (archived)
-- [_archive/REFACTORING_ROADMAP_COMPLETED.md](_archive/REFACTORING_ROADMAP_COMPLETED.md) — Refactoring history (archived)
+- [architecture.md](architecture.md) — Overall system architecture
+- [../CLAUDE.md](../CLAUDE.md) — Layer rules and commands
+- [README.md](README.md) — Documentation index

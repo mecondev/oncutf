@@ -289,7 +289,7 @@ A: The simplification algorithm detects collisions and keeps keys unique by pres
 
 ## Related Documentation
 
-- [Metadata Key Simplification Plan](metadata_key_simplification_plan.md) - Technical implementation details
+- [Metadata Engine Subsystem](subsystems/metadata_engine.md) - Technical implementation details
 - [Application Workflow](application_workflow.md) - Overall application usage
 - [Safe Rename Workflow](safe_rename_workflow.md) - Using metadata in file renaming
 

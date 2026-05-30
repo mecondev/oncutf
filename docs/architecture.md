@@ -8,9 +8,8 @@
 ## Quick Navigation
 
 - **[Documentation Index](README.md)** — All available documentation
-- **[Refactoring Summary](260121_summary.md)** — Phases A-E completion status
 - **[Migration Stance](migration_stance.md)** — Architecture migration policy
-- **Archived docs** — See `_archive/` for historical phase details
+- **[CLAUDE.md](../CLAUDE.md)** — Layer rules and commands
 
 ---
 
@@ -427,11 +426,9 @@ oncutf/
 │   └── mocks.py
 │
 └── docs/                            # Documentation
-    ├── ARCHITECTURE.md              # (this file)
-    ├── ROADMAP.md                   # Development roadmap
-    ├── 2025_12_19.md                # Master plan and status
-    └── _archive/                    # Historical phase docs
-        └── refactor-runs/           # Phase execution records
+    ├── architecture.md              # (this file)
+    ├── README.md                    # Documentation index
+    └── subsystems/                  # Per-subsystem technical maps
 ```
 
 ---
@@ -637,15 +634,15 @@ For detailed development plans, see documentation in `docs/` folder:
 | Document | Purpose | Status |
 | ---------- | --------- | -------- |
 | [README.md](README.md) | Documentation index | [x] Active |
-| [PHASE5_SUMMARY.md](PHASE5_SUMMARY.md) | Phase 5 summary | [x] Reference |
 
-Historical phase execution plans are archived in `_archive/`.
+Completed migration/refactor plans were removed from `docs/` on 2026-05-31
+(recoverable via git history) to keep the set matching the codebase.
 
 ---
 
 ## Naming Guidelines: Controllers, Services, Managers
 
-**Problem:** The codebase has grown to include `*_controller.py`, `*_service.py`, and `*_manager.py` scattered across different layers (`controllers/`, `services/`, `core/`, `core/ui_managers/`). Without clear rules, this becomes confusing and inconsistent.
+**Problem:** The codebase has grown to include `*_controller.py`, `*_service.py`, and `*_manager.py` scattered across different layers (`controllers/`, `services/`, `core/`, `ui/managers/`). Without clear rules, this becomes confusing and inconsistent.
 
 **Solution:** Use these strict naming and placement rules going forward:
 
@@ -709,12 +706,12 @@ Historical phase execution plans are archived in `_archive/`.
 - `core/metadata/unified_manager.py` — Orchestrates metadata loading, caching, companion files
 - `core/metadata/staging_manager.py` — Manages staged metadata changes before write
 - `core/backup_manager.py` — Coordinates backup creation/restoration
-- `core/ui_managers/status_manager.py` — Manages status bar state and messages
+- `ui/managers/status_manager.py` — Manages status bar state and messages
 - `core/batch/operations_manager.py` — Batches operations for performance
 
-**Naming rule:** `<feature>_manager.py` in `core/<domain>/` or `core/ui_managers/`
+**Naming rule:** `<feature>_manager.py` in `core/<domain>/` or `ui/managers/`
 
-**Special case - UI Managers:** Put UI-specific managers in `core/ui_managers/` (e.g., `status_manager.py`, `window_config_manager.py`, `column_manager.py`). These manage UI state but are NOT controllers (they don't handle user actions).
+**Special case - UI Managers:** Put UI-specific managers in `ui/managers/` (e.g., `status_manager.py`, `window_config_manager.py`, `column_manager.py`). These manage UI state but are NOT controllers (they don't handle user actions).
 
 ---
 
@@ -772,7 +769,7 @@ Is it a pure helper function?
 
 **Legacy (grandfathered, don't replicate):**
 
-- `core/ui_managers/*` — UI managers (should ideally be in controllers or separate layer, but kept for historical reasons)
+- `ui/managers/*` — UI managers (should ideally be in controllers or separate layer, but kept for historical reasons)
 - Some `*_manager.py` scattered in `core/` root — Should be in feature folders like `core/<domain>/`
 
 ---
