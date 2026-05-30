@@ -22,7 +22,7 @@ from PyQt5.QtCore import (
     pyqtSignal,
 )
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.ui.adapters.qt_app_context import get_qt_app_context
 from oncutf.ui.models.file_table.data_provider import DataProvider
 from oncutf.ui.models.file_table.icon_manager import IconManager

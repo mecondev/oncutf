@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from oncutf.app.state.context import AppContext
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 
 def update_file_load_ui(items: list["FileItem"], clear: bool = True) -> None:

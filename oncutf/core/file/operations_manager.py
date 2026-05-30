@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 if TYPE_CHECKING:
     from oncutf.app.ports.conflict_resolution import ConflictResolutionPort
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.app.services.user_interaction import (
     show_question_message,

@@ -31,8 +31,8 @@ if TYPE_CHECKING:
     from oncutf.core.metadata.companion_metadata_handler import CompanionMetadataHandler
     from oncutf.core.metadata.metadata_progress_handler import MetadataProgressHandler
     from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
+    from oncutf.domain.models.file_item import FileItem
     from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
-    from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

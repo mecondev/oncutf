@@ -12,8 +12,8 @@ from oncutf.core.rename.preview_manager import (
     apply_rename_modules,
     calculate_scope_aware_index,
 )
-from oncutf.models.counter_scope import CounterScope
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.counter_scope import CounterScope
+from oncutf.domain.models.file_item import FileItem
 
 
 class TestPerFileGroupScope:

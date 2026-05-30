@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from oncutf.core.metadata import UnifiedMetadataManagerProtocol
     from oncutf.core.metadata.structured_manager import StructuredMetadataManager
     from oncutf.domain.metadata import MetadataModeDecision
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = logging.getLogger(__name__)
 

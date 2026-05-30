@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont

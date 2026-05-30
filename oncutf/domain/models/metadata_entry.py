@@ -14,13 +14,14 @@ Benefits:
 - Built-in validation
 """
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from oncutf.utils.logging.logger_factory import get_cached_logger
-
-logger = get_cached_logger(__name__)
+# Domain entity: stdlib logging only (no oncutf.utils dependency). dev_only
+# filtering still applies via the root handlers this logger propagates to.
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)

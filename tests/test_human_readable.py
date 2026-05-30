@@ -21,7 +21,10 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from oncutf.models.file_item import FileItem  # noqa: E402
+from oncutf.domain.models.file_item import FileItem  # noqa: E402
+from oncutf.utils.filesystem.file_size_formatter import (  # noqa: E402
+    format_file_size_system_compatible,
+)
 
 # Check if we're on Windows
 IS_WINDOWS = platform.system() == "Windows"
@@ -93,7 +96,7 @@ def test_actual_files():
         if full_path.exists():
             # Our application's method
             file_item = FileItem.from_path(str(full_path))
-            file_item.get_human_readable_size()
+            format_file_size_system_compatible(file_item.size)
 
             # System formats
             get_system_human_sizes(str(full_path))
@@ -109,7 +112,7 @@ def test_actual_files_cross_platform():
         if full_path.exists():
             # Our application's method
             file_item = FileItem.from_path(str(full_path))
-            our_size = file_item.get_human_readable_size()
+            our_size = format_file_size_system_compatible(file_item.size)
 
             # Verify it returns a valid string
             assert our_size is not None

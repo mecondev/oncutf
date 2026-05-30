@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
 )
 
 from oncutf.config import ICON_SIZES
-from oncutf.models.counter_scope import CounterScope
+from oncutf.domain.models.counter_scope import CounterScope
 from oncutf.modules.base_module import BaseRenameModule
 from oncutf.modules.logic.counter_logic import CounterLogic
 from oncutf.ui.helpers.icons_loader import get_menu_icon

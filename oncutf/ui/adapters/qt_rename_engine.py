@@ -22,7 +22,7 @@ from oncutf.core.rename.data_classes import (
     ValidationResult,
 )
 from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

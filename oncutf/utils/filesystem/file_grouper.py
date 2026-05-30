@@ -14,9 +14,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
-from oncutf.models.file_group import FileGroup
+from oncutf.domain.models.file_group import FileGroup
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

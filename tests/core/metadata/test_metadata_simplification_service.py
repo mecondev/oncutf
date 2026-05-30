@@ -12,7 +12,7 @@ from oncutf.core.metadata.metadata_simplification_service import (
     MetadataSimplificationService,
     get_metadata_simplification_service,
 )
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 
 
 class TestMetadataSimplificationService:

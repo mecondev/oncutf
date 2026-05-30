@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from oncutf.core.rename.query_managers import BatchQueryManager, SmartCacheManager
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.core.rename.data_classes import PreviewResult
 from oncutf.core.rename.name_composer import NameComposer

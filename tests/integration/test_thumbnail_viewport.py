@@ -19,7 +19,7 @@ from unittest.mock import Mock, patch
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.ui.delegates.thumbnail_delegate import ThumbnailDelegate
 from oncutf.ui.models.file_table.file_table_model import FileTableModel
 from oncutf.ui.widgets.thumbnail_viewport import ThumbnailViewportWidget

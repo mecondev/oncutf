@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from oncutf.app.state.file_store import FileStore
     from oncutf.app.state.selection_store import SelectionStore
     from oncutf.app.types import MetadataCache
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

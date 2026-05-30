@@ -10,7 +10,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from oncutf.config import INVALID_FILENAME_MARKER
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.modules.specified_text_module import SpecifiedTextModule
 from oncutf.ui.managers.rename_manager import RenameManager
 from oncutf.utils.naming.filename_validator import is_validation_error_marker

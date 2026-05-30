@@ -18,8 +18,8 @@ from oncutf.utils.logging.logger_factory import get_cached_logger
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from oncutf.domain.models.file_item import FileItem
     from oncutf.infra.db.database_manager import DatabaseManager
-    from oncutf.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from oncutf.core.file.operations_manager import FileOperationsManager
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 
 
 @pytest.fixture

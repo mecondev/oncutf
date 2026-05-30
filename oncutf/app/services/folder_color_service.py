@@ -16,7 +16,7 @@ if TYPE_CHECKING:
         AutoColorCommandProtocol,
         DatabaseManagerProtocol,
     )
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 
 # Factory function - registered during bootstrap

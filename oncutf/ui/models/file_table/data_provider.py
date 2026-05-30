@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
     from oncutf.ui.models.file_table.icon_manager import IconManager
     from oncutf.ui.models.file_table.model_column_manager import ColumnManager
 
@@ -22,6 +22,7 @@ from PyQt5.QtGui import QColor
 
 from oncutf.config.ui import MISSED_TEXT_COLOR, MODIFIED_TEXT_COLOR
 from oncutf.ui.adapters.qt_app_context import get_qt_app_context
+from oncutf.utils.filesystem.file_size_formatter import format_file_size_system_compatible
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -96,7 +97,7 @@ class DataProvider:
                 # Color column shows no text, only icon
                 return ""
             if column_key == "file_size":
-                return str(file.get_human_readable_size())
+                return format_file_size_system_compatible(file.size)
             if column_key == "type":
                 return str(file.extension)
             if column_key == "modified":

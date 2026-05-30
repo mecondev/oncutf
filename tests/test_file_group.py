@@ -6,8 +6,8 @@ Date: 2025-12-16
 
 from pathlib import Path
 
-from oncutf.models.file_group import FileGroup
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_group import FileGroup
+from oncutf.domain.models.file_item import FileItem
 
 
 class TestFileGroupCreation:

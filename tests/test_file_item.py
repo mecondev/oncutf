@@ -1,7 +1,8 @@
 import os
 from datetime import datetime
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
+from oncutf.utils.filesystem.file_size_formatter import format_file_size_system_compatible
 
 
 def test_fileitem_from_path_and_size(tmp_path):
@@ -13,7 +14,7 @@ def test_fileitem_from_path_and_size(tmp_path):
     assert fi.size == p.stat().st_size
     assert isinstance(fi.modified, datetime)
     # human readable string
-    s = fi.get_human_readable_size()
+    s = format_file_size_system_compatible(fi.size)
     assert isinstance(s, str) and len(s) > 0
 
 

@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from oncutf.core.metadata.parallel_loader import ParallelMetadataLoader
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
 
 

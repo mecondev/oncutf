@@ -35,7 +35,7 @@ def profile_rename_preview(file_count: int) -> dict[str, float]:
 
     from PyQt5.QtWidgets import QApplication
 
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
     # Create QApplication if needed
     app = QApplication.instance()

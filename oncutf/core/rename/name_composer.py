@@ -17,10 +17,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.core.rename.module_registry import get_logic_class
-from oncutf.models.counter_scope import CounterScope
+from oncutf.domain.models.counter_scope import CounterScope
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

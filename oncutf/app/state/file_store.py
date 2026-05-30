@@ -19,7 +19,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.utils.events import Observable, Signal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

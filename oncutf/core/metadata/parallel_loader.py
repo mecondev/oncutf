@@ -19,8 +19,8 @@ from collections.abc import Callable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import Any
 
+from oncutf.domain.models.file_item import FileItem
 from oncutf.infra.external.exopsis_wrapper import ExopsisWrapper
-from oncutf.models.file_item import FileItem
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

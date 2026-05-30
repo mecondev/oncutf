@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.app.services.user_interaction import show_info_message
 from oncutf.config import STATUS_COLORS

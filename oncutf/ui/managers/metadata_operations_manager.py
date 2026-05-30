@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from PyQt5.QtWidgets import QWidget
 
     from oncutf.app.ports.metadata_editing import MetadataEditPort
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

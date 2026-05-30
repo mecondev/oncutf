@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from oncutf.models.file_item import FileItem
-from oncutf.models.validation_result import (
+from oncutf.domain.models.file_item import FileItem
+from oncutf.domain.models.validation_result import (
     ValidationIssue,
     ValidationIssueType,
     ValidationResult,

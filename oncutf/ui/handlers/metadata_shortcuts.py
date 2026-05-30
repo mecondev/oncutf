@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from oncutf.core.metadata.unified_metadata_protocol import (
         UnifiedMetadataManagerProtocol,
     )
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from oncutf.controllers.rename_controller import RenameController
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 
 
 class MockPreviewResult:

@@ -4,7 +4,7 @@ Author: Michael Economou
 Date: 2025-12-16
 """
 
-from oncutf.models.counter_scope import CounterScope
+from oncutf.domain.models.counter_scope import CounterScope
 from oncutf.modules.counter_module import CounterModule
 
 

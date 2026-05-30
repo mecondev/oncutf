@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.ui.managers.hash_loading_service import HashLoadingService
 
 

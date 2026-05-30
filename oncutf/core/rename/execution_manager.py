@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
 from oncutf.core.rename.data_classes import ExecutionItem, ExecutionResult

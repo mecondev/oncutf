@@ -164,7 +164,7 @@ class TestIntegrationWithFileItem(unittest.TestCase):
 
     def test_file_item_uses_new_formatter(self):
         """Test that FileItem uses the new formatter."""
-        from oncutf.models.file_item import FileItem
+        from oncutf.domain.models.file_item import FileItem
 
         # Create a test file item
         test_file = project_root / "oncutf.config.py"
@@ -172,7 +172,7 @@ class TestIntegrationWithFileItem(unittest.TestCase):
             file_item = FileItem.from_path(str(test_file))
 
             # Get formatted size
-            readable_size = file_item.get_human_readable_size()
+            readable_size = format_file_size_system_compatible(file_item.size)
 
             # Should be a non-empty string
             self.assertIsInstance(readable_size, str)

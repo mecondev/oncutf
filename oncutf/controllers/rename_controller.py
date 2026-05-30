@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from oncutf.app.state.context import AppContext as ApplicationContext
     from oncutf.app.state.file_store import FileStore
     from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.controllers.protocols import (
     ConflictResolverProtocol,

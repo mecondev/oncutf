@@ -20,11 +20,11 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from oncutf.models.validation_result import ValidationIssueType
+from oncutf.domain.models.validation_result import ValidationIssueType
 from oncutf.ui.helpers.tooltip_helper import TooltipHelper, TooltipType
 
 if TYPE_CHECKING:
-    from oncutf.models.validation_result import ValidationResult
+    from oncutf.domain.models.validation_result import ValidationResult
 
 
 class ValidationIssuesDialog(QDialog):

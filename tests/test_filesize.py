@@ -23,7 +23,10 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from oncutf.models.file_item import FileItem  # noqa: E402
+from oncutf.domain.models.file_item import FileItem  # noqa: E402
+from oncutf.utils.filesystem.file_size_formatter import (  # noqa: E402
+    format_file_size_system_compatible,
+)
 
 # Check if we're on Windows
 IS_WINDOWS = platform.system() == "Windows"
@@ -119,7 +122,7 @@ class TestFileSizeComparison(unittest.TestCase):
                 # Our application's method
                 file_item = FileItem.from_path(str(file_path))
                 app_size = file_item.size
-                file_item.get_human_readable_size()
+                format_file_size_system_compatible(file_item.size)
 
                 # System commands
                 sys_sizes = self.get_system_file_sizes(str(file_path))
@@ -158,7 +161,7 @@ def run_manual_test():
             # Our application's method
             file_item = FileItem.from_path(str(file_path))
             app_size = file_item.size
-            file_item.get_human_readable_size()
+            format_file_size_system_compatible(file_item.size)
 
             # System commands
             tester = TestFileSizeComparison()

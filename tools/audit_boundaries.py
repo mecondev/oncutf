@@ -49,8 +49,6 @@ FORBIDDEN_EXTERNAL_IMPORTS: dict[str, set[str]] = {
     "app": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
     # Core should be Qt-free for testability (but currently has violations)
     "core": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
-    # models holds pure data entities only - Qt-bound models live in ui/models/
-    "models": {"PyQt5", "PyQt6", "PySide2", "PySide6", "sip"},
 }
 
 # Allowed Qt imports in core (temporary whitelist during migration).
@@ -413,13 +411,6 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
     # core must not import ui
     if file_layer == "core" and imported_layer in ui_side:
         return "core_must_not_import_ui"
-
-    # models holds pure data entities: may use domain/utils/config + stdlib only.
-    # No UI, no orchestration (app/controllers), no concrete infra/core/modules.
-    if file_layer == "models" and imported_layer in ui_side | {
-        "app", "core", "controllers", "infra", "boot", "modules"
-    }:
-        return "models_must_be_entity_only"
 
     # ui must not import infra directly (should go through boot)
     if file_layer in ui_side:

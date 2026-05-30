@@ -14,14 +14,14 @@ import platform
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from oncutf.models.validation_result import (
+from oncutf.domain.models.validation_result import (
     ValidationIssue,
     ValidationIssueType,
     ValidationResult,
 )
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = logging.getLogger(__name__)
 

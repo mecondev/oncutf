@@ -14,7 +14,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 from oncutf.core.rename.data_classes import PreviewResult, ValidationResult
 from oncutf.utils.logging.logger_factory import get_cached_logger

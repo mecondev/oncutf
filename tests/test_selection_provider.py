@@ -5,7 +5,7 @@ Test suite for SelectionProvider unified selection interface.
 
 from datetime import datetime
 
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.ui.helpers.selection_provider import (
     SelectionProvider,
     get_checked_files,

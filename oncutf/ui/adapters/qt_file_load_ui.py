@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 from oncutf.ui.managers.file_load_ui_service import FileLoadUIService
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 
 class QtFileLoadUIAdapter:

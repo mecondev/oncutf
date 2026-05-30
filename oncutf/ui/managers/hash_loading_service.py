@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from PyQt5.QtCore import Qt
 
 from oncutf.config import STATUS_COLORS
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.utils.filesystem.path_utils import paths_equal
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

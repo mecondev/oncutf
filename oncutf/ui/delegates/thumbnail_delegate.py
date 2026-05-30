@@ -89,7 +89,7 @@ from oncutf.config.ui.thumbnail import (
     VIDEO_BADGE_PADDING,
     VIDEO_BADGE_TEXT as _VB_TEXT,
 )
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.utils.logging.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

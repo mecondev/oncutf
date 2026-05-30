@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from oncutf.app.ports.user_interaction import ProgressDialogPort
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

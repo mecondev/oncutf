@@ -10,7 +10,7 @@ Decouples core file loading logic from UI refresh operations.
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 
 class FileLoadUIPort(Protocol):

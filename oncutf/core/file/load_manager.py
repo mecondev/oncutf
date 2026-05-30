@@ -24,7 +24,7 @@ from oncutf.config import (
     SHOW_COMPANION_FILES_IN_TABLE,
 )
 from oncutf.domain.keyboard import KeyboardModifier
-from oncutf.models.file_item import FileItem
+from oncutf.domain.models.file_item import FileItem
 from oncutf.utils.filesystem.companion_files_helper import CompanionFilesHelper
 from oncutf.utils.logging.logger_factory import get_cached_logger
 

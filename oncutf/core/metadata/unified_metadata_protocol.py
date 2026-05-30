@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from oncutf.domain.metadata import MetadataModeDecision
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
 
 
 @runtime_checkable

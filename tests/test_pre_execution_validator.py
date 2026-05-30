@@ -15,8 +15,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from oncutf.core.pre_execution_validator import PreExecutionValidator
-from oncutf.models.file_item import FileItem
-from oncutf.models.validation_result import ValidationIssueType
+from oncutf.domain.models.file_item import FileItem
+from oncutf.domain.models.validation_result import ValidationIssueType
 
 
 class TestPreExecutionValidator:

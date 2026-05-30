@@ -32,7 +32,7 @@ from oncutf.config.features import FeatureAvailability
 from oncutf.config.file_types import PREVIEWABLE_DOT_EXTENSIONS, VIDEO_DOT_EXTENSIONS
 
 if TYPE_CHECKING:
-    from oncutf.models.file_item import FileItem
+    from oncutf.domain.models.file_item import FileItem
     from oncutf.ui.models.file_table.file_table_model import FileTableModel
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ Test suite for MetadataEntry dataclass.
 
 import time
 
-from oncutf.models.metadata_entry import MetadataEntry
+from oncutf.domain.models.metadata_entry import MetadataEntry
 
 
 class TestMetadataEntryCreation:

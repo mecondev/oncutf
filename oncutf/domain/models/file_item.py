@@ -12,15 +12,16 @@ Classes:
     FileItem: Represents a single file item in the table.
 """
 
+import logging
 import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-# Initialize Logger
-from oncutf.utils.logging.logger_factory import get_cached_logger
-
-logger = get_cached_logger(__name__)
+# Domain entity: uses stdlib logging only (no oncutf.utils dependency).
+# dev_only filtering still applies via the DevOnlyFilter installed on the
+# root handlers, which this child logger propagates to.
+logger = logging.getLogger(__name__)
 
 
 class FileItem:
@@ -132,13 +133,3 @@ class FileItem:
                     exc_info=True,
                 )
         return 0
-
-    def get_human_readable_size(self) -> str:
-        """Returns a human-readable string for the file size, e.g. '1.2 GB', '540 MB', '999 KB'.
-        Uses cross-platform formatting that respects system locale and conventions.
-        """
-        from oncutf.utils.filesystem.file_size_formatter import (
-            format_file_size_system_compatible,
-        )
-
-        return format_file_size_system_compatible(self.size)
