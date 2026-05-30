@@ -88,12 +88,16 @@ class ExopsisWrapper:
     ) -> dict[str, Any]:
         """Extract metadata from a single file via Exopsis.
 
-        Exopsis ≥ 3.x defaults to frame_sample='first' — reads only the first
-        timed-metadata frame from the RTMD track (O(1) fast path in the Sony
-        XAVC parser). This gives per-capture values (fnumber, ISO, shutter)
-        without iterating all frames in the clip.
+        MUST pass ExtractOptions(frame_sample='first') explicitly: the option's
+        dataclass default is 'first', but that only applies when an options
+        object is passed. Calling extract(path) with no options lets the Sony
+        XAVC extractor fall back to frame_sample='all', which reads every RTMD
+        timed-metadata frame (hundreds), scattered across the mdat box — turning
+        an O(1) read into one that scales with file size (cold ~340ms vs ~6ms
+        for a 134 MB clip). 'first' reads only the first frame for the
+        per-capture values (fnumber, ISO, shutter).
         """
-        from exopsis import extract
+        from exopsis import ExtractOptions, extract
 
         file_path = normalize_path(file_path)
         if not Path(file_path).is_file():
@@ -107,7 +111,7 @@ class ExopsisWrapper:
                 )
                 return {}
 
-            result = extract(file_path)
+            result = extract(file_path, options=ExtractOptions(frame_sample="first"))
             raw_metadata = cast("dict[str, Any]", result.to_dict())
             metadata = self._normalize_exopsis_metadata(raw_metadata)
             self._consecutive_errors = 0
@@ -152,19 +156,33 @@ class ExopsisWrapper:
     @staticmethod
     def _add_exopsis_aliases(metadata: dict[str, Any]) -> None:
         """Add legacy EXIF-style aliases for common Exopsis fields."""
+        capture = metadata.get("capture")
+        capture_dt = capture.get("datetime_original") if isinstance(capture, dict) else None
+
         file_info = metadata.get("file_info")
         if isinstance(file_info, dict):
             created_dt = file_info.get("created_dt")
-            if created_dt is not None:
-                metadata.setdefault("CreateDate", created_dt)
-                metadata.setdefault("DateTimeOriginal", created_dt)
-                metadata.setdefault("creation_date", created_dt)
-                metadata.setdefault("date", created_dt)
-
             modified_dt = file_info.get("modified_dt")
+
+            # Capture date = when the shot was taken (capture.datetime_original).
+            # Fall back to filesystem created_dt only when there is no capture
+            # metadata. The rename "metadata date" module reads these keys, so
+            # they must carry the real capture time — not the filesystem copy
+            # time, which previously leaked in here.
+            capture_date = capture_dt or created_dt
+            if capture_date is not None:
+                metadata.setdefault("DateTimeOriginal", capture_date)
+                metadata.setdefault("CreateDate", capture_date)
+                metadata.setdefault("creation_date", capture_date)
+                metadata.setdefault("date", capture_date)
+
+            # Filesystem timestamps — kept distinct and clearly labeled so they
+            # are not confused with the capture date.
+            if created_dt is not None:
+                metadata.setdefault("FileCreateDate", created_dt)
             if modified_dt is not None:
-                metadata.setdefault("ModifyDate", modified_dt)
                 metadata.setdefault("FileModifyDate", modified_dt)
+                metadata.setdefault("ModifyDate", modified_dt)
 
             path = file_info.get("path")
             if path is not None:
@@ -181,6 +199,20 @@ class ExopsisWrapper:
             media_kind = file_info.get("media_kind")
             if media_kind is not None:
                 metadata.setdefault("MediaType", media_kind)
+
+        # Lens / focal length — surfaced when exopsis provides them (many bodies
+        # report no lens data, e.g. manual/adapted glass, in which case these
+        # stay absent rather than showing as empty rows).
+        device = metadata.get("device")
+        if isinstance(device, dict):
+            lens_model = device.get("lens_model")
+            if lens_model:
+                metadata.setdefault("LensModel", lens_model)
+                metadata.setdefault("Lens", lens_model)
+        if isinstance(capture, dict):
+            focal = capture.get("focal_length_mm")
+            if focal:
+                metadata.setdefault("FocalLength", focal)
 
         container = metadata.get("container")
         if isinstance(container, dict):
@@ -243,7 +275,6 @@ class ExopsisWrapper:
             "device",
             "capture",
             "static_metadata",
-            "vendor_raw",
         ):
             group = metadata.get(group_name)
             if not isinstance(group, dict):
@@ -252,14 +283,34 @@ class ExopsisWrapper:
                 metadata.setdefault(key, value)
             del metadata[group_name]
 
-        # timed_metadata is per-frame sensor data — not useful for display
-        metadata.pop("timed_metadata", None)
+        # timed_metadata is per-frame sensor data — not useful for display.
+        # hdr/ilst/id3v2/diagnostics/schema_version are known exopsis groups we
+        # do not surface (redundant with flattened fields, or non-display data).
+        # vendor_raw is intentionally NOT flattened: it duplicates the structured
+        # fields (codec/camera/gamma/ltc/…) and adds container-internal date
+        # variants (create_date/modify_date in a different timezone), which only
+        # bloats the metadata tree with redundant rows.
+        for known in (
+            "timed_metadata",
+            "vendor_raw",
+            "hdr",
+            "ilst",
+            "id3v2",
+            "diagnostics",
+            "schema_version",
+        ):
+            metadata.pop(known, None)
 
-        # Drop any remaining top-level dict/list values (un-flattened nested structures).
-        # Log so new exopsis groups (e.g. future GPS/HDR clusters) surface instead of
-        # being silently dropped.
+        # Drop any *unexpected* remaining nested structures, with a warning so a
+        # genuinely new exopsis group surfaces instead of being silently dropped.
         for key in [k for k, v in metadata.items() if isinstance(v, (dict, list))]:
             logger.warning("[Exopsis] Dropping unrecognized nested value: %s", key)
+            del metadata[key]
+
+        # Drop None-valued keys — exopsis emits many absent fields as None
+        # (lens_model, gps_*, focal_length_mm, datetime_utc, …); showing them as
+        # empty rows just clutters the metadata tree.
+        for key in [k for k, v in metadata.items() if v is None]:
             del metadata[key]
 
     @staticmethod
