@@ -46,12 +46,12 @@ Pre-commit runs ruff + audit_boundaries.py automatically on every commit.
 
 Four-tier clean architecture (strict layer boundaries):
 
-```
+```Architecture
 UI (PyQt5)  →  Controllers  →  App Services (Facades)  →  Core / Domain / Infra
 ```
 
 | Layer | Package | Role |
-|---|---|---|
+| ----- | ------- | ---- |
 | UI | `oncutf/ui/` | PyQt5 widgets, behaviors (composition), dialogs, delegates |
 | Controllers | `oncutf/controllers/` | UI-agnostic orchestration (FileLoad, Metadata, Rename, MainWindow) |
 | App Services | `oncutf/app/` | Ports, services, use cases, events, state — clean arch facades |
@@ -60,15 +60,18 @@ UI (PyQt5)  →  Controllers  →  App Services (Facades)  →  Core / Domain / 
 | Infra | `oncutf/infra/` | External tools (exopsis, ffmpeg), cache, SQLite, filesystem ops |
 | Modules | `oncutf/modules/` | Composable rename-fragment implementations (counter, metadata, text, datetime…) |
 
-**Cross-layer imports must go through `.api` modules only:**
-- `from oncutf.core.rename.api import UnifiedRenameEngine`  ✓
-- `from oncutf.core.rename.unified_rename_engine import ...`  ✗
+**Cross-layer imports must target the subpackage, not its implementation files.**
+Each subpackage's `__init__.py` re-exports the public API (`__all__`); treat that as the contract.
 
-The architecture audit tool enforces this; violations break pre-commit.
+- `from oncutf.core.rename import UnifiedRenameEngine`  ✓
+- `from oncutf.core.rename.unified_rename_engine import UnifiedRenameEngine`  ✗
+
+The architecture audit tool enforces layer-to-layer rules (e.g. `ui → infra` is blocked, `domain` must stay pure). It does **not** enforce the subpackage-only convention — that one is a code-review rule.
 
 ## MyPy Strictness Tiers
 
 Three tiers, configured in `pyproject.toml`:
+
 - **Tier 1** (`app/`, `domain/`, `infra/`): strict equivalent
 - **Tier 2** (`controllers/`, `core/`, `models/`): strict but pragmatic
 - **Tier 3** (`ui/`): targeted suppression for Qt stub noise

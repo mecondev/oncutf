@@ -37,6 +37,16 @@ if TYPE_CHECKING:
 
 logger = get_cached_logger(__name__)
 
+# Common technical acronyms preserved in upper case when format_key falls back
+# to snake_case word-splitting. Keys registered in the simplification service
+# (preferred path) bypass this list entirely.
+_ACRONYMS: frozenset[str] = frozenset({
+    "bps", "kbps", "mbps", "fps", "iso", "exif", "gps", "rgb", "yuv",
+    "hdr", "sdr", "ltc", "uuid", "id", "url", "uri", "xml", "json",
+    "mp4", "mov", "wav", "mp3", "aac", "ac3", "hd", "uhd", "sd",
+    "led", "ois", "ev", "wb", "af", "ae",
+})
+
 
 class MetadataTreeService:
     """Service layer for metadata tree operations.
@@ -93,9 +103,13 @@ class MetadataTreeService:
             # Simplification successful
             return simplified
 
-        # Fallback: snake_case keys (exopsis native format)
+        # Fallback: snake_case keys (exopsis native format).
+        # Preserve common acronyms (BPS, FPS, ISO, …) in upper case.
         if "_" in key:
-            return " ".join(w.capitalize() for w in key.split("_"))
+            return " ".join(
+                w.upper() if w.lower() in _ACRONYMS else w.capitalize()
+                for w in key.split("_")
+            )
 
         # Final fallback: camelCase splitting
         return re.sub(r"(?<!^)(?=[A-Z])", " ", key)

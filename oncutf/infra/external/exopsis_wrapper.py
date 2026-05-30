@@ -88,12 +88,12 @@ class ExopsisWrapper:
     ) -> dict[str, Any]:
         """Extract metadata from a single file via Exopsis.
 
-        Uses frame_sample='first' — reads only the first timed-metadata frame
-        from the RTMD track (O(1) fast path in the Sony XAVC parser). This
-        gives per-capture values (fnumber, ISO, shutter) without iterating
-        all frames in the clip.
+        Exopsis ≥ 3.x defaults to frame_sample='first' — reads only the first
+        timed-metadata frame from the RTMD track (O(1) fast path in the Sony
+        XAVC parser). This gives per-capture values (fnumber, ISO, shutter)
+        without iterating all frames in the clip.
         """
-        from exopsis import ExtractOptions, extract
+        from exopsis import extract
 
         file_path = normalize_path(file_path)
         if not Path(file_path).is_file():
@@ -107,8 +107,7 @@ class ExopsisWrapper:
                 )
                 return {}
 
-            options = ExtractOptions(frame_sample="first")
-            result = extract(file_path, options=options)
+            result = extract(file_path)
             raw_metadata = cast("dict[str, Any]", result.to_dict())
             metadata = self._normalize_exopsis_metadata(raw_metadata)
             self._consecutive_errors = 0
@@ -204,7 +203,6 @@ class ExopsisWrapper:
             codec = video.get("codec")
             if codec is not None:
                 metadata.setdefault("VideoCodec", codec)
-                metadata.setdefault("Codec", codec)
 
             avg_bitrate_kbps = video.get("avg_bitrate_kbps")
             if avg_bitrate_kbps is not None:
@@ -233,7 +231,6 @@ class ExopsisWrapper:
             codec = audio.get("codec")
             if codec is not None:
                 metadata.setdefault("AudioCodec", codec)
-                metadata.setdefault("Codec", codec)
 
     @staticmethod
     def _flatten_metadata_groups(metadata: dict[str, Any]) -> None:
@@ -258,8 +255,11 @@ class ExopsisWrapper:
         # timed_metadata is per-frame sensor data — not useful for display
         metadata.pop("timed_metadata", None)
 
-        # Drop any remaining top-level dict/list values (un-flattened nested structures)
+        # Drop any remaining top-level dict/list values (un-flattened nested structures).
+        # Log so new exopsis groups (e.g. future GPS/HDR clusters) surface instead of
+        # being silently dropped.
         for key in [k for k, v in metadata.items() if isinstance(v, (dict, list))]:
+            logger.warning("[Exopsis] Dropping unrecognized nested value: %s", key)
             del metadata[key]
 
     @staticmethod

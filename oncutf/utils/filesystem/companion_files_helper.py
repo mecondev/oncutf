@@ -391,20 +391,26 @@ class CompanionFilesHelper:
         )
         return file_groups
 
+    # Companion patterns whose presence without the main media file makes no
+    # semantic sense — Sony XAVC-S metadata XML written next to every clip.
+    # Generic sidecars (.srt, .xmp, .cube, …) are NOT included: a folder with
+    # only subtitles, XMP catalogs, or LUTs is a legitimate workflow.
+    _ORPHAN_FILTERABLE_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"^(.+)M01\.XML$",
+        r"^(.+)M02\.XML$",
+    )
+
     @classmethod
     def _matches_any_companion_pattern(cls, filename: str) -> bool:
-        """Return True if filename matches any companion pattern across all main file types.
+        """Return True if filename matches a camera-specific orphan-filterable pattern.
 
-        Used to detect orphaned companions (pattern matches but main file is absent).
+        Used to detect orphaned companions whose main media file is absent and
+        which provide no standalone value (Sony M01.XML, M02.XML).
         """
-        ext = Path(filename).suffix[1:].lower()
-        if ext not in cls.COMPANION_EXTENSIONS:
-            return False
-        for patterns in cls.COMPANION_PATTERNS.values():
-            for pattern in patterns:
-                if re.match(pattern, filename, re.IGNORECASE):
-                    return True
-        return False
+        return any(
+            re.match(pattern, filename, re.IGNORECASE)
+            for pattern in cls._ORPHAN_FILTERABLE_PATTERNS
+        )
 
     @classmethod
     def is_companion_file(cls, file_path: str, folder_files: list[str]) -> bool:
