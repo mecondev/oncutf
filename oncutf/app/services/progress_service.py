@@ -183,7 +183,7 @@ def create_metadata_dialog(
     is_extended: bool = False,
     cancel_callback: Callable[[], None] | None = None,
     show_enhanced_info: bool = True,
-    use_size_based_progress: bool = True,
+    use_size_based_progress: bool = False,
 ) -> ProgressDialogProtocol:
     """Create a progress dialog preconfigured for metadata operations.
 
@@ -192,7 +192,9 @@ def create_metadata_dialog(
         is_extended: True for extended metadata, False for basic
         cancel_callback: Function to call when user cancels
         show_enhanced_info: Whether to show enhanced size/time tracking
-        use_size_based_progress: Whether to use size-based progress bar
+        use_size_based_progress: Count-based by default — metadata extraction is
+            ~constant time per file (frame_sample='first'), so size-based
+            progress lurched on large files. Hash operations stay size-based.
 
     Returns:
         ProgressDialogProtocol configured for metadata operations

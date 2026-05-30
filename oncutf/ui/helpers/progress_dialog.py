@@ -364,7 +364,7 @@ class ProgressDialog(QDialog):
         is_extended: bool = False,
         cancel_callback: Callable[[], None] | None = None,
         show_enhanced_info: bool = True,
-        use_size_based_progress: bool = True,
+        use_size_based_progress: bool = False,
     ) -> "ProgressDialog":
         """Create a progress dialog for metadata operations.
 
@@ -373,10 +373,14 @@ class ProgressDialog(QDialog):
             is_extended: True for extended metadata, False for basic
             cancel_callback: Function to call when user cancels
             show_enhanced_info: Whether to show enhanced size/time tracking
-            use_size_based_progress: Whether to use size-based progress bar (recommended for consistency)
+            use_size_based_progress: Count-based by default. Metadata extraction
+                reads only the moov + first timed frame (frame_sample='first'),
+                so per-file time is ~constant regardless of size — count-based
+                progress advances evenly, whereas size-based lurched on large
+                files (which now cost the same as small ones).
 
         Returns:
-            ProgressDialog configured for metadata operations with optional size-based progress
+            ProgressDialog configured for metadata operations
 
         """
         operation_type = "metadata_extended" if is_extended else "metadata_basic"
