@@ -486,7 +486,7 @@ class LayoutController:
         """
         import time
 
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         # Resolve button ID before entering the wait-cursor block so that
         # no-op clicks (same view already active, or unknown button) return

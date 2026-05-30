@@ -172,7 +172,7 @@ class NodeEditorWidget(QWidget):
             True if load succeeded, False on error.
 
         """
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor():
             try:
@@ -208,7 +208,7 @@ class NodeEditorWidget(QWidget):
         if filename is not None:
             self.filename = filename
 
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor():
             save_scene_to_file(self.scene, self.filename)

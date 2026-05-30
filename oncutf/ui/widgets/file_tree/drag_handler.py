@@ -483,7 +483,7 @@ class DragHandler:
 
         # For FileListView, emit files_dropped to reuse the main drop pipeline
         if target_class == "FileListView":
-            from oncutf.utils.cursor_helper import wait_cursor
+            from oncutf.ui.helpers.cursor_helper import wait_cursor
 
             with wait_cursor(restore_after=False):
                 QApplication.processEvents()
@@ -496,7 +496,7 @@ class DragHandler:
         # For ThumbnailViewportWidget, emit files_dropped signal
         elif target_class == "ThumbnailViewportWidget":
             # Emit files_dropped signal like normal drop sources do
-            from oncutf.utils.cursor_helper import wait_cursor
+            from oncutf.ui.helpers.cursor_helper import wait_cursor
 
             with wait_cursor(restore_after=False):
                 QApplication.processEvents()

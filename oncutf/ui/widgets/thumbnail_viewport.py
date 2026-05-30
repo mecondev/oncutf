@@ -655,9 +655,9 @@ class ThumbnailViewportWidget(QWidget):
             event: Qt drop event
 
         """
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
         from oncutf.ui.widgets.drag_cancel_handler import get_drag_cancel_handler
         from oncutf.ui.widgets.drag_overlay import DragOverlayManager
-        from oncutf.utils.cursor_helper import wait_cursor
 
         logger.debug(
             "[ThumbnailViewport] dropEvent START",
@@ -1653,6 +1653,6 @@ class ThumbnailViewportWidget(QWidget):
 
     def _force_cursor_cleanup(self) -> None:
         """Force cleanup of any stuck cursors during drag operations."""
-        from oncutf.utils.cursor_helper import force_restore_cursor
+        from oncutf.ui.helpers.cursor_helper import force_restore_cursor
 
         force_restore_cursor()

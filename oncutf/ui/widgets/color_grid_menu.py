@@ -253,7 +253,7 @@ class ColorGridMenu(QWidget):
         # Start wait cursor before anything else.
         # NOTE: Use wait_cursor helper so startup suppression (post-splash delay) is respected.
         # Keep cursor active: the external handler will restore it.
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
 
         with wait_cursor(restore_after=False):
             logger.info("[ColorGridMenu] Wait cursor started")

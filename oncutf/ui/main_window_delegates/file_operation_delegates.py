@@ -79,7 +79,7 @@ class FileOperationDelegates:
 
         from oncutf.domain.keyboard import KeyboardModifier
         from oncutf.ui.adapters.qt_keyboard import qt_modifiers_to_domain
-        from oncutf.utils.cursor_helper import wait_cursor
+        from oncutf.ui.helpers.cursor_helper import wait_cursor
         from oncutf.utils.logging.logger_factory import get_cached_logger
 
         logger = get_cached_logger(__name__)

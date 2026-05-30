@@ -377,6 +377,7 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
     - infra should not depend on ui/app/controllers/utils_ui/boot
     - ui must not import infra directly (should go through boot or app services)
     - core must never import ui
+    - utils is cross-cutting: no ui/app/core/controllers/boot (infra allowed).
     - controllers_ui is considered UI-facing; treat it like "ui".
     - utils_ui is UI-only helper; treat it like "ui".
     """
@@ -422,6 +423,14 @@ def is_forbidden(file_layer: str, imported_layer: str, strict_ui_core: bool) -> 
     # controllers (non-ui) ideally should not import ui
     if file_layer == "controllers" and imported_layer in ui_side:
         return "controllers_must_not_import_ui"
+
+    # utils is a cross-cutting helper layer: no UI/app/core/controllers/boot.
+    # (infra is permitted - some filesystem helpers read the persistent caches;
+    #  utils_ui is the home for Qt-bound helpers and is exempt here.)
+    if file_layer == "utils" and imported_layer in ui_side | {
+        "app", "core", "controllers", "boot"
+    }:
+        return "utils_must_not_import_ui_app_core"
 
     return None
 
